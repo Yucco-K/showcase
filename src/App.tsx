@@ -10,6 +10,7 @@ import { useMemo } from "react";
 import React from "react"; // Added missing import for React
 import BubbleScene from "./components/BubbleScene";
 import YuccoCat from "./components/YuccoCat";
+import PaymentForm from "./components/PaymentForm";
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -53,6 +54,7 @@ function useBgColor() {
 	return useMemo(() => {
 		if (pathname === "/internship") return "#ffe5b4"; // 薄いオレンジ
 		if (pathname === "/portfolio") return "#d0ffd6"; // 薄い黄緑
+		if (pathname === "/payment") return "#f0f8ff"; // 薄いブルー
 		return "#2b8dff"; // 濃いスカイブルー
 	}, [pathname]);
 }
@@ -327,6 +329,43 @@ function Top() {
 	);
 }
 
+function Payment() {
+	const handlePaymentSuccess = (result: {
+		paymentIntent: {
+			id: string;
+			status: string;
+			amount: number;
+			currency: string;
+		};
+	}) => {
+		console.log("決済成功:", result);
+		// ここでSupabaseに決済記録を保存することも可能
+	};
+
+	const handlePaymentError = (error: string) => {
+		console.error("決済エラー:", error);
+	};
+
+	return (
+		<main
+			style={{
+				width: "100vw",
+				minHeight: "100vh",
+				padding: "2rem 1rem",
+				background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+			}}
+		>
+			<PaymentForm
+				onPaymentSuccess={handlePaymentSuccess}
+				onPaymentError={handlePaymentError}
+			/>
+		</main>
+	);
+}
+
 function AppRoutes() {
 	const bg = useBgColor();
 	const { pathname } = useLocation();
@@ -343,11 +382,15 @@ function AppRoutes() {
 				<NavLink to="/portfolio" $active={pathname === "/portfolio"}>
 					Portfolio
 				</NavLink>
+				<NavLink to="/payment" $active={pathname === "/payment"}>
+					Payment
+				</NavLink>
 			</Nav>
 			<Routes>
 				<Route path="/" element={<Top />} />
 				<Route path="/internship" element={<Internship />} />
 				<Route path="/portfolio" element={<Portfolio />} />
+				<Route path="/payment" element={<Payment />} />
 			</Routes>
 		</>
 	);

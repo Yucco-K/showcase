@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthProvider";
-import { LoginModal } from "../components/auth/LoginModal";
+
 import { BlogPlatform } from "../types/blog";
 import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
@@ -35,6 +35,10 @@ const Container = styled.div`
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: 24px;
+
+	@media (max-width: 768px) {
+		padding: 16px;
+	}
 `;
 
 const Title = styled.h1`
@@ -59,12 +63,29 @@ const CreateButton = styled.button`
 	}
 `;
 
+const TableContainer = styled.div`
+	overflow-x: auto;
+	border-radius: 12px;
+	margin-bottom: 24px;
+	position: relative;
+
+	@media (max-width: 768px) {
+		margin: 0 -16px 24px -16px;
+		padding: 0 16px;
+	}
+`;
+
 const BlogTable = styled.table`
 	width: 100%;
 	border-collapse: collapse;
 	background: rgba(255, 255, 255, 0.05);
 	border-radius: 12px;
 	overflow: hidden;
+	min-width: 800px;
+
+	@media (max-width: 768px) {
+		min-width: 1200px;
+	}
 `;
 
 const Th = styled.th`
@@ -122,6 +143,40 @@ const ModalContent = styled.div`
 	max-width: 600px;
 	max-height: 90vh;
 	overflow-y: auto;
+	position: relative;
+
+	@media (max-width: 768px) {
+		width: 95%;
+		padding: 24px 16px;
+		max-height: 95vh;
+	}
+`;
+
+const CloseButton = styled.button`
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	background: none;
+	border: none;
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 24px;
+	cursor: pointer;
+	padding: 8px;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+	z-index: 10;
+
+	&:hover {
+		color: white;
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	@media (max-width: 768px) {
+		top: 12px;
+		right: 12px;
+		font-size: 20px;
+		padding: 6px;
+	}
 `;
 
 const Form = styled.form`
@@ -352,78 +407,84 @@ export const BlogAdmin: React.FC = () => {
 
 			<CreateButton onClick={handleCreate}>+ New Create</CreateButton>
 
-			<BlogTable>
-				<thead>
-					<tr>
-						<Th>タイトル</Th>
-						<Th>URL</Th>
-						<Th>プラットフォーム</Th>
-						<Th>公開日</Th>
-						<Th>著者</Th>
-						<Th>操作</Th>
-					</tr>
-				</thead>
-				<tbody>
-					{blogs.map((blog) => (
-						<tr key={blog.id}>
-							<Td>{blog.title}</Td>
-							<Td>
-								<a
-									href={blog.url}
-									target="_blank"
-									rel="noopener noreferrer"
-									style={{
-										color: "#1e40af",
-										textDecoration: "none",
-										fontWeight: "500",
-										transition: "all 0.2s ease",
-									}}
-									onMouseOver={(e) => {
-										e.currentTarget.style.color = "#3b82f6";
-										e.currentTarget.style.textDecoration = "underline";
-									}}
-									onMouseOut={(e) => {
-										e.currentTarget.style.color = "#1e40af";
-										e.currentTarget.style.textDecoration = "none";
-									}}
-									onFocus={(e) => {
-										e.currentTarget.style.color = "#3b82f6";
-										e.currentTarget.style.textDecoration = "underline";
-									}}
-									onBlur={(e) => {
-										e.currentTarget.style.color = "#1e40af";
-										e.currentTarget.style.textDecoration = "none";
-									}}
-								>
-									{blog.url}
-								</a>
-							</Td>
-							<Td>{blog.platform}</Td>
-							<Td>
-								{blog.published_at
-									? new Date(blog.published_at).toLocaleDateString()
-									: "-"}
-							</Td>
-							<Td>{blog.author || "-"}</Td>
-							<Td>
-								<ActionButton $variant="edit" onClick={() => handleEdit(blog)}>
-									✏️
-								</ActionButton>
-								<ActionButton
-									$variant="delete"
-									onClick={() => handleDelete(blog.id)}
-								>
-									🗑️
-								</ActionButton>
-							</Td>
+			<TableContainer>
+				<BlogTable>
+					<thead>
+						<tr>
+							<Th>タイトル</Th>
+							<Th>URL</Th>
+							<Th>プラットフォーム</Th>
+							<Th>公開日</Th>
+							<Th>著者</Th>
+							<Th>操作</Th>
 						</tr>
-					))}
-				</tbody>
-			</BlogTable>
+					</thead>
+					<tbody>
+						{blogs.map((blog) => (
+							<tr key={blog.id}>
+								<Td>{blog.title}</Td>
+								<Td>
+									<a
+										href={blog.url}
+										target="_blank"
+										rel="noopener noreferrer"
+										style={{
+											color: "#1e40af",
+											textDecoration: "none",
+											fontWeight: "500",
+											transition: "all 0.2s ease",
+										}}
+										onMouseOver={(e) => {
+											e.currentTarget.style.color = "#3b82f6";
+											e.currentTarget.style.textDecoration = "underline";
+										}}
+										onMouseOut={(e) => {
+											e.currentTarget.style.color = "#1e40af";
+											e.currentTarget.style.textDecoration = "none";
+										}}
+										onFocus={(e) => {
+											e.currentTarget.style.color = "#3b82f6";
+											e.currentTarget.style.textDecoration = "underline";
+										}}
+										onBlur={(e) => {
+											e.currentTarget.style.color = "#1e40af";
+											e.currentTarget.style.textDecoration = "none";
+										}}
+									>
+										{blog.url}
+									</a>
+								</Td>
+								<Td>{blog.platform}</Td>
+								<Td>
+									{blog.published_at
+										? new Date(blog.published_at).toLocaleDateString()
+										: "-"}
+								</Td>
+								<Td>{blog.author || "-"}</Td>
+								<Td>
+									<ActionButton
+										$variant="edit"
+										onClick={() => handleEdit(blog)}
+									>
+										✏️
+									</ActionButton>
+									<ActionButton
+										$variant="delete"
+										onClick={() => handleDelete(blog.id)}
+									>
+										🗑️
+									</ActionButton>
+								</Td>
+							</tr>
+						))}
+					</tbody>
+				</BlogTable>
+			</TableContainer>
 
 			{isModalOpen && (
 				<Modal onClick={() => setIsModalOpen(false)}>
 					<ModalContent onClick={(e) => e.stopPropagation()}>
+						<CloseButton onClick={() => setIsModalOpen(false)}>×</CloseButton>
 						<h2 style={{ color: "white", marginBottom: "24px" }}>
 							{editingBlog ? "ブログを編集" : "新規ブログを作成"}
 						</h2>
@@ -529,7 +590,8 @@ export const BlogAdmin: React.FC = () => {
 
 			{/* 削除確認モーダル */}
 			{deleteConfirmId && (
-				<div
+				<button
+					type="button"
 					style={{
 						position: "fixed",
 						top: 0,
@@ -541,8 +603,15 @@ export const BlogAdmin: React.FC = () => {
 						alignItems: "center",
 						justifyContent: "center",
 						zIndex: 1000,
+						border: "none",
+						cursor: "default",
 					}}
 					onClick={() => setDeleteConfirmId(null)}
+					onKeyDown={(e) => {
+						if (e.key === "Escape") {
+							setDeleteConfirmId(null);
+						}
+					}}
 				>
 					<div
 						style={{
@@ -554,8 +623,8 @@ export const BlogAdmin: React.FC = () => {
 							width: "90%",
 							textAlign: "center",
 							color: "white",
+							pointerEvents: "auto",
 						}}
-						onClick={(e) => e.stopPropagation()}
 					>
 						<h2
 							style={{
@@ -638,7 +707,7 @@ export const BlogAdmin: React.FC = () => {
 							</button>
 						</div>
 					</div>
-				</div>
+				</button>
 			)}
 
 			<Toast

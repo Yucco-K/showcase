@@ -24,6 +24,11 @@ const Card = styled.div`
 	position: relative;
 	overflow: hidden;
 
+	@media (max-width: 768px) {
+		width: 300px;
+		padding: 16px;
+	}
+
 	&:hover {
 		transform: translateY(-5px);
 		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
@@ -45,6 +50,11 @@ const ImageContainer = styled.div`
 	color: white;
 	font-size: 18px;
 	font-weight: bold;
+
+	@media (max-width: 768px) {
+		height: 140px;
+		font-size: 14px;
+	}
 `;
 
 const CategoryBadge = styled.span`

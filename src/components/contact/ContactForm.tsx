@@ -1,13 +1,16 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { supabase } from "../../lib/supabase";
+import { useToast } from "../../hooks/useToast";
+import { Toast } from "../ui/Toast";
 
 const Container = styled.div`
 	max-width: 600px;
 	margin: 0 auto;
-	padding: 32px;
+	padding: 32px 24px;
 	background: rgba(255, 255, 255, 0.05);
 	border-radius: 12px;
+	box-sizing: border-box;
 `;
 
 const Field = styled.div`
@@ -21,11 +24,12 @@ const Field = styled.div`
 	input,
 	textarea {
 		width: 100%;
-		padding: 10px 14px;
+		padding: 12px 16px;
 		border-radius: 8px;
 		border: 1px solid rgba(255, 255, 255, 0.2);
 		background: rgba(255, 255, 255, 0.05);
 		color: #fff;
+		box-sizing: border-box;
 	}
 `;
 
@@ -37,6 +41,7 @@ const Button = styled.button`
 	cursor: pointer;
 	background: linear-gradient(135deg, #3ea8ff, #0066cc);
 	color: #fff;
+	width: 100%;
 	&:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
@@ -48,8 +53,28 @@ const ScrollBox = styled.div`
 	overflow-y: auto;
 	margin-bottom: 24px;
 	padding-right: 8px;
+	padding-left: 8px;
 	line-height: 1.6;
 	color: rgba(255, 255, 255, 0.85);
+
+	/* スクロールバーのスタイル */
+	&::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	&::-webkit-scrollbar-track {
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 4px;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background: rgba(255, 255, 255, 0.8);
+		border-radius: 4px;
+	}
+
+	&::-webkit-scrollbar-thumb:hover {
+		background: rgba(255, 255, 255, 1);
+	}
 
 	h3 {
 		color: #fff;
@@ -76,19 +101,28 @@ export const ContactForm: React.FC = () => {
 	const [email, setEmail] = useState("");
 	const [message, setMessage] = useState("");
 	const [sent, setSent] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 	const [agree, setAgree] = useState(false);
+	const { toast, showError, showSuccess, hideToast } = useToast();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		setError(null);
-		const { error } = await supabase
-			.from("contacts")
-			.insert({ name, email, message });
-		if (error) {
-			setError(error.message);
-		} else {
-			setSent(true);
+		console.log("Submitting contact form:", { name, email, message });
+		try {
+			const { error } = await supabase
+				.from("contacts")
+				.insert({ name, email, message });
+			console.log("Supabase response:", { error });
+			if (error) {
+				console.error("Contact form error:", error);
+				showError("送信に失敗しました...");
+			} else {
+				console.log("Contact form submitted successfully");
+				showSuccess("お問い合わせを送信しました。ありがとうございます。");
+				setSent(true);
+			}
+		} catch (error) {
+			console.error("Contact form submission error:", error);
+			showError("送信に失敗しました...");
 		}
 	};
 
@@ -104,7 +138,6 @@ export const ContactForm: React.FC = () => {
 	return (
 		<Container>
 			<h2>お問い合わせ</h2>
-			{error && <p style={{ color: "#ef4444" }}>{error}</p>}
 			<ScrollBox>
 				<h3>よくあるご質問</h3>
 				<details>
@@ -203,6 +236,12 @@ export const ContactForm: React.FC = () => {
 					送信
 				</Button>
 			</form>
+			<Toast
+				message={toast.message}
+				type={toast.type}
+				isVisible={toast.isVisible}
+				onClose={hideToast}
+			/>
 		</Container>
 	);
 };

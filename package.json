@@ -10,7 +10,8 @@
 		"preview": "vite preview",
 		"predeploy": "npm run build && cp dist/index.html dist/404.html",
 		"deploy": "gh-pages -d dist",
-		"db:seed": "tsx --env-file=.env scripts/seed.ts"
+		"db:seed": "tsx --env-file=.env scripts/seed.ts",
+		"test:setup-admin": "tsx --env-file=.env scripts/setup-test-admin.ts"
 	},
 	"dependencies": {
 		"@react-three/drei": "^10.5.0",
@@ -20,6 +21,7 @@
 		"framer-motion": "^12.23.3",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
+		"react-hook-form": "^7.60.0",
 		"react-markdown": "^10.1.0",
 		"react-router-dom": "^7.6.3",
 		"styled-components": "^6.1.19",

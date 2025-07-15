@@ -351,17 +351,17 @@ const TabButtons = styled.div`
 const TabButton = styled.button<{ $active: boolean }>`
 	background: none;
 	border: none;
-	color: ${(props) => (props.$active ? "#3b82f6" : "rgba(255, 255, 255, 0.6)")};
+	color: ${(props) => (props.$active ? "#2563eb" : "rgba(255, 255, 255, 0.6)")};
 	padding: 16px 24px;
 	font-size: 16px;
 	font-weight: 600;
 	cursor: pointer;
 	transition: all 0.2s ease;
 	border-bottom: 2px solid
-		${(props) => (props.$active ? "#3b82f6" : "transparent")};
+		${(props) => (props.$active ? "#2563eb" : "transparent")};
 
 	&:hover {
-		color: ${(props) => (props.$active ? "#3b82f6" : "white")};
+		color: ${(props) => (props.$active ? "#2563eb" : "#ffffff")};
 	}
 `;
 
@@ -590,7 +590,7 @@ export const ProductDetail: React.FC = () => {
 							style={{
 								marginLeft: 4,
 								display: "inline-block",
-								transform: "translateY(2px)",
+								transform: "translateY(14px)",
 							}}
 						>
 							{likesCount}

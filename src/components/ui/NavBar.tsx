@@ -1,8 +1,11 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthProvider";
 import { LoginModal } from "../auth/LoginModal";
 import React from "react";
+import { LogoutConfirmationModal } from "../auth/LogoutConfirmationModal";
+import { useToast } from "../../hooks/useToast";
+import { Toast } from "../ui/Toast";
 
 const Nav = styled.nav`
 	display: flex;
@@ -39,8 +42,31 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
 
 const NavBar: React.FC = () => {
 	const { pathname } = useLocation();
+	const navigate = useNavigate();
 	const { user, isAdmin, signOut } = useAuth();
 	const [loginOpen, setLoginOpen] = React.useState(false);
+	const [logoutModalOpen, setLogoutModalOpen] = React.useState(false);
+	const { toast, showSuccess, hideToast } = useToast();
+
+	const handleLogoutClick = () => {
+		setLogoutModalOpen(true);
+	};
+
+	const handleLogoutConfirm = async () => {
+		try {
+			await signOut();
+			showSuccess("ログアウトしました！");
+			setLogoutModalOpen(false);
+			// ログアウト後にトップページにリダイレクト
+			navigate("/");
+		} catch (error) {
+			console.error("Logout error:", error);
+		}
+	};
+
+	const handleLogoutCancel = () => {
+		setLogoutModalOpen(false);
+	};
 
 	return (
 		<>
@@ -60,9 +86,15 @@ const NavBar: React.FC = () => {
 				<NavLink to="/blog" $active={pathname === "/blog"}>
 					Blog
 				</NavLink>
-				<NavLink to="/contact" $active={pathname === "/contact"}>
-					Contact
-				</NavLink>
+				{user ? (
+					<NavLink to="/contact" $active={pathname === "/contact"}>
+						Contact
+					</NavLink>
+				) : (
+					<NavLink as="button" to="#" onClick={() => setLoginOpen(true)}>
+						Contact
+					</NavLink>
+				)}
 
 				{/* Auth buttons */}
 				{!user ? (
@@ -70,7 +102,7 @@ const NavBar: React.FC = () => {
 						Login
 					</NavLink>
 				) : (
-					<NavLink as="button" to="#" onClick={() => signOut()}>
+					<NavLink as="button" to="#" onClick={handleLogoutClick}>
 						Logout
 					</NavLink>
 				)}
@@ -93,6 +125,19 @@ const NavBar: React.FC = () => {
 			{loginOpen && (
 				<LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
 			)}
+			{logoutModalOpen && (
+				<LogoutConfirmationModal
+					isOpen={logoutModalOpen}
+					onConfirm={handleLogoutConfirm}
+					onCancel={handleLogoutCancel}
+				/>
+			)}
+			<Toast
+				message={toast.message}
+				type={toast.type}
+				isVisible={toast.isVisible}
+				onClose={hideToast}
+			/>
 		</>
 	);
 };

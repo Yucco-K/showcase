@@ -29,6 +29,8 @@ const Container = styled.div`
 	padding: 24px;
 	background: rgba(255, 255, 255, 0.05);
 	border-radius: 12px;
+	overflow-y: auto;
+	max-height: 90vh;
 `;
 
 const Field = styled.div`

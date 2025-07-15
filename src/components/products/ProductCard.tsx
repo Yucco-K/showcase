@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 import type { Product } from "../../types/product";
+import { useAuth } from "../../contexts/AuthProvider";
+import { LoginModal } from "../auth/LoginModal";
 
 interface ProductCardProps {
 	product: Product;
@@ -200,6 +202,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 	isFavorite,
 	onToggleFavorite,
 }) => {
+	const { user } = useAuth();
+	const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
 	const isOnSale =
 		product.originalPrice && product.originalPrice > product.price;
 	const salePercentage = isOnSale
@@ -248,50 +253,60 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 	};
 
 	return (
-		<Card data-testid="product-card">
-			{product.isPopular && <PopularBadge>人気</PopularBadge>}
+		<>
+			<Card data-testid="product-card">
+				{product.isPopular && <PopularBadge>人気</PopularBadge>}
 
-			<ImageContainer>
-				<CategoryBadge>{getCategoryLabel(product.category)}</CategoryBadge>
-				<FavoriteButton
-					data-testid="like-button"
-					onClick={(e) => {
-						e.preventDefault();
-						onToggleFavorite(product.id);
-					}}
-				>
-					{isFavorite ? "❤️" : "🤍"}
-				</FavoriteButton>
-				{product.name}
-			</ImageContainer>
+				<ImageContainer>
+					<CategoryBadge>{getCategoryLabel(product.category)}</CategoryBadge>
+					<FavoriteButton
+						data-testid="like-button"
+						onClick={(e) => {
+							e.preventDefault();
+							if (!user) {
+								setIsLoginModalOpen(true);
+							} else {
+								onToggleFavorite(product.id);
+							}
+						}}
+					>
+						{isFavorite ? "❤️" : "🤍"}
+					</FavoriteButton>
+					{product.name}
+				</ImageContainer>
 
-			<Title>{product.name}</Title>
-			<Description>{product.description}</Description>
+				<Title>{product.name}</Title>
+				<Description>{product.description}</Description>
 
-			<PriceContainer>
-				<Price>¥{product.price.toLocaleString()}</Price>
-				{isOnSale && (
-					<>
-						<OriginalPrice>
-							¥{product.originalPrice!.toLocaleString()}
-						</OriginalPrice>
-						<SaleBadge>{salePercentage}% OFF</SaleBadge>
-					</>
-				)}
-			</PriceContainer>
+				<PriceContainer>
+					<Price>¥{product.price.toLocaleString()}</Price>
+					{isOnSale && (
+						<>
+							<OriginalPrice>
+								¥{product.originalPrice!.toLocaleString()}
+							</OriginalPrice>
+							<SaleBadge>{salePercentage}% OFF</SaleBadge>
+						</>
+					)}
+				</PriceContainer>
 
-			<RatingContainer>
-				<Stars>{renderStars(product.rating)}</Stars>
-				<ReviewCount>({product.reviewCount})</ReviewCount>
-			</RatingContainer>
+				<RatingContainer>
+					<Stars>{renderStars(product.rating)}</Stars>
+					<ReviewCount>({product.reviewCount})</ReviewCount>
+				</RatingContainer>
 
-			<TagsContainer>
-				{product.tags.slice(0, 3).map((tag) => (
-					<Tag key={tag}>{tag}</Tag>
-				))}
-			</TagsContainer>
+				<TagsContainer>
+					{product.tags.slice(0, 3).map((tag) => (
+						<Tag key={tag}>{tag}</Tag>
+					))}
+				</TagsContainer>
 
-			<ViewButton to={`/products/${product.id}`}>詳細を見る</ViewButton>
-		</Card>
+				<ViewButton to={`/products/${product.id}`}>詳細を見る</ViewButton>
+			</Card>
+			<LoginModal
+				isOpen={isLoginModalOpen}
+				onClose={() => setIsLoginModalOpen(false)}
+			/>
+		</>
 	);
 };

@@ -86,12 +86,101 @@ const Internship: React.FC = () => {
 					チュートリアル最終ページの「完了」ボタン文言と、クリック後のリダイレクト先を見直し、ユーザーの意図に沿ったナビゲーションに改善。
 					<br />
 				</div>
+				<h3>🛠 バグ修正・ロジック改善</h3>
+				<div style={{ textAlign: "left", margin: "0 auto", maxWidth: 600 }}>
+					<b>ユーザー名生成ロジックの見直し：</b>{" "}
+					メールアドレスからのユーザー名自動生成に関する仕様を見直し、プライバシー面を改善。
+					<br />
+					<b>スペース差異による誤判定を修正：</b>{" "}
+					コード自動判定機能において、半角スペースのみの違いで「不正解」となる問題を解消。
+					<br />
+					<b>編集ログの絞り込み：</b>{" "}
+					編集履歴の表示で、対象のレコード以外も表示されていた問題に対応し、対象のレコードのみに絞って表示されるように改善。
+					<br />
+					<b>モーダルの意図しない表示を防止：</b>{" "}
+					URLパラメータにより不自然にモーダルが開いてしまうバグを修正。
+					<br />
+					<b>非公開コンテンツの表示制御を強化：</b>{" "}
+					非公開のチュートリアルやレッスンが表示されてしまうバグを修正。フロント側とバックエンド側のロジックを厳密に制御。
+					<br />
+				</div>
+				<h3>🔧 機能追加・改善</h3>
+				<div style={{ textAlign: "left", margin: "0 auto", maxWidth: 600 }}>
+					<b>ドラッグ＆ドロップで並び替え可能に：</b> @dnd-kit
+					を活用し、チュートリアルやレッスンの順序変更を直感的にできるUIを新規開発。フロントエンドの
+					UI
+					実装に加え、バックエンドの並び順一括更新API（トランザクション・バリデーション対応）まで担当。ローカル開発用レッスンの運用効率を大幅に改善。
+					<br />
+					<b>フォーム保存の安定化（SkillCodingフォーム）：</b>{" "}
+					保存ボタンを2回押さないと反応しない不具合を解消。状態管理や実行チェック処理を見直し、UXを改善。また、フォームの責務を分割し、useCodeExecution,
+					useSkillCodingForm, useSkillCodingValidation
+					などのカスタムフックへ処理を分離。保守性と再利用性を向上。
+					<br />
+				</div>
+				<h2>🧑‍💻 Tech Stack</h2>
+				<p style={{ fontSize: "0.95rem", color: "#444" }}>
+					※
+					私は主にフロントエンドの開発業務を経験しています。バックエンドやインフラまわりについては、設計方針や連携仕様を理解しつつ、フロント側から関わる範囲で実装・対応しています。
+				</p>
+				<h3>Frontend</h3>
+				<div>
+					Next.js / React / TypeScript
+					<br />
+					Chakra UI（コンポーネント設計）
+					<br />
+					Recoil（状態管理）
+					<br />
+					@dnd-kit（ドラッグ＆ドロップ）
+					<br />
+					Firebase Auth（認証）
+				</div>
+				<h3>Backend</h3>
+				<div>
+					Supabase
+					<br />
+					frourio + Fastify（型安全なAPI構成）
+					<br />
+					Prisma（ORM）
+					<br />
+					PostgreSQL（RDS）
+				</div>
+				<h3>Infra / CI/CD</h3>
+				<div>
+					Vercel（Preview / Staging / Production）
+					<br />
+					GitHub Actions（CI/CD）
+					<br />
+					AWS（AppRunner, S3, EC2, Route53）
+					<br />
+					Serverless Framework
+				</div>
+				<h3>Others</h3>
+				<div>
+					SendGrid / Stripe
+					<br />
+					Google Analytics / Sentry / LogRocket
+				</div>
 				<h2>📝 Notes</h2>
 				<div style={{ fontSize: "0.95rem", color: "#444" }}>
 					実際のプロダクト名や顧客情報などは守秘義務により記載しておりません。
 					<br />
 					上記は私が担当・関与した業務の一部を抜粋したものです。
 				</div>
+				<h2>📌 Final Words</h2>
+				<p>
+					自己学習（最近は Java や Spring Boot など）やインターンを通じて、
+					<b>プロダクトの改善</b>や<b>ユーザー体験の向上</b>に取り組んでいます。
+					<b>
+						Cursor や TaskMaster などの AI ツールも活用し、GitHub CLI
+						と連携した自動化や効率化
+					</b>
+					にもチャレンジしています。また、
+					<b>日々の学びや気づきを Zenn にまとめて発信</b>したり、
+					<b>X（旧Twitter）を通じて技術に関心のある方々とのつながりも大切に</b>
+					しています。限られた時間の中でも、「動くだけでなく、
+					<b>選ばれるプロダクト</b>
+					」を支える開発者として、少しずつ成長を積み重ねているところです。
+				</p>
 			</div>
 		</main>
 	);

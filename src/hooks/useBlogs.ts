@@ -13,14 +13,18 @@ export const useBlogs = () => {
 		const fetchBlogs = async () => {
 			setIsLoading(true);
 			try {
+				console.log("Fetching blogs from Supabase...");
 				const { data, error } = await supabase
 					.from("blogs")
 					.select("*")
 					.order("published_at", { ascending: false });
 
 				if (error) {
+					console.error("Supabase error:", error);
 					throw error;
 				}
+
+				console.log("Raw data from Supabase:", data);
 
 				// SupabaseからのデータをBlogEntry型に変換
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,6 +43,7 @@ export const useBlogs = () => {
 					thumbnail: undefined, // thumbnailはテーブルにないのでundefined
 				}));
 
+				console.log("Formatted blogs:", formattedBlogs);
 				setAllBlogs(formattedBlogs);
 			} catch (error) {
 				console.error("Failed to load blogs from Supabase:", error);

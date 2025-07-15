@@ -30,15 +30,29 @@ export const useReviews = (productId: string, userId?: string) => {
 	// Add or update review (unique constraint ensures 1 per user)
 	const upsertReview = async (rating: number, comment: string | null) => {
 		if (!userId) return { error: "user not logged in" };
+
+		console.log("useReviews upsertReview called:", {
+			productId,
+			userId,
+			rating,
+			comment,
+		});
+
 		const payload = {
 			product_id: productId,
 			user_id: userId,
 			rating,
 			comment,
 		};
+
+		console.log("Upsert payload:", payload);
+
 		const { error } = await supabase.from("product_reviews").upsert(payload, {
 			onConflict: "product_id, user_id",
 		});
+
+		console.log("Supabase upsert result:", { error });
+
 		if (!error) await fetchReviews();
 		return { error };
 	};

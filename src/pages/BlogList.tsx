@@ -248,6 +248,8 @@ export const BlogList: React.FC = () => {
 	const stats = getStats();
 	const platformCounts = getPlatformCounts();
 
+	console.log("BlogList render:", { blogs, isLoading, stats, platformCounts });
+
 	const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		updateFilter({ searchQuery: e.target.value });
 	};

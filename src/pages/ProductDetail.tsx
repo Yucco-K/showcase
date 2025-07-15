@@ -1,37 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useProduct } from "../hooks/useProducts";
 import { useProducts } from "../hooks/useProducts";
 import { PaymentModal } from "../components/payment/PaymentModal";
+import { LoginModal } from "../components/auth/LoginModal";
 import { useAuth } from "../contexts/AuthProvider";
 import { useReviews } from "../hooks/useReviews";
+import { PreventDoubleClickButton } from "../components/ui/PreventDoubleClickButton";
+import { useToast } from "../hooks/useToast";
+import { Toast } from "../components/ui/Toast";
 
 const Container = styled.div`
 	min-height: 100vh;
 	padding: 80px 20px 40px;
 	max-width: 1200px;
 	margin: 0 auto;
-`;
-
-const BackButton = styled.button`
-	background: rgba(255, 255, 255, 0.1);
-	border: 1px solid rgba(255, 255, 255, 0.3);
-	border-radius: 8px;
-	color: white;
-	padding: 12px 20px;
-	font-size: 14px;
-	cursor: pointer;
-	transition: all 0.2s ease;
-	margin-bottom: 32px;
-	display: flex;
-	align-items: center;
-	gap: 8px;
-
-	&:hover {
-		background: rgba(255, 255, 255, 0.2);
-		border-color: rgba(255, 255, 255, 0.4);
-	}
 `;
 
 const NotFound = styled.div`
@@ -246,17 +230,8 @@ const TextArea = styled.textarea`
 	border-radius: 6px;
 	min-height: 140px;
 	width: 100%;
-`;
-
-const SubmitButton = styled.button`
-	padding: 12px;
-	border: none;
-	border-radius: 8px;
-	background: #3ea8ff;
-	color: #fff;
-	font-weight: 600;
-	cursor: pointer;
-	width: 100%;
+	font-size: 16px;
+	line-height: 1.5;
 `;
 
 const ReviewCount = styled.span`
@@ -268,46 +243,6 @@ const ActionButtons = styled.div`
 	display: flex;
 	gap: 16px;
 	margin-bottom: 32px;
-`;
-
-const PurchaseButton = styled.button`
-	background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-	border: none;
-	border-radius: 12px;
-	color: white;
-	padding: 16px 32px;
-	font-size: 18px;
-	font-weight: 600;
-	cursor: pointer;
-	transition: all 0.2s ease;
-	flex: 1;
-
-	&:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 12px 24px rgba(59, 130, 246, 0.3);
-	}
-
-	&:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-		transform: none;
-	}
-`;
-
-const FavoriteButton = styled.button`
-	background: rgba(255, 255, 255, 0.1);
-	border: 1px solid rgba(255, 255, 255, 0.3);
-	border-radius: 12px;
-	color: white;
-	padding: 16px 20px;
-	font-size: 20px;
-	cursor: pointer;
-	transition: all 0.2s ease;
-
-	&:hover {
-		background: rgba(255, 255, 255, 0.2);
-		transform: scale(1.05);
-	}
 `;
 
 const MetaInfo = styled.div`
@@ -420,6 +355,7 @@ const TagsContainer = styled.div`
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
+	margin-bottom: 32px;
 `;
 
 const Tag = styled.span`
@@ -431,11 +367,15 @@ const Tag = styled.span`
 `;
 
 export const ProductDetail: React.FC = () => {
+	useEffect(() => {
+		document.title = "Dummy App Store";
+	}, []);
+
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const { product, isFound } = useProduct(id || "");
 	const { toggleFavorite, isFavorite, allProducts } = useProducts();
-	const { user } = useAuth();
+	const { user, isAdmin } = useAuth();
 	const {
 		reviews,
 		loading: reviewsLoading,
@@ -443,6 +383,7 @@ export const ProductDetail: React.FC = () => {
 		deleteOwnReview,
 		myReview,
 	} = useReviews(id || "", user?.id);
+	const { toast, showSuccess, showError, hideToast } = useToast();
 
 	// 平均評価と件数をリアルタイムで計算
 	const avgRating = reviews.length
@@ -452,13 +393,14 @@ export const ProductDetail: React.FC = () => {
 
 	// （後段で product が確定してから likesCount を計算する）
 
-	const [ratingInput, setRatingInput] = useState<number>(myReview?.rating || 0);
+	const [ratingInput, setRatingInput] = useState<number>(myReview?.rating || 3);
 	const [commentInput, setCommentInput] = useState<string>(
 		myReview?.comment || ""
 	);
 	const [showReviewForm, setShowReviewForm] = useState(false);
 
 	const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+	const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 	const [activeTab, setActiveTab] = useState<
 		"description" | "features" | "requirements"
 	>("description");
@@ -466,9 +408,13 @@ export const ProductDetail: React.FC = () => {
 	if (!id || !isFound || !product) {
 		return (
 			<Container>
-				<BackButton onClick={() => navigate("/products")}>
+				<PreventDoubleClickButton
+					onClick={() => navigate("/products")}
+					className="back-button"
+					style={{ marginBottom: "24px" }}
+				>
 					← 商品一覧に戻る
-				</BackButton>
+				</PreventDoubleClickButton>
 				<NotFound>
 					<h2>商品が見つかりません</h2>
 					<p>指定された商品は存在しないか、削除された可能性があります。</p>
@@ -519,25 +465,67 @@ export const ProductDetail: React.FC = () => {
 		: 0;
 
 	const handlePurchase = () => {
-		setIsPaymentModalOpen(true);
+		if (!user) {
+			setIsLoginModalOpen(true);
+		} else {
+			setIsPaymentModalOpen(true);
+		}
 	};
 
 	const handlePaymentSuccess = (productId: string) => {
-		alert(`${product.name}の購入が完了しました！ありがとうございます。`);
+		showSuccess(`${product.name}の購入が完了しました！ありがとうございます。`);
 		console.log(`Product ${productId} purchased successfully`);
 	};
 
 	const handleSubmitReview = async (e: React.FormEvent) => {
 		e.preventDefault();
-		await upsertReview(ratingInput, commentInput || null);
-		setShowReviewForm(false);
+
+		// 最小値を1に制限
+		const finalRating = Math.max(1, ratingInput);
+
+		try {
+			console.log("Submitting review:", {
+				rating: finalRating,
+				comment: commentInput,
+				userId: user?.id,
+				isAdmin: isAdmin(user),
+				userEmail: user?.email,
+			});
+
+			const result = await upsertReview(finalRating, commentInput || null);
+			console.log("Upsert result:", result);
+
+			if (result.error) {
+				throw new Error(
+					typeof result.error === "string" ? result.error : result.error.message
+				);
+			}
+
+			if (myReview) {
+				showSuccess("レビューを更新しました！");
+			} else {
+				showSuccess("レビューを投稿しました！");
+			}
+			setShowReviewForm(false);
+		} catch (error) {
+			if (myReview) {
+				showError("更新に失敗しました...");
+			} else {
+				showError("投稿に失敗しました...");
+			}
+			console.error("Review submission error:", error);
+		}
 	};
 
 	return (
 		<Container>
-			<BackButton onClick={() => navigate("/products")}>
+			<PreventDoubleClickButton
+				onClick={() => navigate("/products")}
+				className="back-button"
+				style={{ marginBottom: "24px" }}
+			>
 				← 商品一覧に戻る
-			</BackButton>
+			</PreventDoubleClickButton>
 
 			<ProductHeader>
 				<ImageSection>
@@ -576,15 +564,37 @@ export const ProductDetail: React.FC = () => {
 					</RatingSection>
 
 					<ActionButtons>
-						<PurchaseButton onClick={handlePurchase}>
-							¥{product.price.toLocaleString()}で購入
-						</PurchaseButton>
-						<FavoriteButton
-							data-testid="like-button-detail"
-							onClick={() => toggleFavorite(product.id)}
+						<PreventDoubleClickButton
+							onClick={handlePurchase}
+							className="purchase-button"
+							style={{
+								background: "linear-gradient(135deg, #10b981, #059669)",
+								color: "white",
+								border: "none",
+								padding: "12px 24px",
+								borderRadius: "8px",
+								fontWeight: "600",
+								cursor: "pointer",
+								transition: "all 0.2s ease",
+								fontSize: "16px",
+							}}
+						>
+							{user
+								? `¥${product.price.toLocaleString()}で購入`
+								: "ログインして購入する"}
+						</PreventDoubleClickButton>
+						<PreventDoubleClickButton
+							onClick={() => {
+								if (!user) {
+									setIsLoginModalOpen(true);
+								} else {
+									toggleFavorite(product.id);
+								}
+							}}
+							className="favorite-button"
 						>
 							{isFavorite(product.id) ? "❤️" : "🤍"}
-						</FavoriteButton>
+						</PreventDoubleClickButton>
 						<span
 							data-testid="like-count-detail"
 							style={{
@@ -618,6 +628,54 @@ export const ProductDetail: React.FC = () => {
 						))}
 					</TagsContainer>
 
+					{/* Details Tabs */}
+					<DetailsTabs>
+						<TabButtons>
+							<TabButton
+								$active={activeTab === "description"}
+								onClick={() => setActiveTab("description")}
+							>
+								詳細説明
+							</TabButton>
+							<TabButton
+								$active={activeTab === "features"}
+								onClick={() => setActiveTab("features")}
+							>
+								機能
+							</TabButton>
+							<TabButton
+								$active={activeTab === "requirements"}
+								onClick={() => setActiveTab("requirements")}
+							>
+								動作環境
+							</TabButton>
+						</TabButtons>
+
+						<TabContent>
+							{activeTab === "description" && (
+								<LongDescription>{product.longDescription}</LongDescription>
+							)}
+
+							{activeTab === "features" && (
+								<FeaturesList>
+									{product.features.map((feature) => (
+										<FeatureItem key={feature}>{feature}</FeatureItem>
+									))}
+								</FeaturesList>
+							)}
+
+							{activeTab === "requirements" && (
+								<RequirementsList>
+									{product.requirements.map((requirement) => (
+										<RequirementItem key={requirement}>
+											{requirement}
+										</RequirementItem>
+									))}
+								</RequirementsList>
+							)}
+						</TabContent>
+					</DetailsTabs>
+
 					{/* Reviews */}
 					<ReviewsSection>
 						<h3>レビュー</h3>
@@ -630,7 +688,27 @@ export const ProductDetail: React.FC = () => {
 									<ReviewItem key={rev.id}>
 										<div>
 											{renderStars(rev.rating)}
-											{rev.comment && <p>{rev.comment}</p>}
+											{rev.comment && (
+												<div>
+													{isAdmin(user) && rev.user_id === user?.id && (
+														<div
+															style={{
+																color: "#6d28d9",
+																fontWeight: "600",
+																marginBottom: "8px",
+																fontSize: "14px",
+																backgroundColor: "rgba(109, 40, 217, 0.18)",
+																padding: "4px 8px",
+																borderRadius: "4px",
+																border: "1px solid #6d28d9",
+															}}
+														>
+															管理者より
+														</div>
+													)}
+													<p>{rev.comment}</p>
+												</div>
+											)}
 										</div>
 										{user && rev.user_id === user.id && (
 											<ReviewActions>
@@ -651,10 +729,16 @@ export const ProductDetail: React.FC = () => {
 													onClick={async () => {
 														// 即時にフォームを閉じて初期化
 														setShowReviewForm(false);
-														setRatingInput(0);
+														setRatingInput(3);
 														setCommentInput("");
 														// レビュー削除を非同期で実行
-														await deleteOwnReview();
+														try {
+															await deleteOwnReview();
+															showSuccess("レビューを削除しました！");
+														} catch (error) {
+															showError("削除に失敗しました...");
+															console.error("Review deletion error:", error);
+														}
 													}}
 												>
 													🗑️
@@ -667,151 +751,125 @@ export const ProductDetail: React.FC = () => {
 						)}
 
 						{!user && (
-							<SubmitButton
-								type="button"
-								onClick={() => setIsPaymentModalOpen(true)}
+							<PreventDoubleClickButton
+								onClick={() => setIsLoginModalOpen(true)}
+								className="submit-button"
+								style={{
+									background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+									color: "white",
+									border: "none",
+									padding: "12px 24px",
+									borderRadius: "8px",
+									fontWeight: "600",
+									cursor: "pointer",
+									transition: "all 0.2s ease",
+									fontSize: "16px",
+								}}
 							>
 								ログインしてレビューを書く
-							</SubmitButton>
+							</PreventDoubleClickButton>
 						)}
 
 						{user && (
 							<>
-								{!showReviewForm && (
-									<SubmitButton
-										type="button"
-										onClick={() => {
-											if (myReview) {
-												// 編集モード: 既存値をセット
-												setRatingInput(myReview.rating);
-												setCommentInput(myReview.comment ?? "");
-											} else {
-												// 新規投稿: フィールドを初期化
-												setRatingInput(0);
-												setCommentInput("");
-											}
-											setShowReviewForm(true);
-										}}
+								{!showReviewForm ? (
+									<PreventDoubleClickButton
+										onClick={() => setShowReviewForm(true)}
 									>
-										{myReview ? "レビューを編集" : "レビューを書く"}
-									</SubmitButton>
+										レビューを書く
+									</PreventDoubleClickButton>
+								) : (
+									<ReviewForm
+										onSubmit={handleSubmitReview}
+										data-testid="review-form"
+									>
+										<StarRow>
+											{[1, 2, 3, 4, 5].map((rating) => (
+												<Star
+													key={`rating-${rating}`}
+													$filled={rating <= ratingInput}
+													onClick={() => {
+														// トグル機能: 同じ星をクリックした場合は1つ減らす
+														if (ratingInput === rating) {
+															setRatingInput(Math.max(1, rating - 1));
+														} else {
+															setRatingInput(rating);
+														}
+													}}
+												>
+													★
+												</Star>
+											))}
+										</StarRow>
+										<TextArea
+											name="comment"
+											placeholder="レビューを書いてください..."
+											value={commentInput}
+											onChange={(e) => setCommentInput(e.target.value)}
+										/>
+										<input type="hidden" name="rating" value={ratingInput} />
+										<div
+											style={{ display: "flex", gap: "12px", marginTop: "8px" }}
+										>
+											<button
+												type="submit"
+												style={{
+													background:
+														"linear-gradient(135deg, #3b82f6, #1d4ed8)",
+													color: "white",
+													border: "none",
+													padding: "12px 24px",
+													borderRadius: "8px",
+													fontWeight: "600",
+													cursor: "pointer",
+													transition: "all 0.2s ease",
+												}}
+											>
+												{myReview ? "更新する" : "投稿する"}
+											</button>
+											<button
+												type="button"
+												style={{
+													background: "rgba(255,255,255,0.15)",
+													color: "#333",
+													border: "1px solid #ccc",
+													padding: "12px 24px",
+													borderRadius: "8px",
+													fontWeight: "600",
+													cursor: "pointer",
+												}}
+												onClick={() => {
+													setShowReviewForm(false);
+													setRatingInput(myReview?.rating || 3);
+													setCommentInput(myReview?.comment || "");
+												}}
+											>
+												キャンセル
+											</button>
+										</div>
+									</ReviewForm>
 								)}
 							</>
-						)}
-
-						{user && showReviewForm && (
-							<ReviewForm onSubmit={handleSubmitReview}>
-								<div>
-									<span style={{ display: "block", marginBottom: 4 }}>
-										評価:
-									</span>
-									<StarRow>
-										{[1, 2, 3, 4, 5].map((n) => (
-											<button
-												key={n}
-												onClick={() =>
-													setRatingInput((prev) => (prev === n ? 0 : n))
-												}
-												style={{
-													color: n <= ratingInput ? "#fbbf24" : "#555",
-													background: "transparent",
-													border: "none",
-													cursor: "pointer",
-													fontSize: "28px",
-												}}
-												type="button"
-											>
-												★
-											</button>
-										))}
-									</StarRow>
-								</div>
-								<div style={{ width: "100%" }}>
-									<label
-										htmlFor="commentInput"
-										style={{ display: "block", marginBottom: 4 }}
-									>
-										コメントを投稿してください。
-									</label>
-									<TextArea
-										id="commentInput"
-										value={commentInput}
-										onChange={(e) => setCommentInput(e.target.value)}
-									/>
-								</div>
-								<SubmitButton type="submit">
-									{myReview ? "更新" : "投稿"}
-								</SubmitButton>
-								{/* 削除ボタンをフォームから削除 */}
-
-								{/* Cancel button */}
-								<SubmitButton
-									type="button"
-									style={{ background: "#6b7280" }}
-									onClick={() => {
-										setShowReviewForm(false);
-									}}
-								>
-									キャンセル
-								</SubmitButton>
-							</ReviewForm>
 						)}
 					</ReviewsSection>
 				</InfoSection>
 			</ProductHeader>
-
-			<DetailsTabs>
-				<TabButtons>
-					<TabButton
-						$active={activeTab === "description"}
-						onClick={() => setActiveTab("description")}
-					>
-						詳細説明
-					</TabButton>
-					<TabButton
-						$active={activeTab === "features"}
-						onClick={() => setActiveTab("features")}
-					>
-						機能
-					</TabButton>
-					<TabButton
-						$active={activeTab === "requirements"}
-						onClick={() => setActiveTab("requirements")}
-					>
-						動作環境
-					</TabButton>
-				</TabButtons>
-
-				<TabContent>
-					{activeTab === "description" && (
-						<LongDescription>{product.longDescription}</LongDescription>
-					)}
-
-					{activeTab === "features" && (
-						<FeaturesList>
-							{product.features.map((feature) => (
-								<FeatureItem key={feature}>{feature}</FeatureItem>
-							))}
-						</FeaturesList>
-					)}
-
-					{activeTab === "requirements" && (
-						<RequirementsList>
-							{product.requirements.map((requirement) => (
-								<RequirementItem key={requirement}>
-									{requirement}
-								</RequirementItem>
-							))}
-						</RequirementsList>
-					)}
-				</TabContent>
-			</DetailsTabs>
 
 			<PaymentModal
 				product={product}
 				isOpen={isPaymentModalOpen}
 				onClose={() => setIsPaymentModalOpen(false)}
 				onSuccess={handlePaymentSuccess}
+			/>
+			<LoginModal
+				isOpen={isLoginModalOpen}
+				onClose={() => setIsLoginModalOpen(false)}
+			/>
+			<Toast
+				message={toast.message}
+				type={toast.type}
+				isVisible={toast.isVisible}
+				onClose={hideToast}
 			/>
 		</Container>
 	);

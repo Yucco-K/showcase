@@ -19,6 +19,12 @@ const Card = styled.div`
 	border: 1px solid rgba(255, 255, 255, 0.2);
 	backdrop-filter: blur(10px);
 
+	@media (max-width: 768px) {
+		width: 280px;
+		height: 220px;
+		padding: 0.8rem;
+	}
+
 	&:hover {
 		transform: translateY(-5px);
 		background: rgba(255, 255, 255, 0.15);
@@ -144,7 +150,11 @@ const ExternalIcon = styled.div`
 
 const CardContainer = styled.div`
 	position: relative;
-	margin: 1rem; /* カード間のマージンを確保 */
+	margin: 1rem; /* カード間のマージンを広めに */
+
+	@media (max-width: 768px) {
+		margin: 0.75rem; /* スマホでも広めに */
+	}
 `;
 
 export const BlogCard: React.FC<BlogCardProps> = ({ blog, onClick }) => {

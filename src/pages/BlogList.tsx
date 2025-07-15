@@ -139,8 +139,12 @@ const SearchInput = styled.input`
 	color: white;
 	font-size: 1rem;
 	width: 100%;
-	max-width: 350px;
+	max-width: 280px;
 	backdrop-filter: blur(10px);
+
+	@media (max-width: 768px) {
+		max-width: 240px;
+	}
 
 	&::placeholder {
 		color: rgba(255, 255, 255, 0.5);
@@ -153,7 +157,10 @@ const SearchInput = styled.input`
 	}
 `;
 
-const Select = styled.select`
+const PlatformSelect = styled.select.attrs({
+	"aria-label": "Platform Filter",
+	title: "プラットフォームを選択",
+})`
 	padding: 0.75rem 1rem;
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	border-radius: 8px;
@@ -213,6 +220,7 @@ const BlogGrid = styled.div`
 	justify-content: center;
 	margin-top: 2rem;
 	width: 100%;
+	box-sizing: border-box;
 `;
 
 const LoadingMessage = styled.div`
@@ -278,7 +286,11 @@ export const BlogList: React.FC = () => {
 			<ContentWrapper>
 				<Header>
 					<Title>Blog Showcase</Title>
-					<Subtitle>日々の学びや技術的な発見をシェアしています。</Subtitle>
+					<Subtitle>
+						日々の学びや技術的な発見を
+						<br />
+						シェアしています。
+					</Subtitle>
 				</Header>
 
 				<StatsContainer>
@@ -305,11 +317,20 @@ export const BlogList: React.FC = () => {
 						value={filters.searchQuery || ""}
 						onChange={handleSearchChange}
 					/>
-					<Select
+					<label
+						id="platform-label"
+						htmlFor="platform-filter"
+						style={{ display: "none" }}
+					>
+						プラットフォーム選択
+					</label>
+					<PlatformSelect
+						id="platform-filter"
+						aria-labelledby="platform-label"
+						aria-label="プラットフォーム選択"
+						title="プラットフォーム選択"
 						value={filters.platform || "all"}
 						onChange={handlePlatformChange}
-						aria-label="Platform Filter"
-						title="プラットフォームを選択"
 					>
 						<option value="all">すべてのプラットフォーム</option>
 						{Object.values(BlogPlatform).map((platform) => (
@@ -317,7 +338,7 @@ export const BlogList: React.FC = () => {
 								{platform}
 							</option>
 						))}
-					</Select>
+					</PlatformSelect>
 					<Button $variant="secondary" onClick={() => resetFilters()}>
 						リセット
 					</Button>

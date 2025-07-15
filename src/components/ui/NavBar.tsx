@@ -18,6 +18,12 @@ const Nav = styled.nav`
 	position: sticky;
 	top: 0;
 	z-index: 10;
+
+	@media (max-width: 768px) {
+		flex-direction: column;
+		gap: 0;
+		padding: 0;
+	}
 `;
 
 const NavLink = styled(Link)<{ $active?: boolean }>`
@@ -38,6 +44,40 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
 		background: rgba(255, 255, 255, 0.18);
 		color: #ffd700;
 	}
+
+	@media (max-width: 768px) {
+		font-size: 1rem;
+		padding: 0.8em 1em;
+		border-radius: 0;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		text-align: center;
+	}
+`;
+
+const MobileMenuButton = styled.button`
+	display: none;
+	background: none;
+	border: none;
+	color: white;
+	font-size: 1.5rem;
+	cursor: pointer;
+	padding: 1rem;
+
+	@media (max-width: 768px) {
+		display: block;
+	}
+`;
+
+const MenuContainer = styled.div<{ $isOpen: boolean }>`
+	display: flex;
+	gap: 2rem;
+
+	@media (max-width: 768px) {
+		display: ${({ $isOpen }) => ($isOpen ? "flex" : "none")};
+		flex-direction: column;
+		gap: 0;
+		width: 100%;
+	}
 `;
 
 const NavBar: React.FC = () => {
@@ -46,7 +86,12 @@ const NavBar: React.FC = () => {
 	const { user, isAdmin, signOut } = useAuth();
 	const [loginOpen, setLoginOpen] = React.useState(false);
 	const [logoutModalOpen, setLogoutModalOpen] = React.useState(false);
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 	const { toast, showSuccess, hideToast } = useToast();
+
+	// Top画面（"/"）では常にメニューを開いた状態にする
+	const isTopPage = pathname === "/";
+	const shouldShowMobileMenu = isMobileMenuOpen || isTopPage;
 
 	const handleLogoutClick = () => {
 		setLogoutModalOpen(true);
@@ -68,59 +113,123 @@ const NavBar: React.FC = () => {
 		setLogoutModalOpen(false);
 	};
 
+	const toggleMobileMenu = () => {
+		setIsMobileMenuOpen(!isMobileMenuOpen);
+	};
+
+	const closeMobileMenu = () => {
+		setIsMobileMenuOpen(false);
+	};
+
 	return (
 		<>
 			<Nav>
-				<NavLink to="/" $active={pathname === "/"}>
-					Top
-				</NavLink>
-				<NavLink to="/internship" $active={pathname === "/internship"}>
-					Internship
-				</NavLink>
-				<NavLink to="/portfolio" $active={pathname === "/portfolio"}>
-					Portfolio
-				</NavLink>
-				<NavLink to="/products" $active={pathname.startsWith("/products")}>
-					Products
-				</NavLink>
-				<NavLink to="/blog" $active={pathname === "/blog"}>
-					Blog
-				</NavLink>
-				{user ? (
-					<NavLink to="/contact" $active={pathname === "/contact"}>
-						Contact
-					</NavLink>
-				) : (
-					<NavLink as="button" to="#" onClick={() => setLoginOpen(true)}>
-						Contact
-					</NavLink>
+				{/* モバイルメニューボタン - Top画面では非表示 */}
+				{!isTopPage && (
+					<MobileMenuButton type="button" onClick={toggleMobileMenu}>
+						{isMobileMenuOpen ? "✕" : "☰"}
+					</MobileMenuButton>
 				)}
 
-				{/* Auth buttons */}
-				{!user ? (
-					<NavLink as="button" to="#" onClick={() => setLoginOpen(true)}>
-						Login
+				{/* デスクトップメニュー */}
+				<MenuContainer $isOpen={shouldShowMobileMenu}>
+					<NavLink to="/" $active={pathname === "/"} onClick={closeMobileMenu}>
+						Top
 					</NavLink>
-				) : (
-					<NavLink as="button" to="#" onClick={handleLogoutClick}>
-						Logout
+					<NavLink
+						to="/internship"
+						$active={pathname === "/internship"}
+						onClick={closeMobileMenu}
+					>
+						Internship
 					</NavLink>
-				)}
-
-				{/* Admin links */}
-				{user && isAdmin(user) && (
-					<>
-						<NavLink to="/blog-admin" $active={pathname === "/blog-admin"}>
-							Blog Admin
-						</NavLink>
+					<NavLink
+						to="/portfolio"
+						$active={pathname === "/portfolio"}
+						onClick={closeMobileMenu}
+					>
+						Portfolio
+					</NavLink>
+					<NavLink
+						to="/products"
+						$active={pathname.startsWith("/products")}
+						onClick={closeMobileMenu}
+					>
+						Products
+					</NavLink>
+					<NavLink
+						to="/blog"
+						$active={pathname === "/blog"}
+						onClick={closeMobileMenu}
+					>
+						Blog
+					</NavLink>
+					{user ? (
 						<NavLink
-							to="/product-admin"
-							$active={pathname === "/product-admin"}
+							to="/contact"
+							$active={pathname === "/contact"}
+							onClick={closeMobileMenu}
 						>
-							Product Admin
+							Contact
 						</NavLink>
-					</>
-				)}
+					) : (
+						<NavLink
+							as="button"
+							to="#"
+							onClick={() => {
+								setLoginOpen(true);
+								closeMobileMenu();
+							}}
+						>
+							Contact
+						</NavLink>
+					)}
+
+					{/* Auth buttons */}
+					{!user ? (
+						<NavLink
+							as="button"
+							to="#"
+							onClick={() => {
+								setLoginOpen(true);
+								closeMobileMenu();
+							}}
+						>
+							Login
+						</NavLink>
+					) : (
+						<NavLink
+							as="button"
+							to="#"
+							onClick={() => {
+								handleLogoutClick();
+								closeMobileMenu();
+							}}
+						>
+							Logout
+						</NavLink>
+					)}
+
+					{/* Admin links */}
+					{user && isAdmin(user) && (
+						<>
+							<NavLink
+								to="/blog-admin"
+								$active={pathname === "/blog-admin"}
+								onClick={closeMobileMenu}
+							>
+								Blog Admin
+							</NavLink>
+							<NavLink
+								to="/product-admin"
+								$active={pathname === "/product-admin"}
+								onClick={closeMobileMenu}
+							>
+								Product Admin
+							</NavLink>
+						</>
+					)}
+				</MenuContainer>
 			</Nav>
 			{loginOpen && (
 				<LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />

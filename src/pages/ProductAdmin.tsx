@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthProvider";
-import { LoginModal } from "../components/auth/LoginModal";
 import { ProductCategory } from "../types/product";
 import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
@@ -45,6 +44,10 @@ const Container = styled.div`
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: 24px;
+
+	@media (max-width: 768px) {
+		padding: 16px;
+	}
 `;
 
 const Title = styled.h1`
@@ -69,12 +72,29 @@ const CreateButton = styled.button`
 	}
 `;
 
+const TableContainer = styled.div`
+	overflow-x: auto;
+	border-radius: 12px;
+	margin-bottom: 24px;
+	position: relative;
+
+	@media (max-width: 768px) {
+		margin: 0 0 24px 0;
+		padding: 0;
+	}
+`;
+
 const ProductTable = styled.table`
 	width: 100%;
 	border-collapse: collapse;
 	background: rgba(255, 255, 255, 0.05);
 	border-radius: 12px;
 	overflow: hidden;
+	min-width: 800px;
+
+	@media (max-width: 768px) {
+		font-size: 0.8rem;
+	}
 `;
 
 const Th = styled.th`
@@ -83,12 +103,44 @@ const Th = styled.th`
 	padding: 16px;
 	text-align: left;
 	font-weight: 600;
+
+	@media (max-width: 768px) {
+		&:first-child {
+			position: sticky;
+			left: 0;
+			z-index: 2;
+			background: rgba(255, 255, 255, 0.15);
+			width: 40vw;
+			max-width: 40vw;
+		}
+		&:nth-child(2) {
+			width: 60vw;
+			max-width: 60vw;
+		}
+	}
 `;
 
 const Td = styled.td`
 	color: white;
 	padding: 16px;
 	border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+	@media (max-width: 768px) {
+		&:first-child {
+			position: sticky;
+			left: 0;
+			z-index: 1;
+			background: rgba(255, 255, 255, 0.05);
+			width: 40vw;
+			max-width: 40vw;
+		}
+		&:nth-child(2) {
+			width: 60vw;
+			max-width: 60vw;
+			word-wrap: break-word;
+			white-space: normal;
+		}
+	}
 `;
 
 const ActionButton = styled.button<{ $variant: "edit" | "delete" }>`
@@ -131,6 +183,40 @@ const ModalContent = styled.div`
 	max-width: 700px;
 	max-height: 90vh;
 	overflow-y: auto;
+	position: relative;
+
+	@media (max-width: 768px) {
+		width: 95%;
+		padding: 24px 16px;
+		max-height: 95vh;
+	}
+`;
+
+const CloseButton = styled.button`
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	background: none;
+	border: none;
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 24px;
+	cursor: pointer;
+	padding: 8px;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+	z-index: 10;
+
+	&:hover {
+		color: white;
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	@media (max-width: 768px) {
+		top: 12px;
+		right: 12px;
+		font-size: 20px;
+		padding: 6px;
+	}
 `;
 
 const Form = styled.form`
@@ -442,56 +528,59 @@ export const ProductAdmin: React.FC = () => {
 
 			<CreateButton onClick={handleCreate}>+ New Create</CreateButton>
 
-			<ProductTable>
-				<thead>
-					<tr>
-						<Th>商品名</Th>
-						<Th>説明</Th>
-						<Th>価格</Th>
-						<Th>カテゴリ</Th>
-						<Th>特徴</Th>
-						<Th>操作</Th>
-					</tr>
-				</thead>
-				<tbody>
-					{products.map((product) => (
-						<tr key={product.id}>
-							<Td>{product.name}</Td>
-							<Td>{product.description}</Td>
-							<Td>¥{product.price.toLocaleString()}</Td>
-							<Td>{product.category}</Td>
-							<Td>
-								{product.is_featured && (
-									<span style={{ color: "#fbbf24", marginRight: "8px" }}>
-										⭐
-									</span>
-								)}
-								{product.is_popular && (
-									<span style={{ color: "#ef4444" }}>🔥</span>
-								)}
-							</Td>
-							<Td>
-								<ActionButton
-									$variant="edit"
-									onClick={() => handleEdit(product)}
-								>
-									✏️
-								</ActionButton>
-								<ActionButton
-									$variant="delete"
-									onClick={() => handleDelete(product.id)}
-								>
-									🗑️
-								</ActionButton>
-							</Td>
+			<TableContainer>
+				<ProductTable>
+					<thead>
+						<tr>
+							<Th>商品名</Th>
+							<Th>説明</Th>
+							<Th>価格</Th>
+							<Th>カテゴリ</Th>
+							<Th>特徴</Th>
+							<Th>操作</Th>
 						</tr>
-					))}
-				</tbody>
-			</ProductTable>
+					</thead>
+					<tbody>
+						{products.map((product) => (
+							<tr key={product.id}>
+								<Td>{product.name}</Td>
+								<Td>{product.description}</Td>
+								<Td>¥{product.price.toLocaleString()}</Td>
+								<Td>{product.category}</Td>
+								<Td>
+									{product.is_featured && (
+										<span style={{ color: "#fbbf24", marginRight: "8px" }}>
+											⭐
+										</span>
+									)}
+									{product.is_popular && (
+										<span style={{ color: "#ef4444" }}>🔥</span>
+									)}
+								</Td>
+								<Td>
+									<ActionButton
+										$variant="edit"
+										onClick={() => handleEdit(product)}
+									>
+										✏️
+									</ActionButton>
+									<ActionButton
+										$variant="delete"
+										onClick={() => handleDelete(product.id)}
+									>
+										🗑️
+									</ActionButton>
+								</Td>
+							</tr>
+						))}
+					</tbody>
+				</ProductTable>
+			</TableContainer>
 
 			{isModalOpen && (
 				<Modal onClick={() => setIsModalOpen(false)}>
 					<ModalContent onClick={(e) => e.stopPropagation()}>
+						<CloseButton onClick={() => setIsModalOpen(false)}>×</CloseButton>
 						<h2 style={{ color: "white", marginBottom: "24px" }}>
 							{editingProduct ? "商品を編集" : "新規商品を作成"}
 						</h2>
@@ -648,7 +737,8 @@ export const ProductAdmin: React.FC = () => {
 
 			{/* 削除確認モーダル */}
 			{deleteConfirmId && (
-				<div
+				<button
+					type="button"
 					style={{
 						position: "fixed",
 						top: 0,
@@ -660,8 +750,15 @@ export const ProductAdmin: React.FC = () => {
 						alignItems: "center",
 						justifyContent: "center",
 						zIndex: 1000,
+						border: "none",
+						cursor: "default",
 					}}
 					onClick={() => setDeleteConfirmId(null)}
+					onKeyDown={(e) => {
+						if (e.key === "Escape") {
+							setDeleteConfirmId(null);
+						}
+					}}
 				>
 					<div
 						style={{
@@ -675,6 +772,9 @@ export const ProductAdmin: React.FC = () => {
 							color: "white",
 						}}
 						onClick={(e) => e.stopPropagation()}
+						onKeyDown={(e) => e.stopPropagation()}
+						role="dialog"
+						tabIndex={-1}
 					>
 						<h2
 							style={{
@@ -757,7 +857,7 @@ export const ProductAdmin: React.FC = () => {
 							</button>
 						</div>
 					</div>
-				</div>
+				</button>
 			)}
 
 			<Toast

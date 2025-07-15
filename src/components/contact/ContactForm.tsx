@@ -11,6 +11,11 @@ const Container = styled.div`
 	background: rgba(255, 255, 255, 0.05);
 	border-radius: 12px;
 	box-sizing: border-box;
+
+	@media (max-width: 768px) {
+		margin: 0 16px;
+		padding: 24px 16px;
+	}
 `;
 
 const Field = styled.div`
@@ -82,6 +87,11 @@ const ScrollBox = styled.div`
 	}
 	ul {
 		padding-left: 1.2em;
+	}
+
+	@media (max-width: 768px) {
+		max-height: 250px;
+		font-size: 0.9rem;
 	}
 `;
 

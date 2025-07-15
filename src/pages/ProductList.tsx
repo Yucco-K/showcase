@@ -1,13 +1,14 @@
-import React, { useEffect } from "react";
+import type React from "react";
+import { useEffect } from "react";
 import styled from "styled-components";
 import { ProductCard } from "../components/products/ProductCard";
 import { useProducts } from "../hooks/useProducts";
-import { ProductCategory } from "../types/product";
 import type { Product } from "../types/product";
+import { ProductCategory } from "../types/product";
 
 const Container = styled.div`
 	min-height: 100vh;
-	padding: 80px 20px 40px;
+	padding: 80px 0 40px;
 	width: 100%;
 `;
 
@@ -19,7 +20,11 @@ const ContentWrapper = styled.div`
 
 	@media (max-width: 1440px) {
 		width: 100%;
-		padding-inline: 16px; /* スマホで少し狭め */
+		padding-inline: 20px; /* 左右均等のマージン */
+	}
+
+	@media (max-width: 768px) {
+		padding-inline: 16px; /* スマホで左右均等のマージン */
 	}
 `;
 
@@ -50,13 +55,19 @@ const FilterSection = styled.div`
 	backdrop-filter: blur(10px);
 	border: 1px solid rgba(255, 255, 255, 0.2);
 	border-radius: 16px;
-	padding: 24px;
+	padding: 20px;
 	margin-bottom: 40px;
 	width: 100%;
 	box-sizing: border-box;
-	max-width: 1008px; /* align with 3 card width */
+	max-width: 800px; /* 横幅を狭くする */
 	margin-left: auto;
 	margin-right: auto;
+
+	@media (max-width: 768px) {
+		padding: 16px;
+		margin-bottom: 32px;
+		max-width: 600px; /* スマホでも横幅を狭くする */
+	}
 `;
 
 const FilterRow = styled.div`
@@ -83,7 +94,8 @@ const SearchInput = styled.input`
 	max-width: 320px;
 
 	&::placeholder {
-		color: rgba(255, 255, 255, 0.5);
+		color: rgba(255, 255, 255, 0.8);
+		font-weight: 500;
 	}
 
 	&:focus {
@@ -93,7 +105,10 @@ const SearchInput = styled.input`
 	}
 `;
 
-const Select = styled.select`
+const Select = styled.select.attrs({
+	"aria-label": "Select option",
+	title: "Select option",
+})`
 	background: rgba(255, 255, 255, 0.1);
 	border: 1px solid rgba(255, 255, 255, 0.3);
 	border-radius: 8px;
@@ -141,23 +156,26 @@ const PriceInput = styled.input`
 `;
 
 const PriceLabel = styled.span`
-	color: rgba(255, 255, 255, 0.8);
+	color: rgba(255, 255, 255, 0.95);
 	font-size: 14px;
+	font-weight: 600;
 `;
 
 const ClearButton = styled.button`
-	background: rgba(239, 68, 68, 0.2);
-	border: 1px solid rgba(239, 68, 68, 0.5);
+	background: rgba(239, 68, 68, 0.3);
+	border: 1px solid rgba(239, 68, 68, 0.6);
 	border-radius: 8px;
-	color: #f87171;
+	color: #fca5a5;
 	padding: 12px 16px;
 	font-size: 14px;
+	font-weight: 600;
 	cursor: pointer;
 	transition: all 0.2s ease;
 
 	&:hover {
-		background: rgba(239, 68, 68, 0.3);
-		border-color: rgba(239, 68, 68, 0.7);
+		background: rgba(239, 68, 68, 0.4);
+		border-color: rgba(239, 68, 68, 0.8);
+		color: #fecaca;
 	}
 `;
 
@@ -183,17 +201,35 @@ const ProductGrid = styled.div<{ view: "grid" | "list" }>`
 	margin-left: auto;
 	margin-right: auto;
 
+	@media (max-width: 768px) {
+		padding: 0;
+		width: 100%;
+		max-width: 100%;
+	}
+
 	${(props) =>
 		props.view === "grid"
 			? `
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-		gap: 24px;
+		gap: 40px;
+		place-items: center;
+
+		@media (max-width: 768px) {
+			grid-template-columns: 1fr;
+			gap: 24px;
+			padding: 0 12px;
+			place-items: center;
+		}
 	`
 			: `
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
+		gap: 24px;
+
+		@media (max-width: 768px) {
+			padding: 0 16px;
+		}
 	`}
 `;
 

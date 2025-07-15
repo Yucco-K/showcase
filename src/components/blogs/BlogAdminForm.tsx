@@ -16,6 +16,8 @@ const Container = styled.div`
 	padding: 24px;
 	background: rgba(255, 255, 255, 0.05);
 	border-radius: 12px;
+	overflow-y: auto;
+	max-height: 90vh;
 `;
 
 const Field = styled.div`
@@ -75,7 +77,7 @@ export const BlogAdminForm: React.FC<BlogAdminFormProps> = ({
 	const [publishedAt, setPublishedAt] = useState("");
 	const [tags, setTags] = useState("");
 	const [readTime, setReadTime] = useState<number | "">("");
-	const [author, setAuthor] = useState("");
+	const [author, setAuthor] = useState("Yuki");
 	const [error, setError] = useState<string | null>(null);
 	const [loadingSave, setLoadingSave] = useState(false);
 
@@ -221,7 +223,7 @@ export const BlogAdminForm: React.FC<BlogAdminFormProps> = ({
 				<label htmlFor="author">著者</label>
 				<input
 					id="author"
-					placeholder="Yukig"
+					placeholder="Yuki"
 					value={author}
 					onChange={(e) => setAuthor(e.target.value)}
 				/>

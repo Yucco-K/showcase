@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 import { ProductCard } from "../components/products/ProductCard";
 import { useProducts } from "../hooks/useProducts";
@@ -232,6 +232,10 @@ const SectionTitle = styled.h2`
 `;
 
 export const ProductList: React.FC = () => {
+	useEffect(() => {
+		document.title = "Dummy App Store";
+	}, []);
+
 	const {
 		filteredProducts,
 		filter,
@@ -292,7 +296,7 @@ export const ProductList: React.FC = () => {
 		<Container>
 			<ContentWrapper>
 				<Header>
-					<Title>アプリストア</Title>
+					<Title>Dummy App Store</Title>
 					<Subtitle>
 						あなたの生産性を向上させる最高のアプリを発見しよう
 					</Subtitle>

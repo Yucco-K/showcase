@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthProvider";
+import { useToast } from "../../hooks/useToast";
+import { Toast } from "../ui/Toast";
 
 interface LoginModalProps {
 	isOpen: boolean;
@@ -17,7 +19,7 @@ const Backdrop = styled.div`
 	z-index: 1000;
 `;
 
-const Modal = styled.div`
+const Modal = styled.div.attrs({ className: "login-modal" })`
 	width: 400px;
 	background: #1e1e2f;
 	border-radius: 12px;
@@ -35,6 +37,10 @@ const Input = styled.input`
 	width: 100%;
 	padding: 12px 16px;
 	margin-bottom: 16px;
+	margin-left: auto;
+	margin-right: auto;
+	display: block;
+	max-width: 300px;
 	border-radius: 8px;
 	border: 1px solid rgba(255, 255, 255, 0.2);
 	background: rgba(255, 255, 255, 0.05);
@@ -63,6 +69,7 @@ const ErrorMsg = styled.p`
 	color: #ef4444;
 	font-size: 0.9rem;
 	margin-top: 8px;
+	text-align: center;
 `;
 
 export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
@@ -71,18 +78,34 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [isSignUp, setIsSignUp] = useState(false);
+	const { toast, showSuccess, showError, hideToast } = useToast();
+	const [isLoading, setIsLoading] = useState(false);
 
 	const handleSubmit = async () => {
 		try {
 			setError(null);
+			setIsLoading(true);
+
+			if (!email || !password) {
+				setError("メールアドレスとパスワードを入力してください。");
+				return;
+			}
+
 			if (isSignUp) {
 				await signUp(email, password);
+				showSuccess("アカウントを作成しました！");
 			} else {
 				await signIn(email, password);
+				showSuccess("ログインしました！");
 			}
 			onClose();
 		} catch (err) {
-			if (err instanceof Error) setError(err.message);
+			if (err instanceof Error) {
+				setError(err.message);
+				showError(err.message);
+			}
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -96,24 +119,33 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 					placeholder="Email"
 					value={email}
 					onChange={(e) => setEmail(e.target.value)}
+					disabled={isLoading}
 				/>
 				<Input
 					placeholder="Password"
 					type="password"
 					value={password}
 					onChange={(e) => setPassword(e.target.value)}
+					disabled={isLoading}
 				/>
 				{error && <ErrorMsg>{error}</ErrorMsg>}
-				<Button $variant="primary" onClick={handleSubmit}>
-					{isSignUp ? "サインアップ" : "ログイン"}
+				<Button $variant="primary" onClick={handleSubmit} disabled={isLoading}>
+					{isLoading ? "処理中..." : isSignUp ? "サインアップ" : "ログイン"}
 				</Button>
 				<Button
 					$variant="secondary"
 					onClick={() => setIsSignUp((prev) => !prev)}
+					disabled={isLoading}
 				>
 					{isSignUp ? "ログインに切替" : "アカウント作成"}
 				</Button>
 			</Modal>
+			<Toast
+				message={toast.message}
+				type={toast.type}
+				isVisible={toast.isVisible}
+				onClose={hideToast}
+			/>
 		</Backdrop>
 	);
 };

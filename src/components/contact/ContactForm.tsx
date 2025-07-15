@@ -1,0 +1,208 @@
+import React, { useState } from "react";
+import styled from "styled-components";
+import { supabase } from "../../lib/supabase";
+
+const Container = styled.div`
+	max-width: 600px;
+	margin: 0 auto;
+	padding: 32px;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 12px;
+`;
+
+const Field = styled.div`
+	margin-bottom: 16px;
+	label {
+		display: block;
+		font-weight: 600;
+		margin-bottom: 4px;
+		color: #fff;
+	}
+	input,
+	textarea {
+		width: 100%;
+		padding: 10px 14px;
+		border-radius: 8px;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		background: rgba(255, 255, 255, 0.05);
+		color: #fff;
+	}
+`;
+
+const Button = styled.button`
+	padding: 12px 24px;
+	border: none;
+	border-radius: 8px;
+	font-weight: 600;
+	cursor: pointer;
+	background: linear-gradient(135deg, #3ea8ff, #0066cc);
+	color: #fff;
+	&:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+`;
+
+const ScrollBox = styled.div`
+	max-height: 300px;
+	overflow-y: auto;
+	margin-bottom: 24px;
+	padding-right: 8px;
+	line-height: 1.6;
+	color: rgba(255, 255, 255, 0.85);
+
+	h3 {
+		color: #fff;
+		margin-top: 1.6em;
+	}
+	ul {
+		padding-left: 1.2em;
+	}
+`;
+
+const CheckboxLabel = styled.label`
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 16px 0;
+	color: #fff;
+	input {
+		accent-color: #3ea8ff;
+	}
+`;
+
+export const ContactForm: React.FC = () => {
+	const [name, setName] = useState("");
+	const [email, setEmail] = useState("");
+	const [message, setMessage] = useState("");
+	const [sent, setSent] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const [agree, setAgree] = useState(false);
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setError(null);
+		const { error } = await supabase
+			.from("contacts")
+			.insert({ name, email, message });
+		if (error) {
+			setError(error.message);
+		} else {
+			setSent(true);
+		}
+	};
+
+	if (sent) {
+		return (
+			<Container>
+				<h2>お問い合わせありがとうございます！</h2>
+				<p>確認の上、折り返しご連絡いたします。</p>
+			</Container>
+		);
+	}
+
+	return (
+		<Container>
+			<h2>お問い合わせ</h2>
+			{error && <p style={{ color: "#ef4444" }}>{error}</p>}
+			<ScrollBox>
+				<h3>よくあるご質問</h3>
+				<details>
+					<summary>
+						<strong>Q1:</strong> サービスの利用は無料ですか？
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong> はい、基本機能はすべて無料でご利用いただけます。
+					</p>
+				</details>
+				<details>
+					<summary>
+						<strong>Q2:</strong> 退会方法を教えてください。
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong>{" "}
+						マイページの「アカウント設定」からいつでも退会できます。
+					</p>
+				</details>
+				<details>
+					<summary>
+						<strong>Q3:</strong> 問い合わせの返答はいつもらえますか？
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong> 原則として 2
+						営業日以内にメールでご連絡いたします。
+					</p>
+				</details>
+
+				<h3>利用規約（抜粋）</h3>
+				<p>
+					本サービスをご利用いただく前に、以下の利用規約をよくお読みください。ユーザーは本サービスを利用することで、本規約に同意したものとみなされます。
+					<br />
+					・ユーザーは法令・公序良俗に反する行為を行ってはなりません。
+					<br />
+					・弊社は予告なくサービス内容を変更・停止する場合があります。
+					<br />
+					・免責事項：弊社は本サービスの利用によって生じたいかなる損害についても責任を負いません。
+				</p>
+
+				<h3>プライバシーポリシー（抜粋）</h3>
+				<p>
+					当社は個人情報保護の重要性を認識し、適切に取り扱います。
+					<br />
+					・取得した個人情報はお問い合わせ対応の目的のみに使用します。
+					<br />
+					・法令に基づく場合を除き、第三者に提供することはありません。
+					<br />
+					・ユーザーからの請求があった場合、遅滞なく開示・訂正・削除に応じます。
+				</p>
+			</ScrollBox>
+
+			<form onSubmit={handleSubmit}>
+				<Field>
+					<label htmlFor="name">お名前 *</label>
+					<input
+						id="name"
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+						required
+					/>
+				</Field>
+				<Field>
+					<label htmlFor="email">メールアドレス *</label>
+					<input
+						id="email"
+						type="email"
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
+						required
+					/>
+				</Field>
+				<Field>
+					<label htmlFor="message">メッセージ *</label>
+					<textarea
+						id="message"
+						rows={6}
+						value={message}
+						onChange={(e) => setMessage(e.target.value)}
+						required
+					/>
+				</Field>
+
+				<CheckboxLabel htmlFor="agree">
+					<input
+						id="agree"
+						type="checkbox"
+						checked={agree}
+						onChange={(e) => setAgree(e.target.checked)}
+						title="規約に同意する"
+					/>
+					利用規約とプライバシーポリシーに同意します
+				</CheckboxLabel>
+
+				<Button type="submit" disabled={!agree}>
+					送信
+				</Button>
+			</form>
+		</Container>
+	);
+};

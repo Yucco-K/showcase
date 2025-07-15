@@ -19,6 +19,9 @@ type DbProduct = {
 	likes?: number | null; // 保持していても良い
 	stars_total: number | null;
 	stars_count: number | null;
+	features: string[] | null;
+	requirements: string[] | null;
+	last_updated: string | null;
 	product_likes?: { count: number }[]; // relation count
 	product_reviews?: { count: number }[];
 };
@@ -50,10 +53,10 @@ const mapDbProduct = (row: DbProduct): Product => {
 		category: row.category as ProductCategory,
 		imageUrl: row.image_url ?? "",
 		screenshots: [],
-		features: [],
-		requirements: [],
+		features: row.features ?? [],
+		requirements: row.requirements ?? [],
 		version: "1.0.0",
-		lastUpdated: "",
+		lastUpdated: row.last_updated ?? "",
 		rating: avgRating,
 		reviewCount: reviewCount,
 		likes: likesCount,

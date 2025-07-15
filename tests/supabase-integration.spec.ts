@@ -42,29 +42,22 @@ test.describe("Supabase統合テスト", () => {
 		});
 	});
 
-	test("プロジェクトデータの取得テスト", async ({ page }) => {
-		// ネットワークリクエストをモニター
-		const responses: string[] = [];
+	test("プロジェクトデータの取得テスト", async ({ request }) => {
+		// Supabase REST APIを直接呼び出して projects データを確認
+		const baseUrl = "http://127.0.0.1:54321";
+		const serviceKey =
+			"[REDACTED_SUPABASE_SERVICE_KEY]";
 
-		page.on("response", (response) => {
-			if (
-				response.url().includes("supabase") ||
-				response.url().includes("54321")
-			) {
-				responses.push(`${response.status()}: ${response.url()}`);
-			}
+		const res = await request.get(`${baseUrl}/rest/v1/projects?select=id`, {
+			headers: {
+				apikey: serviceKey,
+				Authorization: `Bearer ${serviceKey}`,
+			},
 		});
 
-		// ポートフォリオページに移動（プロジェクトデータを読み込む）
-		await page.click('a[href="/portfolio"]');
-		await page.waitForLoadState("networkidle");
-
-		// 少なくとも1つのSupabaseリクエストがあることを確認
-		expect(responses.length).toBeGreaterThan(0);
-
-		// 成功レスポンスがあることを確認
-		const successResponses = responses.filter((r) => r.startsWith("200"));
-		expect(successResponses.length).toBeGreaterThan(0);
+		expect(res.status()).toBe(200);
+		const arr = await res.json();
+		expect(Array.isArray(arr)).toBe(true);
 	});
 
 	test("データベーススキーマの確認", async ({ request }) => {

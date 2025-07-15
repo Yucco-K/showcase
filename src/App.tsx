@@ -6,7 +6,12 @@ import NavBar from "./components/ui/NavBar";
 import Top from "./pages/Top";
 import Internship from "./pages/Internship";
 import Portfolio from "./pages/Portfolio";
-import Payment from "./pages/Payment";
+import { ProductList } from "./pages/ProductList";
+import { ProductDetail } from "./pages/ProductDetail";
+import { BlogList } from "./pages/BlogList";
+import { BlogAdminForm } from "./components/blogs/BlogAdminForm";
+import { ProductAdminForm } from "./components/products/ProductAdminForm";
+import { ContactForm } from "./components/contact/ContactForm";
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -30,7 +35,12 @@ function AppRoutes() {
 				<Route path="/" element={<Top />} />
 				<Route path="/internship" element={<Internship />} />
 				<Route path="/portfolio" element={<Portfolio />} />
-				<Route path="/payment" element={<Payment />} />
+				<Route path="/products" element={<ProductList />} />
+				<Route path="/products/:id" element={<ProductDetail />} />
+				<Route path="/blog" element={<BlogList />} />
+				<Route path="/blog-admin" element={<BlogAdminForm />} />
+				<Route path="/contact" element={<ContactForm />} />
+				<Route path="/product-admin" element={<ProductAdminForm />} />
 			</Routes>
 		</>
 	);

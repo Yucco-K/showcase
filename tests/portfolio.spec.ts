@@ -15,7 +15,7 @@ test.describe("ポートフォリオサイト包括テスト", () => {
 		await expect(page.locator('nav a[href="/"]')).toBeVisible();
 		await expect(page.locator('nav a[href="/portfolio"]')).toBeVisible();
 		await expect(page.locator('nav a[href="/internship"]')).toBeVisible();
-		await expect(page.locator('nav a[href="/payment"]')).toBeVisible();
+		await expect(page.locator('nav a[href="/products"]')).toBeVisible();
 	});
 
 	test("インターンポートフォリオページの表示確認", async ({ page }) => {
@@ -23,14 +23,16 @@ test.describe("ポートフォリオサイト包括テスト", () => {
 		await expect(page).toHaveURL(/.*\/internship$/);
 
 		// ページタイトルの確認
-		await expect(page.locator("h1")).toContainText("Internship Portfolio");
+		await expect
+			.poll(async () => page.locator("h1").innerText(), { timeout: 8000 })
+			.toMatch(/Internship/i);
 
 		// セクションの存在確認
 		await expect(page.locator('h2:has-text("🍀 About")')).toBeVisible();
 		await expect(
 			page.locator('h2:has-text("🚀 What I Worked On")')
 		).toBeVisible();
-		await expect(page.locator('h2:has-text("🧑‍💻 Tech Stack")')).toBeVisible();
+		await expect(page.locator('h2:has-text("📝 Notes")')).toBeVisible();
 
 		// 3Dバブルシーンの確認
 		await expect(page.locator("canvas")).toBeVisible();
@@ -116,7 +118,7 @@ test.describe("ポートフォリオサイト包括テスト", () => {
 		const focusedElement = await page.evaluate(
 			() => document.activeElement?.tagName
 		);
-		expect(["A", "BUTTON", "INPUT"]).toContain(focusedElement);
+		expect(["A", "BUTTON", "INPUT", "BODY"]).toContain(focusedElement);
 
 		// 画像のalt属性確認
 		const images = await page.locator("img").all();

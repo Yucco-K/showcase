@@ -137,3 +137,10 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+.env
+
+# Ignore Playwright artifacts
+playwright-report/
+
+# Ignore Playwright test results
+test-results/

@@ -15,7 +15,7 @@ jobs:
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
-      VITE_ADMIN_EMAILS: ${{ secrets.VITE_ADMIN_EMAILS }}
+      VITE_ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
       CI: true
       NODE_ENV: test
       DEBUG: pw:api*

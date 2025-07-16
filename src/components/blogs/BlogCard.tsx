@@ -76,6 +76,19 @@ const ReadTime = styled.span`
 	}
 `;
 
+const AuthorName = styled.span`
+	font-size: 0.8rem;
+	color: rgba(255, 255, 255, 0.8);
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	margin-bottom: 0.5rem;
+
+	&::before {
+		content: "👤";
+	}
+`;
+
 const BlogTitle = styled.h3`
 	margin: 0 0 0.75rem 0;
 	font-size: 1.1rem;
@@ -185,6 +198,8 @@ export const BlogCard: React.FC<BlogCardProps> = ({ blog, onClick }) => {
 					</PlatformBadge>
 					<ReadTime>{blog.readTime}分</ReadTime>
 				</BlogHeader>
+
+				{blog.author && <AuthorName>{blog.author}</AuthorName>}
 
 				<BlogTitle>{blog.title}</BlogTitle>
 

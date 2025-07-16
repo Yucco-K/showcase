@@ -531,7 +531,7 @@ const ProductDetail: React.FC = () => {
 				← 商品一覧に戻る
 			</PreventDoubleClickButton>
 			<PreventDoubleClickButton
-				onClick={() => navigate("/my-page")}
+				onClick={() => navigate("/mypage")}
 				className="back-button"
 				style={{ marginBottom: "24px" }}
 			>

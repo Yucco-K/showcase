@@ -130,12 +130,16 @@ export const ContactForm: React.FC = () => {
 
 		// バリデーションエラーがある場合
 		if (!isValid) {
+			console.log("Form validation failed, showing error toast");
 			showError("フォームの入力内容を確認してください。");
 			return;
 		}
 
 		// 認証されていない場合
 		if (!isAuthenticated) {
+			console.log(
+				"User not authenticated, showing error toast and opening login modal"
+			);
 			showError("お問い合わせを送信するにはログインが必要です。");
 			setIsLoginModalOpen(true);
 			return;

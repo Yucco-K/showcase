@@ -526,9 +526,16 @@ export const ProductDetail: React.FC = () => {
 			<PreventDoubleClickButton
 				onClick={() => navigate("/products")}
 				className="back-button"
-				style={{ marginBottom: "24px" }}
+				style={{ marginBottom: "24px", marginRight: "16px" }}
 			>
 				← 商品一覧に戻る
+			</PreventDoubleClickButton>
+			<PreventDoubleClickButton
+				onClick={() => navigate("/my-page")}
+				className="back-button"
+				style={{ marginBottom: "24px" }}
+			>
+				← マイページに戻る
 			</PreventDoubleClickButton>
 
 			<ProductHeader>

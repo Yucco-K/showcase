@@ -26,12 +26,7 @@ const Nav = styled.nav`
 `;
 
 const NavLink = styled(Link)<{ $active?: boolean }>`
-	color: ${({ $active, to }) =>
-		$active && to === "/sample"
-			? "#ffc300"
-			: $active
-			? "#ffd700"
-			: "rgba(255, 255, 255, 0.7)"};
+	color: ${({ $active }) => ($active ? "#ffd700" : "rgba(255, 255, 255, 0.7)")};
 	font-weight: 600;
 	text-decoration: none;
 	font-size: 1.2rem;

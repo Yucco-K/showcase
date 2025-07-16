@@ -1,4 +1,4 @@
--- avatarsストレージバケットを作成
+-- avatarsストレージバケットを作成（既存の場合はスキップ）
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'avatars',
@@ -6,7 +6,8 @@ VALUES (
   true,
   5242880, -- 5MB
   ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-);
+)
+ON CONFLICT (id) DO NOTHING;
 
 -- avatarsバケットのRLSポリシーを設定
 -- 認証ユーザーは自分のアバターをアップロード可能

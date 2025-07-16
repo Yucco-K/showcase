@@ -59,7 +59,7 @@ const Internship: React.FC = () => {
 				<p>テキストテキスト</p>
 				<p>テキストテキスト</p>
 				<h2>テキストテキスト</h2>
-				<h3>テキストテキスト</h3>
+				{/* <h3>テキストテキスト</h3>
 				<div style={{ textAlign: "left", margin: "0 auto", maxWidth: 600 }}>
 					テキストテキスト
 				</div>
@@ -73,7 +73,7 @@ const Internship: React.FC = () => {
 				</div>
 				<h2>テキストテキスト</h2>
 				<p style={{ fontSize: "0.95rem", color: "#444" }}>テキストテキスト</p>
-				<h3>テキストテキスト</h3>
+				<h3>テキストテキスト</h3> */}
 				<div>テキストテキスト</div>
 				<h3>テキストテキスト</h3>
 				<div>テキストテキスト</div>

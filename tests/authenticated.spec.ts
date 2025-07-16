@@ -1,12 +1,11 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("認証が必要な機能のテスト", () => {
-	test.beforeEach(async ({ page }) => {
-		// TODO: テスト用のログイン処理を実装
-		// await page.goto("/login");
-		// await page.fill("#email", process.env.TEST_USER_EMAIL || "");
-		// await page.fill("#password", process.env.TEST_USER_PASSWORD || "");
-		// await page.click("button[type=submit]");
+	// 認証が設定されていない場合は全テストをスキップ
+	test.beforeAll(async () => {
+		if (!process.env.TEST_USER_EMAIL || !process.env.TEST_USER_PASSWORD) {
+			test.skip();
+		}
 	});
 
 	test.describe("マイページ機能", () => {

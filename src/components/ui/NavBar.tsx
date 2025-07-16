@@ -155,6 +155,7 @@ const NavBar: React.FC = () => {
 		{ path: "/products", label: "Products" },
 		{ path: "/blog", label: "Blog" },
 		{ path: "/contact", label: "Contact" },
+		{ path: "/internship", label: "Sample" },
 	];
 
 	return (
@@ -175,9 +176,9 @@ const NavBar: React.FC = () => {
 					<UserMenu>
 						<UserButton
 							onClick={() => navigate("/mypage")}
-							aria-label="マイページへ移動"
+							aria-label="Go to My Page"
 						>
-							マイページ
+							My Page
 						</UserButton>
 						<UserButton
 							onClick={() => setShowLogoutModal(true)}

@@ -535,7 +535,7 @@ const ProductDetail: React.FC = () => {
 				className="back-button"
 				style={{ marginBottom: "24px" }}
 			>
-				← マイページに戻る
+				← Back to My Page
 			</PreventDoubleClickButton>
 
 			<ProductHeader>

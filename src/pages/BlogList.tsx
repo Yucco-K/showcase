@@ -158,7 +158,7 @@ const SearchInput = styled.input`
 `;
 
 const PlatformSelect = styled.select.attrs({
-	"aria-label": "Platform Filter",
+	"aria-label": "プラットフォームを選択",
 	title: "プラットフォームを選択",
 })`
 	padding: 0.75rem 1rem;
@@ -317,11 +317,7 @@ export const BlogList: React.FC = () => {
 						value={filters.searchQuery || ""}
 						onChange={handleSearchChange}
 					/>
-					<label
-						id="platform-label"
-						htmlFor="platform-filter"
-						style={{ display: "none" }}
-					>
+					<label htmlFor="platform-filter" style={{ display: "none" }}>
 						プラットフォーム選択
 					</label>
 					<PlatformSelect

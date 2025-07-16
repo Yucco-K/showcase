@@ -325,7 +325,7 @@ export const ProductList: React.FC = () => {
 
 	// フィルター後の注目アプリ
 	const featuredFilteredProducts = filteredProducts.filter(
-		(product: Product): boolean => product.isFeatured
+		(product: Product): boolean => !!product.isFeatured
 	);
 
 	return (
@@ -346,11 +346,15 @@ export const ProductList: React.FC = () => {
 							value={filter.searchQuery || ""}
 							onChange={handleSearchChange}
 						/>
+						<label htmlFor="category-filter" style={{ display: "none" }}>
+							カテゴリー選択
+						</label>
 						<Select
+							id="category-filter"
+							aria-label="カテゴリー選択"
+							title="カテゴリー選択"
 							value={filter.category || ""}
 							onChange={handleCategoryChange}
-							aria-label="カテゴリーを選択"
-							title="カテゴリーを選択"
 						>
 							<option value="">すべてのカテゴリー</option>
 							{categories.map((category) => (
@@ -379,15 +383,19 @@ export const ProductList: React.FC = () => {
 							/>
 						</PriceInputs>
 
+						<label htmlFor="sort-filter" style={{ display: "none" }}>
+							並び順選択
+						</label>
 						<Select
+							id="sort-filter"
+							aria-label="並び順選択"
+							title="並び順選択"
 							value={
 								filter.sortBy && filter.sortOrder
 									? `${filter.sortBy}-${filter.sortOrder}`
 									: ""
 							}
 							onChange={handleSortChange}
-							aria-label="並び順を選択"
-							title="並び順を選択"
 						>
 							<option value="">並び順</option>
 							<option value="name-asc">名前 (A-Z)</option>

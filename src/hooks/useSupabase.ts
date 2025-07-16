@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import type { Project, Profile } from "../types/database";
+import type { User } from "@supabase/supabase-js";
 
 export function useProjects() {
 	const [projects, setProjects] = useState<Project[]>([]);
@@ -81,7 +82,7 @@ export function useProfile(userId?: string) {
 }
 
 export function useSupabaseAuth() {
-	const [user, setUser] = useState<any>(null);
+	const [user, setUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {

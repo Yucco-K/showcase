@@ -93,7 +93,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
 			if (isSignUp) {
 				await signUp(email, password);
-				showSuccess("アカウントを作成しました！");
+				showSuccess("認証メールが送信されました。ご確認ください。");
 			} else {
 				await signIn(email, password);
 				showSuccess("ログインしました！");

@@ -100,6 +100,10 @@ const UserSection = styled.div`
 const AvatarContainer = styled.div`
 	position: relative;
 	cursor: pointer;
+
+	@media (max-width: 768px) {
+		margin-bottom: 8px;
+	}
 `;
 
 const Avatar = styled.img`

@@ -20,7 +20,7 @@ export default function LazyBubbleScene() {
 						justifyContent: "center",
 					}}
 				>
-					<Spinner />
+					<Spinner text="" />
 				</div>
 			}
 		>

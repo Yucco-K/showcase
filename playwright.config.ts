@@ -4,12 +4,16 @@ export default defineConfig({
 	testDir: "tests",
 	timeout: 60000,
 	webServer: {
-		command: "npm run dev -- --port 5173",
-		port: 5173,
+		command: "npm run dev",
+		url: "http://localhost:5175",
 		reuseExistingServer: !process.env.CI,
+		timeout: 120000,
 	},
 	use: {
-		baseURL: "http://localhost:5173",
+		baseURL: "http://localhost:5175",
 		headless: true,
 	},
+	reporter: [["html", { outputFolder: "playwright-report" }], ["list"]],
+	retries: process.env.CI ? 2 : 0,
+	workers: process.env.CI ? 1 : undefined,
 });

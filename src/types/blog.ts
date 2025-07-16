@@ -10,6 +10,7 @@ export interface BlogEntry {
 	platform: BlogPlatform;
 	thumbnail?: string;
 	isExternal: boolean;
+	author?: string; // 著者名
 }
 
 export enum BlogPlatform {

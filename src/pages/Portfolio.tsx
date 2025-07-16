@@ -1,20 +1,31 @@
 import YuccoCat from "../components/YuccoCat";
-
-const portfolioLinks = [
-	{ title: "question-app", url: "https://github.com/Yucco-K/question-app" },
-	{ title: "snapstreamApp", url: "https://github.com/Yucco-K/snapstreamApp" },
-	{
-		title: "lostiteminfoApp",
-		url: "https://github.com/Yucco-K/lostiteminfoApp",
-	},
-	{
-		title: "jutaku-assignment",
-		url: "https://github.com/Yucco-K/jutaku-assignment",
-	},
-	{ title: "tech-blog-1", url: "https://github.com/Yucco-K/tech-blog-1" },
-];
+import { useProjects } from "../hooks/useProjects";
 
 const Portfolio: React.FC = () => {
+	const { projects, loading, error } = useProjects();
+
+	if (loading) {
+		return (
+			<main style={{ padding: "4rem 0", textAlign: "center" }}>
+				<h1 style={{ marginBottom: "2rem" }}>WEB App Portfolio</h1>
+				<p>読み込み中...</p>
+			</main>
+		);
+	}
+
+	if (error) {
+		return (
+			<main style={{ padding: "4rem 0", textAlign: "center" }}>
+				<h1 style={{ marginBottom: "2rem" }}>WEB App Portfolio</h1>
+				<p>エラーが発生しました: {error}</p>
+			</main>
+		);
+	}
+
+	const sortedProjects = [...projects].sort((a, b) =>
+		b.title.localeCompare(a.title)
+	);
+
 	return (
 		<>
 			<main style={{ padding: "4rem 0", textAlign: "center" }}>
@@ -27,10 +38,10 @@ const Portfolio: React.FC = () => {
 						gap: "2rem",
 					}}
 				>
-					{portfolioLinks.map((link) => (
+					{sortedProjects.map((project) => (
 						<a
-							key={link.url}
-							href={link.url}
+							key={project.id}
+							href={project.github_url || project.demo_url || "#"}
 							target="_blank"
 							rel="noopener noreferrer"
 							style={{
@@ -48,7 +59,7 @@ const Portfolio: React.FC = () => {
 								transition: "transform 0.2s, box-shadow 0.2s",
 							}}
 						>
-							{link.title}
+							{project.title}
 						</a>
 					))}
 				</div>

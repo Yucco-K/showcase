@@ -46,7 +46,7 @@ function AppRoutes() {
 				<Route path="/contact-admin" element={<ContactAdmin />} />
 				<Route path="/contact-detail/:id" element={<ContactDetail />} />
 				<Route path="/contact" element={<ContactForm />} />
-				<Route path="/my-page" element={<MyPage />} />
+				<Route path="/mypage" element={<MyPage />} />
 			</Routes>
 		</>
 	);

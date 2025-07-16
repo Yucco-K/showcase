@@ -24,11 +24,14 @@ export default defineConfig({
 	},
 	build: {
 		// チャンクサイズの最適化
+		chunkSizeWarningLimit: 1000, // 1MBに調整
 		rollupOptions: {
 			output: {
 				manualChunks: {
 					vendor: ["react", "react-dom", "react-router-dom"],
 					three: ["three", "@react-three/fiber", "@react-three/drei"],
+					supabase: ["@supabase/supabase-js"],
+					stripe: ["@stripe/stripe-js"],
 				},
 			},
 		},

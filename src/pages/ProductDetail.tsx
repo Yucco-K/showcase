@@ -232,6 +232,10 @@ const TextArea = styled.textarea`
 	width: 100%;
 	font-size: 16px;
 	line-height: 1.5;
+
+	@media (max-width: 768px) {
+		width: 92%; /* slightly shorter on small screens */
+	}
 `;
 
 const ReviewCount = styled.span`

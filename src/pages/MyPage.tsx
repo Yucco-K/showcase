@@ -4,7 +4,6 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthProvider";
 import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
-import { useProductPayment } from "../hooks/useProductPayment";
 import { AvatarDeleteConfirmationModal } from "../components/auth/AvatarDeleteConfirmationModal";
 
 interface Profile {
@@ -26,14 +25,6 @@ interface LikedProduct {
 	category: string;
 }
 
-interface PurchasedProduct {
-	productId: string;
-	productName: string;
-	amount: number;
-	purchaseDate: string;
-	paymentId: string;
-}
-
 // アニメーション定義
 const fadeInUp = keyframes`
   from {
@@ -52,15 +43,6 @@ const float = keyframes`
   }
   50% {
     transform: translateY(-10px);
-  }
-`;
-
-const pulse = keyframes`
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
   }
 `;
 
@@ -605,13 +587,6 @@ const ProductPrice = styled.div`
 	background-clip: text;
 `;
 
-const PurchaseDate = styled.div`
-	color: #a0aec0;
-	font-size: 0.85rem;
-	margin-top: 12px;
-	font-style: italic;
-`;
-
 const EmptyMessage = styled.div`
 	text-align: center;
 	padding: 60px 20px;
@@ -639,52 +614,11 @@ const ErrorMessage = styled.div`
 	font-weight: 500;
 `;
 
-const PurchasedBadge = styled.div`
-	background: linear-gradient(135deg, #48bb78, #38a169);
-	color: white;
-	padding: 6px 12px;
-	border-radius: 20px;
-	font-size: 0.75rem;
-	font-weight: 600;
-	position: absolute;
-	top: 12px;
-	right: 12px;
-	box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
-	animation: ${pulse} 2s ease-in-out infinite;
-`;
-
-const PurchasedSection = styled(Section)`
-	background: linear-gradient(
-		135deg,
-		rgba(255, 255, 255, 0.95),
-		rgba(255, 255, 255, 0.9)
-	);
-	border: 2px solid rgba(72, 187, 120, 0.2);
-	box-shadow: 0 20px 40px rgba(72, 187, 120, 0.1),
-		0 8px 16px rgba(72, 187, 120, 0.05);
-
-	&::before {
-		background: linear-gradient(90deg, #48bb78, #38a169);
-	}
-`;
-
-const PurchasedTitle = styled(SectionTitle)`
-	color: #2f855a;
-
-	&::after {
-		background: linear-gradient(90deg, #48bb78, #38a169);
-	}
-`;
-
 export const MyPage: React.FC = () => {
 	const { user } = useAuth();
 	const { toast, showError, showSuccess, hideToast } = useToast();
-	const { getPurchaseHistory } = useProductPayment();
 	const [profile, setProfile] = useState<Profile | null>(null);
 	const [likedProducts, setLikedProducts] = useState<LikedProduct[]>([]);
-	const [purchasedProducts, setPurchasedProducts] = useState<
-		PurchasedProduct[]
-	>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSaving, setIsSaving] = useState(false);
 	const [isAvatarDeleteModalOpen, setIsAvatarDeleteModalOpen] = useState(false);
@@ -759,22 +693,12 @@ export const MyPage: React.FC = () => {
 		}
 	}, [user]);
 
-	const fetchPurchasedProducts = useCallback(() => {
-		try {
-			const purchases = getPurchaseHistory();
-			setPurchasedProducts(purchases || []);
-		} catch (error) {
-			console.error("Failed to fetch purchased products:", error);
-		}
-	}, [getPurchaseHistory]);
-
 	useEffect(() => {
 		if (user) {
 			fetchProfile();
 			fetchLikedProducts();
-			fetchPurchasedProducts();
 		}
-	}, [user, fetchProfile, fetchLikedProducts, fetchPurchasedProducts]);
+	}, [user, fetchProfile, fetchLikedProducts]);
 
 	// アバタークリックでファイル選択を開く
 	const handleAvatarClick = () => {
@@ -1200,15 +1124,6 @@ export const MyPage: React.FC = () => {
 		}
 	};
 
-	const formatPurchaseDate = (dateString: string) => {
-		const date = new Date(dateString);
-		return date.toLocaleDateString("ja-JP", {
-			year: "numeric",
-			month: "long",
-			day: "numeric",
-		});
-	};
-
 	if (isLoading) {
 		return (
 			<Container>
@@ -1230,26 +1145,7 @@ export const MyPage: React.FC = () => {
 			<Title>✨ マイページ</Title>
 
 			{/* 購入したアプリ */}
-			{purchasedProducts.length > 0 && (
-				<PurchasedSection style={{ marginBottom: "32px" }}>
-					<PurchasedTitle>🎉 購入したアプリ</PurchasedTitle>
-					<ProductGrid>
-						{purchasedProducts.map((product) => (
-							<ProductCard key={product.paymentId}>
-								<PurchasedBadge>購入済み</PurchasedBadge>
-								<ProductName>{product.productName}</ProductName>
-								<ProductDescription>
-									素晴らしいアプリを購入していただき、ありがとうございます！
-								</ProductDescription>
-								<ProductPrice>¥{product.amount.toLocaleString()}</ProductPrice>
-								<PurchaseDate>
-									購入日: {formatPurchaseDate(product.purchaseDate)}
-								</PurchaseDate>
-							</ProductCard>
-						))}
-					</ProductGrid>
-				</PurchasedSection>
-			)}
+			{/* 購入したアプリ */}
 
 			<Grid data-testid="grid">
 				{/* プロフィール情報 */}

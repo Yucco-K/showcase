@@ -284,7 +284,7 @@ export const BlogList: React.FC = () => {
 		<Container>
 			<ContentWrapper>
 				<Header>
-					<Title>Blog Showcase</Title>
+					<Title>Blog</Title>
 					<Subtitle>
 						日々の学びや技術的な発見を
 						<br />

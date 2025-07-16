@@ -250,14 +250,161 @@ const CheckText = styled.span<{ $checked: boolean }>`
 	font-weight: 600;
 `;
 
-export const ContactDetail: React.FC = () => {
+// 編集モーダル用のスタイル
+const Modal = styled.div`
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.8);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+	background: #1e1e2f;
+	border-radius: 12px;
+	padding: 32px;
+	width: 90%;
+	max-width: 600px;
+	max-height: 90vh;
+	overflow-y: auto;
+	position: relative;
+`;
+
+const CloseButton = styled.button`
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	background: none;
+	border: none;
+	color: white;
+	font-size: 24px;
+	cursor: pointer;
+`;
+
+const ContactInfo = styled.div`
+	margin-bottom: 24px;
+
+	h3 {
+		color: white;
+		margin-bottom: 16px;
+	}
+
+	p {
+		color: rgba(255, 255, 255, 0.9);
+		margin: 8px 0;
+	}
+`;
+
+const ModalMessageContent = styled.div`
+	margin-bottom: 24px;
+
+	h4 {
+		color: white;
+		margin-bottom: 12px;
+	}
+
+	p {
+		color: rgba(255, 255, 255, 0.9);
+		background: rgba(255, 255, 255, 0.05);
+		padding: 16px;
+		border-radius: 8px;
+		white-space: pre-wrap;
+	}
+`;
+
+const Form = styled.form`
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+`;
+
+const FormField = styled.div`
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+
+	label {
+		color: white;
+		font-weight: 600;
+	}
+
+	select,
+	textarea {
+		padding: 12px;
+		border-radius: 8px;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		background: rgba(255, 255, 255, 0.05);
+		color: white;
+		font-size: 14px;
+	}
+
+	textarea {
+		min-height: 100px;
+		resize: vertical;
+	}
+`;
+
+const CheckboxField = styled.div`
+	display: flex;
+	align-items: center;
+	gap: 8px;
+
+	input[type="checkbox"] {
+		width: 18px;
+		height: 18px;
+	}
+
+	label {
+		color: white;
+		font-weight: 600;
+	}
+`;
+
+const ButtonRow = styled.div`
+	display: flex;
+	gap: 12px;
+	margin-top: 24px;
+`;
+
+const ModalButton = styled.button<{ $variant?: "primary" | "secondary" }>`
+	padding: 12px 24px;
+	border: none;
+	border-radius: 8px;
+	font-weight: 600;
+	cursor: pointer;
+	flex: 1;
+
+	${({ $variant }) => {
+		switch ($variant) {
+			case "secondary":
+				return "background: rgba(255,255,255,0.2); color:#fff;";
+			default:
+				return "background: linear-gradient(135deg,#3EA8FF,#0066CC); color:#fff;";
+		}
+	}}
+
+	&:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+`;
+
+const ContactDetail: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const { user, isAdmin, loading } = useAuth();
-	const { toast, hideToast } = useToast();
+	const { toast, showSuccess, showError, hideToast } = useToast();
 	const [contact, setContact] = useState<Contact | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [editingContact, setEditingContact] = useState<Contact | null>(null);
+	const [isUpdating, setIsUpdating] = useState(false);
 
 	useEffect(() => {
 		const fetchContact = async () => {
@@ -298,6 +445,67 @@ export const ContactDetail: React.FC = () => {
 	const formatDate = (dateString: string | null) => {
 		if (!dateString) return "-";
 		return new Date(dateString).toLocaleString("ja-JP");
+	};
+
+	const handleEdit = () => {
+		setEditingContact(contact);
+		setIsModalOpen(true);
+	};
+
+	const handleUpdate = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!editingContact) return;
+
+		setIsUpdating(true);
+		try {
+			const { error } = await supabase
+				.from("contacts")
+				.update({
+					is_checked: editingContact.is_checked,
+					is_replied: editingContact.is_replied,
+					status: editingContact.status,
+					admin_notes: editingContact.admin_notes,
+					checked_at: editingContact.is_checked
+						? new Date().toISOString()
+						: null,
+					replied_at: editingContact.is_replied
+						? new Date().toISOString()
+						: null,
+					checked_by: editingContact.is_checked ? user?.id : null,
+					replied_by: editingContact.is_replied ? user?.id : null,
+				})
+				.eq("id", editingContact.id);
+
+			if (error) throw error;
+
+			showSuccess("お問い合わせを更新しました");
+			// 更新されたデータでcontactを更新
+			if (contact) {
+				const updatedContact: Contact = {
+					...contact,
+					is_checked: editingContact.is_checked,
+					is_replied: editingContact.is_replied,
+					status: editingContact.status,
+					admin_notes: editingContact.admin_notes,
+					checked_at: editingContact.is_checked
+						? new Date().toISOString()
+						: null,
+					replied_at: editingContact.is_replied
+						? new Date().toISOString()
+						: null,
+					checked_by: editingContact.is_checked ? user?.id : null,
+					replied_by: editingContact.is_replied ? user?.id : null,
+				};
+				setContact(updatedContact);
+			}
+			setIsModalOpen(false);
+			setEditingContact(null);
+		} catch (error) {
+			console.error("Failed to update contact:", error);
+			showError("更新に失敗しました");
+		} finally {
+			setIsUpdating(false);
+		}
 	};
 
 	if (loading) return <LoadingMessage>Loading...</LoadingMessage>;
@@ -406,13 +614,142 @@ export const ContactDetail: React.FC = () => {
 			</Section>
 
 			<ActionButtons>
-				<Button onClick={() => navigate(`/contact-admin?edit=${contact.id}`)}>
-					編集する
-				</Button>
+				<Button onClick={handleEdit}>編集する</Button>
 				<Button $variant="secondary" onClick={() => navigate("/contact-admin")}>
 					一覧に戻る
 				</Button>
 			</ActionButtons>
+
+			{/* 編集モーダル */}
+			{isModalOpen && editingContact && (
+				<Modal onClick={() => setIsModalOpen(false)}>
+					<ModalContent onClick={(e) => e.stopPropagation()}>
+						<CloseButton onClick={() => setIsModalOpen(false)}>×</CloseButton>
+						<h2 style={{ color: "white", marginBottom: "24px" }}>
+							お問い合わせ編集
+						</h2>
+
+						<ContactInfo>
+							<h3>お客様情報</h3>
+							<p>
+								<strong>名前:</strong> {editingContact.name}
+							</p>
+							<p>
+								<strong>メール:</strong> {editingContact.email}
+							</p>
+							<p>
+								<strong>送信日時:</strong>{" "}
+								{new Date(editingContact.created_at).toLocaleString()}
+							</p>
+						</ContactInfo>
+
+						<ModalMessageContent>
+							<h4>お問い合わせ内容</h4>
+							<p>{editingContact.message}</p>
+						</ModalMessageContent>
+
+						<Form onSubmit={handleUpdate}>
+							<FormField>
+								<label htmlFor="status">ステータス</label>
+								<select
+									id="status"
+									value={editingContact.status}
+									onChange={(e) =>
+										setEditingContact((prev) =>
+											prev
+												? {
+														...prev,
+														status: e.target.value as Contact["status"],
+												  }
+												: null
+										)
+									}
+								>
+									<option value="pending">未対応</option>
+									<option value="in_progress">対応中</option>
+									<option value="completed">完了</option>
+									<option value="closed">終了</option>
+								</select>
+							</FormField>
+
+							<CheckboxField>
+								<input
+									id="is_checked"
+									type="checkbox"
+									checked={editingContact.is_checked}
+									onChange={(e) =>
+										setEditingContact((prev) =>
+											prev
+												? {
+														...prev,
+														is_checked: e.target.checked,
+												  }
+												: null
+										)
+									}
+								/>
+								<label htmlFor="is_checked">確認済み</label>
+							</CheckboxField>
+
+							<CheckboxField>
+								<input
+									id="is_replied"
+									type="checkbox"
+									checked={editingContact.is_replied}
+									onChange={(e) =>
+										setEditingContact((prev) =>
+											prev
+												? {
+														...prev,
+														is_replied: e.target.checked,
+												  }
+												: null
+										)
+									}
+								/>
+								<label htmlFor="is_replied">返信済み</label>
+							</CheckboxField>
+
+							<FormField>
+								<label htmlFor="admin_notes">管理者メモ</label>
+								<textarea
+									id="admin_notes"
+									value={editingContact.admin_notes || ""}
+									onChange={(e) =>
+										setEditingContact((prev) =>
+											prev
+												? {
+														...prev,
+														admin_notes: e.target.value,
+												  }
+												: null
+										)
+									}
+									placeholder="対応状況や返信内容などのメモを入力してください"
+								/>
+							</FormField>
+
+							<ButtonRow>
+								<ModalButton
+									type="submit"
+									$variant="primary"
+									disabled={isUpdating}
+								>
+									{isUpdating ? "更新中..." : "更新"}
+								</ModalButton>
+								<ModalButton
+									type="button"
+									$variant="secondary"
+									onClick={() => setIsModalOpen(false)}
+									disabled={isUpdating}
+								>
+									キャンセル
+								</ModalButton>
+							</ButtonRow>
+						</Form>
+					</ModalContent>
+				</Modal>
+			)}
 
 			<Toast
 				message={toast.message}
@@ -423,3 +760,5 @@ export const ContactDetail: React.FC = () => {
 		</Container>
 	);
 };
+
+export default ContactDetail;

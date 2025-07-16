@@ -311,7 +311,7 @@ const ErrorMessage = styled.p`
 	margin: 0;
 `;
 
-export const ProductAdmin: React.FC = () => {
+const ProductAdmin: React.FC = () => {
 	const navigate = useNavigate();
 	const { user, isAdmin, loading } = useAuth();
 	const { toast, showSuccess, showError, hideToast } = useToast();
@@ -461,18 +461,24 @@ export const ProductAdmin: React.FC = () => {
 
 			if (editingProduct) {
 				console.log("Updating product with ID:", editingProduct.id);
+				console.log("Update payload:", JSON.stringify(payload, null, 2));
+
 				// 更新
-				const { error } = await supabase
+				const { data, error } = await supabase
 					.from("products")
 					.update(payload)
-					.eq("id", editingProduct.id);
+					.eq("id", editingProduct.id)
+					.select();
 
 				console.log(
 					"Supabase update result:",
-					JSON.stringify({ error }, null, 2)
+					JSON.stringify({ data, error }, null, 2)
 				);
 
-				if (error) throw error;
+				if (error) {
+					console.error("Update error details:", error);
+					throw error;
+				}
 				console.log("Update successful, showing success toast");
 				showSuccess("商品を更新しました");
 			} else {
@@ -502,6 +508,23 @@ export const ProductAdmin: React.FC = () => {
 
 				console.log("Updated product from database:", updatedProducts);
 				console.log("Fetch error:", fetchError);
+
+				// 更新が反映されているかチェック
+				if (updatedProducts) {
+					console.log("Check if update was applied:");
+					console.log(
+						"- is_featured expected:",
+						payload.is_featured,
+						"actual:",
+						updatedProducts.is_featured
+					);
+					console.log(
+						"- is_popular expected:",
+						payload.is_popular,
+						"actual:",
+						updatedProducts.is_popular
+					);
+				}
 			}
 
 			fetchProducts();
@@ -869,3 +892,5 @@ export const ProductAdmin: React.FC = () => {
 		</Container>
 	);
 };
+
+export default ProductAdmin;

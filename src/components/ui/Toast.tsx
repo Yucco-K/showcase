@@ -61,6 +61,8 @@ export const Toast: React.FC<ToastProps> = ({
 	onClose,
 	isVisible,
 }) => {
+	console.log("Toast render:", { message, type, isVisible });
+
 	useEffect(() => {
 		if (isVisible && duration > 0) {
 			const timer = setTimeout(() => {

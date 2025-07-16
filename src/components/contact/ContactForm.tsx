@@ -121,8 +121,22 @@ export const ContactForm: React.FC = () => {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
+		// フォームバリデーションをチェック
+		const form = e.target as HTMLFormElement;
+		const isValid = form.checkValidity();
+
 		// 認証状態をチェック
-		if (!user) {
+		const isAuthenticated = !!user;
+
+		// バリデーションエラーがある場合
+		if (!isValid) {
+			showError("フォームの入力内容を確認してください。");
+			return;
+		}
+
+		// 認証されていない場合
+		if (!isAuthenticated) {
+			showError("お問い合わせを送信するにはログインが必要です。");
 			setIsLoginModalOpen(true);
 			return;
 		}

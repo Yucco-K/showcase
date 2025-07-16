@@ -3,6 +3,8 @@ import styled from "styled-components";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "../../hooks/useToast";
 import { Toast } from "../ui/Toast";
+import { useAuth } from "../../contexts/AuthProvider";
+import { LoginModal } from "../auth/LoginModal";
 
 const Container = styled.div`
 	max-width: 600px;
@@ -112,10 +114,19 @@ export const ContactForm: React.FC = () => {
 	const [message, setMessage] = useState("");
 	const [sent, setSent] = useState(false);
 	const [agree, setAgree] = useState(false);
+	const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 	const { toast, showError, showSuccess, hideToast } = useToast();
+	const { user } = useAuth();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+
+		// 認証状態をチェック
+		if (!user) {
+			setIsLoginModalOpen(true);
+			return;
+		}
+
 		console.log("Submitting contact form:", { name, email, message });
 		try {
 			const { error } = await supabase.from("contacts").insert({
@@ -256,6 +267,10 @@ export const ContactForm: React.FC = () => {
 				type={toast.type}
 				isVisible={toast.isVisible}
 				onClose={hideToast}
+			/>
+			<LoginModal
+				isOpen={isLoginModalOpen}
+				onClose={() => setIsLoginModalOpen(false)}
 			/>
 		</Container>
 	);

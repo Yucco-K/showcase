@@ -2,6 +2,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Color, Group, MeshPhysicalMaterial, MathUtils } from "three";
 import { OrbitControls, Environment } from "@react-three/drei";
 import { useRef, Suspense } from "react";
+import Spinner from "./ui/Spinner";
 
 function Bubble({ seed }: { seed: number }) {
 	const ref = useRef<Group>(null!);
@@ -138,11 +139,9 @@ export default function BubbleScene() {
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
-						color: "white",
-						fontSize: "1.2rem",
 					}}
 				>
-					読み込み中...
+					<Spinner text="" />
 				</div>
 			}
 		>

@@ -35,27 +35,58 @@ const Internship: React.FC = () => {
 			}}
 		>
 			<LazyBubbleScene />
-			<div style={{ position: "relative", zIndex: 2 }}>
+			<div
+				style={{
+					position: "relative",
+					zIndex: 2,
+					width: "100%",
+					color: "#fff",
+				}}
+			>
 				<h1
 					style={{
-						fontSize: "2.5rem",
-						marginBottom: "1.5rem",
-						color: "#333",
+						color: "#6a4fb6",
+						fontWeight: 800,
+						fontSize: "2.2rem",
+						marginBottom: "1.2rem",
+						letterSpacing: "0.04em",
 					}}
 				>
-					インターンシップ募集
+					Sample Portfolio
 				</h1>
-				<p
-					style={{
-						fontSize: "1.2rem",
-						color: "#666",
-						maxWidth: "600px",
-						lineHeight: "1.6",
-					}}
-				>
-					現在、フロントエンド開発のインターンシップ生を募集しています。
-					一緒に素晴らしいプロダクトを作りませんか？
-				</p>
+				<h2>テキストテキスト</h2>
+				<p>テキストテキスト</p>
+				<p>テキストテキスト</p>
+				<p>テキストテキスト</p>
+				<h2>テキストテキスト</h2>
+				{/* <h3>テキストテキスト</h3>
+				<div style={{ textAlign: "left", margin: "0 auto", maxWidth: 600 }}>
+					テキストテキスト
+				</div>
+				<h3>テキストテキスト</h3>
+				<div style={{ textAlign: "left", margin: "0 auto", maxWidth: 600 }}>
+					テキストテキスト
+				</div>
+				<h3>テキストテキスト</h3>
+				<div style={{ textAlign: "left", margin: "0 auto", maxWidth: 600 }}>
+					テキストテキスト
+				</div>
+				<h2>テキストテキスト</h2>
+				<p style={{ fontSize: "0.95rem", color: "#444" }}>テキストテキスト</p>
+				<h3>テキストテキスト</h3> */}
+				<div>テキストテキスト</div>
+				<h3>テキストテキスト</h3>
+				<div>テキストテキスト</div>
+				<h3>テキストテキスト</h3>
+				<div>テキストテキスト</div>
+				<h3>テキストテキスト</h3>
+				<div>テキストテキスト</div>
+				<h2>テキストテキスト</h2>
+				<div style={{ fontSize: "0.95rem", color: "#444" }}>
+					テキストテキスト
+				</div>
+				<h2>テキストテキスト</h2>
+				<p>テキストテキスト</p>
 			</div>
 		</main>
 	);

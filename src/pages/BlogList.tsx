@@ -15,7 +15,6 @@ const glowAnimation = keyframes`
 
 const Container = styled.div`
 	position: relative;
-	padding: 4rem 1rem;
 	min-height: 100vh;
 	width: 100%;
 	background-color: #02040a;

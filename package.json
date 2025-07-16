@@ -10,6 +10,8 @@
 		"preview": "vite preview",
 		"predeploy": "npm run build && cp dist/index.html dist/404.html",
 		"deploy": "gh-pages -d dist",
+		"vercel-build": "npm run build",
+		"vercel-deploy": "vercel --prod",
 		"db:seed": "tsx --env-file=.env scripts/seed.ts",
 		"test:setup-admin": "tsx --env-file=.env scripts/setup-test-admin.ts",
 		"type-check": "tsc --noEmit",

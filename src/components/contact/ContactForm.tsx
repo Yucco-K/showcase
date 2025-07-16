@@ -3,8 +3,6 @@ import styled from "styled-components";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "../../hooks/useToast";
 import { Toast } from "../ui/Toast";
-import { useAuth } from "../../contexts/AuthProvider";
-import { LoginModal } from "../auth/LoginModal";
 
 const Container = styled.div`
 	max-width: 600px;
@@ -114,50 +112,65 @@ export const ContactForm: React.FC = () => {
 	const [message, setMessage] = useState("");
 	const [sent, setSent] = useState(false);
 	const [agree, setAgree] = useState(false);
-	const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const { toast, showError, showSuccess, hideToast } = useToast();
-	const { user } = useAuth();
 
-	console.log("ContactForm render - toast state:", toast);
+	// バリデーション関数
+	const validateForm = () => {
+		const errors: string[] = [];
+
+		// お名前のバリデーション
+		if (!name.trim()) {
+			errors.push("お名前を入力してください");
+		} else if (name.trim().length < 2) {
+			errors.push("お名前は2文字以上で入力してください");
+		}
+
+		// メールアドレスのバリデーション
+		if (!email.trim()) {
+			errors.push("メールアドレスを入力してください");
+		} else {
+			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			if (!emailRegex.test(email.trim())) {
+				errors.push("正しいメールアドレスの形式で入力してください");
+			}
+		}
+
+		// メッセージのバリデーション
+		if (!message.trim()) {
+			errors.push("メッセージを入力してください");
+		} else if (message.trim().length < 10) {
+			errors.push("メッセージは10文字以上で入力してください");
+		} else if (message.trim().length > 1000) {
+			errors.push("メッセージは1000文字以内で入力してください");
+		}
+
+		// 利用規約同意のバリデーション
+		if (!agree) {
+			errors.push("利用規約とプライバシーポリシーに同意してください");
+		}
+
+		return errors;
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		console.log("handleSubmit called");
-
-		// フォームバリデーションをチェック
-		const form = e.target as HTMLFormElement;
-		const isValid = form.checkValidity();
-		console.log("Form validation result:", isValid);
-
-		// 認証状態をチェック
-		const isAuthenticated = !!user;
-		console.log("Authentication status:", isAuthenticated, "User:", user);
-
-		// バリデーションエラーがある場合
-		if (!isValid) {
-			console.log("Form validation failed, showing error toast");
-			showError("フォームの入力内容を確認してください。");
-			console.log("showError called for validation failure");
-			return;
-		}
-
-		// 認証されていない場合
-		if (!isAuthenticated) {
-			console.log(
-				"User not authenticated, showing error toast and opening login modal"
-			);
-			showError("お問い合わせを送信するにはログインが必要です。");
-			console.log("showError called for authentication failure");
-			setIsLoginModalOpen(true);
-			return;
-		}
-
 		console.log("Submitting contact form:", { name, email, message });
+
+		// バリデーションチェック
+		const validationErrors = validateForm();
+		if (validationErrors.length > 0) {
+			console.log("Validation errors:", validationErrors);
+			showError(validationErrors.join("\n"));
+			return;
+		}
+
+		setIsSubmitting(true);
 		try {
 			const { error } = await supabase.from("contacts").insert({
-				name,
-				email,
-				message,
+				name: name.trim(),
+				email: email.trim(),
+				message: message.trim(),
 				status: "pending",
 				is_checked: false,
 				is_replied: false,
@@ -174,6 +187,8 @@ export const ContactForm: React.FC = () => {
 		} catch (error) {
 			console.error("Contact form submission error:", error);
 			showError("送信に失敗しました...");
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
@@ -248,7 +263,6 @@ export const ContactForm: React.FC = () => {
 						id="name"
 						value={name}
 						onChange={(e) => setName(e.target.value)}
-						required
 					/>
 				</Field>
 				<Field>
@@ -258,7 +272,6 @@ export const ContactForm: React.FC = () => {
 						type="email"
 						value={email}
 						onChange={(e) => setEmail(e.target.value)}
-						required
 					/>
 				</Field>
 				<Field>
@@ -268,7 +281,6 @@ export const ContactForm: React.FC = () => {
 						rows={6}
 						value={message}
 						onChange={(e) => setMessage(e.target.value)}
-						required
 					/>
 				</Field>
 
@@ -283,8 +295,8 @@ export const ContactForm: React.FC = () => {
 					利用規約とプライバシーポリシーに同意します
 				</CheckboxLabel>
 
-				<Button type="submit" disabled={!agree}>
-					送信
+				<Button type="submit" disabled={isSubmitting}>
+					{isSubmitting ? "送信中..." : "送信"}
 				</Button>
 			</form>
 			<Toast
@@ -292,10 +304,6 @@ export const ContactForm: React.FC = () => {
 				type={toast.type}
 				isVisible={toast.isVisible}
 				onClose={hideToast}
-			/>
-			<LoginModal
-				isOpen={isLoginModalOpen}
-				onClose={() => setIsLoginModalOpen(false)}
 			/>
 		</Container>
 	);

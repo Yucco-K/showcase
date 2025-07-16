@@ -18,13 +18,11 @@ export const useToast = () => {
 			message: string,
 			type: "success" | "error" | "info" | "warning" = "info"
 		) => {
-			console.log("showToast called:", { message, type });
 			setToast({
 				message,
 				type,
 				isVisible: true,
 			});
-			console.log("Toast state set to visible");
 		},
 		[]
 	);

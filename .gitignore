@@ -214,3 +214,4 @@ logs/
 # Local development files
 .local/
 local/
+.vercel

@@ -35,7 +35,7 @@ interface SpinnerProps {
 }
 
 const Spinner: React.FC<SpinnerProps> = ({
-	text = "読み込み中...",
+	text = "Loading...",
 	size = 40,
 }) => {
 	return (

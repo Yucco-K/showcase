@@ -726,10 +726,11 @@ export const MyPage: React.FC = () => {
 
 			if (error) throw error;
 
-			const products = data
-				?.map((item) => item.products)
-				.filter(Boolean) as LikedProduct[];
-			setLikedProducts(products || []);
+			const products =
+				(data as Array<{ products: LikedProduct | null }>)
+					?.map((item) => item.products)
+					.filter((p): p is LikedProduct => p !== null) ?? [];
+			setLikedProducts(products);
 		} catch (error) {
 			console.error("Failed to fetch liked products:", error);
 		}

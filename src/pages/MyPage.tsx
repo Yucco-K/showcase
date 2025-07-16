@@ -686,11 +686,11 @@ export const MyPage: React.FC = () => {
 
 			if (error) throw error;
 
-			setProfile(data);
+			setProfile(data as Profile);
 			setFormData({
-				full_name: data.full_name || "",
-				biography: data.biography || "",
-				email: data.email || "",
+				full_name: (data.full_name as string) || "",
+				biography: (data.biography as string) || "",
+				email: (data.email as string) || "",
 				currentPassword: "",
 				newPassword: "",
 				confirmPassword: "",

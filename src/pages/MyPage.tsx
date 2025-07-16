@@ -1185,7 +1185,7 @@ export const MyPage: React.FC = () => {
 
 	return (
 		<Container>
-			<Title>✨ マイページ</Title>
+			<Title>✨ My Page</Title>
 
 			{purchasedProducts.length > 0 && (
 				<Section style={{ marginBottom: 32 }}>

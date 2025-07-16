@@ -112,15 +112,17 @@ jobs:
           ls -la dist/
           echo "Build output verified"
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to Vercel
         run: |
-          echo "Starting deployment to GitHub Pages..."
-          npm run deploy || {
-            echo "Deployment failed, but this is not critical for CI"
-            exit 0
-          }
+          echo "Starting deployment to Vercel..."
+          npm install -g vercel@latest
+          vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
           echo "Deployment completed"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        timeout-minutes: 5
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://example.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'dummy-key' }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_dummy' }}
+          VITE_ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS || 'admin@example.com' }}
+        timeout-minutes: 10
         continue-on-error: true

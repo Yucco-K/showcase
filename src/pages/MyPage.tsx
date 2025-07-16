@@ -635,7 +635,7 @@ export const MyPage: React.FC = () => {
 				.select("product_id")
 				.eq("user_id", user.id);
 			if (purchasesError || !purchases) return;
-			const productIds = purchases.map((p: any) => p.product_id);
+			const productIds = purchases.map((p) => p.product_id as string);
 			if (productIds.length === 0) {
 				if (isMounted) setPurchasedProducts([]);
 				return;
@@ -647,28 +647,28 @@ export const MyPage: React.FC = () => {
 				.in("id", productIds);
 			if (!productsError && products && isMounted) {
 				// DBのsnake_caseをcamelCaseに変換
-				const mapped = products.map((p: any) => ({
-					id: p.id,
-					name: p.name,
-					description: p.description,
-					longDescription: p.long_description ?? "",
-					price: p.price,
-					originalPrice: p.original_price ?? undefined,
-					category: p.category,
-					imageUrl: p.image_url ?? "",
-					screenshots: p.screenshots ?? [],
-					features: p.features ?? [],
-					requirements: p.requirements ?? [],
-					version: p.version ?? "",
-					lastUpdated: p.last_updated ?? "",
-					rating: p.rating ?? 0,
-					reviewCount: p.review_count ?? 0,
-					likes: p.likes ?? 0,
-					tags: p.tags ?? [],
-					isPopular: p.is_popular ?? false,
-					isFeatured: p.is_featured ?? false,
+				const mapped = products.map((p) => ({
+					id: p.id as string,
+					name: p.name as string,
+					description: p.description as string,
+					longDescription: (p.long_description as string) ?? "",
+					price: p.price as number,
+					originalPrice: (p.original_price as number) ?? undefined,
+					category: p.category as string,
+					imageUrl: (p.image_url as string) ?? "",
+					screenshots: (p.screenshots as string[]) ?? [],
+					features: (p.features as string[]) ?? [],
+					requirements: (p.requirements as string[]) ?? [],
+					version: (p.version as string) ?? "",
+					lastUpdated: (p.last_updated as string) ?? "",
+					rating: (p.rating as number) ?? 0,
+					reviewCount: (p.review_count as number) ?? 0,
+					likes: (p.likes as number) ?? 0,
+					tags: (p.tags as string[]) ?? [],
+					isPopular: (p.is_popular as boolean) ?? false,
+					isFeatured: (p.is_featured as boolean) ?? false,
 				}));
-				setPurchasedProducts(mapped);
+				setPurchasedProducts(mapped as Product[]);
 			}
 		})();
 		return () => {

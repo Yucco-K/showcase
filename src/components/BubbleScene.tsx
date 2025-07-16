@@ -1,7 +1,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Color, Group, MeshPhysicalMaterial, MathUtils } from "three";
 import { OrbitControls, Environment } from "@react-three/drei";
-import { useRef } from "react";
+import { useRef, Suspense } from "react";
 
 function Bubble({ seed }: { seed: number }) {
 	const ref = useRef<Group>(null!);
@@ -101,7 +101,7 @@ function InteractiveBubbles() {
 	);
 }
 
-export default function BubbleScene() {
+function BubbleSceneContent() {
 	return (
 		<Canvas
 			style={{
@@ -120,5 +120,33 @@ export default function BubbleScene() {
 			<InteractiveBubbles />
 			<Environment preset="sunset" blur={0.8} />
 		</Canvas>
+	);
+}
+
+export default function BubbleScene() {
+	return (
+		<Suspense
+			fallback={
+				<div
+					style={{
+						position: "fixed",
+						inset: 0,
+						zIndex: 0,
+						width: "100vw",
+						height: "100vh",
+						background: "#2b8dff",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						color: "white",
+						fontSize: "1.2rem",
+					}}
+				>
+					読み込み中...
+				</div>
+			}
+		>
+			<BubbleSceneContent />
+		</Suspense>
 	);
 }

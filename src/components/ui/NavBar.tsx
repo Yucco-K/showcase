@@ -263,9 +263,32 @@ const NavBar: React.FC = () => {
 		setIsMobileMenuOpen(!isMobileMenuOpen);
 	};
 
-	const closeMobileMenu = () => {
+	const closeMobileMenu = React.useCallback(() => {
 		setIsMobileMenuOpen(false);
-	};
+	}, []);
+
+	// Close mobile menu when user scrolls up on non-Top pages (mobile only)
+	React.useEffect(() => {
+		if (typeof window === "undefined") return;
+
+		let prevY = window.scrollY;
+		const handleScroll = () => {
+			const currentY = window.scrollY;
+			// If scrolling up (currentY < prevY) and menu is open, close it
+			if (
+				currentY < prevY &&
+				isMobileMenuOpen &&
+				window.innerWidth <= 768 &&
+				!isTopPage
+			) {
+				closeMobileMenu();
+			}
+			prevY = currentY;
+		};
+
+		window.addEventListener("scroll", handleScroll, { passive: true });
+		return () => window.removeEventListener("scroll", handleScroll);
+	}, [isMobileMenuOpen, isTopPage, closeMobileMenu]);
 
 	return (
 		<>

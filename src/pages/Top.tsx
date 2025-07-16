@@ -1,4 +1,4 @@
-import BubbleScene from "../components/BubbleScene";
+import LazyBubbleScene from "../components/LazyBubbleScene";
 import YuccoCat from "../components/YuccoCat";
 
 const Top: React.FC = () => {
@@ -17,7 +17,7 @@ const Top: React.FC = () => {
 				justifyContent: "flex-start",
 			}}
 		>
-			<BubbleScene />
+			<LazyBubbleScene />
 			<YuccoCat />
 			<div style={{ position: "relative", zIndex: 2 }}>
 				<h1

@@ -1,5 +1,6 @@
 name: CI/CD Pipeline
 
+# Workflow for testing and deployment
 on:
   push:
     branches: [main]

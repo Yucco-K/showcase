@@ -11,7 +11,11 @@
 		"predeploy": "npm run build && cp dist/index.html dist/404.html",
 		"deploy": "gh-pages -d dist",
 		"db:seed": "tsx --env-file=.env scripts/seed.ts",
-		"test:setup-admin": "tsx --env-file=.env scripts/setup-test-admin.ts"
+		"test:setup-admin": "tsx --env-file=.env scripts/setup-test-admin.ts",
+		"type-check": "tsc --noEmit",
+		"test": "playwright test",
+		"test:ui": "playwright test --ui",
+		"ci": "npm run type-check && npm run lint && npm run build && npm run test"
 	},
 	"dependencies": {
 		"@react-three/drei": "^10.5.0",

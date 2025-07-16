@@ -728,7 +728,7 @@ export const MyPage: React.FC = () => {
 
 			const products = data
 				?.map((item) => item.products)
-				.filter(Boolean) as unknown as LikedProduct[];
+				.filter(Boolean) as LikedProduct[];
 			setLikedProducts(products || []);
 		} catch (error) {
 			console.error("Failed to fetch liked products:", error);

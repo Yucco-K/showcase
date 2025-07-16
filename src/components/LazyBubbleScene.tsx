@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import Spinner from "./ui/Spinner";
 
 const BubbleScene = lazy(() => import("./BubbleScene"));
 
@@ -17,11 +18,9 @@ export default function LazyBubbleScene() {
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
-						color: "white",
-						fontSize: "1.2rem",
 					}}
 				>
-					読み込み中...
+					<Spinner />
 				</div>
 			}
 		>

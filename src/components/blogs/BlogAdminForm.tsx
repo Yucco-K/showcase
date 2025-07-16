@@ -95,15 +95,17 @@ export const BlogAdminForm: React.FC<BlogAdminFormProps> = ({
 				return;
 			}
 			if (data) {
-				setTitle(data.title ?? "");
-				setUrl(data.url ?? "");
+				setTitle((data.title as string) ?? "");
+				setUrl((data.url as string) ?? "");
 				setPlatform((data.platform as BlogPlatform) ?? "");
 				setPublishedAt(
-					data.published_at ? data.published_at.substring(0, 10) : ""
+					(data.published_at as string)
+						? (data.published_at as string).substring(0, 10)
+						: ""
 				);
 				setTags((data.tags as string[])?.join(",") ?? "");
-				setReadTime(data.read_time ?? "");
-				setAuthor(data.author ?? "");
+				setReadTime((data.read_time as number) ?? "");
+				setAuthor((data.author as string) ?? "");
 			}
 		})();
 	}, [blogId]);

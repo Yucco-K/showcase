@@ -24,6 +24,7 @@ export const useToast = () => {
 				type,
 				isVisible: true,
 			});
+			console.log("Toast state set to visible");
 		},
 		[]
 	);

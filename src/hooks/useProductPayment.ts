@@ -106,9 +106,13 @@ export const useProductPayment = () => {
 		return JSON.parse(localStorage.getItem("product-purchases") || "[]");
 	};
 
+	interface Purchase {
+		productId: string;
+		[key: string]: unknown;
+	}
 	const isPurchased = (productId: string): boolean => {
-		const purchases = getPurchaseHistory();
-		return purchases.some((purchase: any) => purchase.productId === productId);
+		const purchases: Purchase[] = getPurchaseHistory();
+		return purchases.some((purchase) => purchase.productId === productId);
 	};
 
 	return {

@@ -3,9 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("基本テスト", () => {
 	test("ホームページが表示される", async ({ page }) => {
 		await page.goto("/");
-		await expect(page.locator("h1")).toContainText(
-			"Welcome to my portfolio site!"
-		);
+		await expect(page.locator("h1")).toContainText("Welcome to my Showcase!");
 	});
 
 	test("ナビゲーションが機能する", async ({ page }) => {
@@ -15,6 +13,134 @@ test.describe("基本テスト", () => {
 		await page.click('a[href="/portfolio"]');
 		await expect(page).toHaveURL("/portfolio");
 		await expect(page.locator("h1")).toContainText("Portfolio");
+	});
+});
+
+test.describe("マイページ機能", () => {
+	test("未ログイン時にマイページにアクセスするとログインが必要", async ({
+		page,
+	}) => {
+		await page.goto("/mypage");
+
+		// ログインが必要なメッセージが表示されることを確認
+		await expect(page.locator("text=ログインが必要です")).toBeVisible();
+	});
+
+	test("マイページの基本レイアウトが正しく表示される", async ({ page }) => {
+		await page.goto("/mypage");
+
+		// ログインが必要な場合はテストをスキップ
+		const loginRequired = page.locator("text=ログインが必要です");
+		if (await loginRequired.isVisible()) {
+			test.skip();
+			return;
+		}
+
+		// マイページのタイトルが表示されることを確認
+		await expect(page.locator("h1")).toContainText("✨ マイページ");
+
+		// プロフィールセクションが表示されることを確認
+		await expect(page.locator("text=👤 プロフィール")).toBeVisible();
+
+		// パスワード変更セクションが表示されることを確認
+		await expect(page.locator("text=🔐 パスワード変更")).toBeVisible();
+
+		// メールアドレス変更セクションが表示されることを確認
+		await expect(page.locator("text=📧 メールアドレス変更")).toBeVisible();
+
+		// いいねしたアプリセクションが表示されることを確認
+		await expect(page.locator("text=❤️ いいねしたアプリ")).toBeVisible();
+	});
+
+	test("プロフィール情報の表示", async ({ page }) => {
+		await page.goto("/mypage");
+
+		// ログインが必要な場合はテストをスキップ
+		const loginRequired = page.locator("text=ログインが必要です");
+		if (await loginRequired.isVisible()) {
+			test.skip();
+			return;
+		}
+
+		// プロフィール情報が表示されることを確認
+		await expect(
+			page.locator("text=名前未設定, バイオグラフィーが設定されていません")
+		).toBeVisible();
+	});
+
+	test("レスポンシブデザインの確認", async ({ page }) => {
+		await page.goto("/mypage");
+
+		// ログインが必要な場合はテストをスキップ
+		const loginRequired = page.locator("text=ログインが必要です");
+		if (await loginRequired.isVisible()) {
+			test.skip();
+			return;
+		}
+
+		// デスクトップサイズでの確認
+		await page.setViewportSize({ width: 1200, height: 800 });
+		await expect(page.locator('[data-testid="grid"]')).toBeVisible();
+
+		// モバイルサイズでの確認
+		await page.setViewportSize({ width: 375, height: 667 });
+		await expect(page.locator('[data-testid="grid"]')).toBeVisible();
+
+		// タブレットサイズでの確認
+		await page.setViewportSize({ width: 768, height: 1024 });
+		await expect(page.locator('[data-testid="grid"]')).toBeVisible();
+	});
+
+	test("フォーム要素の存在確認", async ({ page }) => {
+		await page.goto("/mypage");
+
+		// ログインが必要な場合はテストをスキップ
+		const loginRequired = page.locator("text=ログインが必要です");
+		if (await loginRequired.isVisible()) {
+			test.skip();
+			return;
+		}
+
+		// 名前入力フィールドが存在することを確認
+		await expect(page.locator('input[id="full_name"]')).toBeVisible();
+
+		// バイオグラフィー入力フィールドが存在することを確認
+		await expect(page.locator('textarea[id="biography"]')).toBeVisible();
+
+		// パスワード変更フォームの要素が存在することを確認
+		await expect(page.locator('input[id="currentPassword"]')).toBeVisible();
+		await expect(page.locator('input[id="newPassword"]')).toBeVisible();
+		await expect(page.locator('input[id="confirmPassword"]')).toBeVisible();
+
+		// メールアドレス変更フォームの要素が存在することを確認
+		await expect(page.locator('input[id="newEmail"]')).toBeVisible();
+		await expect(page.locator('input[id="confirmEmail"]')).toBeVisible();
+	});
+
+	test("ボタンの存在確認", async ({ page }) => {
+		await page.goto("/mypage");
+
+		// ログインが必要な場合はテストをスキップ
+		const loginRequired = page.locator("text=ログインが必要です");
+		if (await loginRequired.isVisible()) {
+			test.skip();
+			return;
+		}
+
+		// プロフィール更新ボタンが存在することを確認
+		await expect(
+			page.locator('button:has-text("プロフィールを更新")')
+		).toBeVisible();
+
+		// パスワード変更ボタンが存在することを確認
+		await expect(
+			page.locator('button:has-text("パスワードを変更")')
+		).toBeVisible();
+
+		// メールアドレス変更ボタンが存在することを確認
+		await expect(
+			page.locator('button:has-text("メールアドレスを変更")')
+		).toBeVisible();
 	});
 });
 

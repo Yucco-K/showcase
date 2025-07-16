@@ -11,7 +11,10 @@ import { ProductDetail } from "./pages/ProductDetail";
 import { BlogList } from "./pages/BlogList";
 import { BlogAdmin } from "./pages/BlogAdmin";
 import { ProductAdmin } from "./pages/ProductAdmin";
+import { ContactAdmin } from "./pages/ContactAdmin";
+import { ContactDetail } from "./pages/ContactDetail";
 import { ContactForm } from "./components/contact/ContactForm";
+import { MyPage } from "./pages/MyPage";
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -40,7 +43,10 @@ function AppRoutes() {
 				<Route path="/blog" element={<BlogList />} />
 				<Route path="/blog-admin" element={<BlogAdmin />} />
 				<Route path="/contact" element={<ContactForm />} />
+				<Route path="/contact-admin" element={<ContactAdmin />} />
+				<Route path="/contact-detail/:id" element={<ContactDetail />} />
 				<Route path="/product-admin" element={<ProductAdmin />} />
+				<Route path="/mypage" element={<MyPage />} />
 			</Routes>
 		</>
 	);

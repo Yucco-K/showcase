@@ -37,7 +37,6 @@ const mapDbProduct = (row: DbProduct): Product => {
 	const likesCount = row.product_likes?.[0]?.count ?? row.likes ?? 0;
 	const reviewCount = row.product_reviews?.[0]?.count ?? row.stars_count ?? 0;
 	if (import.meta.env.DEV) {
-		// eslint-disable-next-line no-console
 		console.log("[mapDbProduct]", row.name, {
 			stars_total: row.stars_total,
 			stars_count: row.stars_count,

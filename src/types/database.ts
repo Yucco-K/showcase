@@ -3,6 +3,7 @@ export interface Profile {
 	email: string;
 	full_name?: string;
 	avatar_url?: string;
+	biography?: string;
 	subscription_plan: string;
 	stripe_customer_id?: string;
 	created_at: string;

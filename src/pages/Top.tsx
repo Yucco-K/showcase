@@ -27,7 +27,7 @@ const Top: React.FC = () => {
 						textShadow: "0 2px 16px #0008",
 					}}
 				>
-					Welcome to my portfolio site!
+					Welcome to my Showcase!
 				</h1>
 			</div>
 		</main>

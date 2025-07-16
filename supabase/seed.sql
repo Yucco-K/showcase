@@ -113,4 +113,17 @@ VALUES (
   ARRAY['在庫','ビジネス'],
   false,
   false
-) ON CONFLICT DO NOTHING; 
+) ON CONFLICT DO NOTHING;
+
+-- Seed contacts table ---------------------------------------------------
+INSERT INTO public.contacts (name, email, message, status, is_checked, is_replied) VALUES
+('テスト太郎', 'test1@example.com', 'これはテストメッセージです。', 'pending', false, false)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.contacts (name, email, message, status, is_checked, is_replied) VALUES
+('テスト花子', 'test2@example.com', 'お問い合わせのテストです。', 'pending', false, false)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.contacts (name, email, message, status, is_checked, is_replied) VALUES
+('山田次郎', 'yamada@example.com', 'サービスについて質問があります。', 'pending', false, false)
+ON CONFLICT DO NOTHING; 

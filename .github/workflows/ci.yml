@@ -18,6 +18,7 @@ jobs:
       VITE_ADMIN_EMAILS: ${{ secrets.VITE_ADMIN_EMAILS }}
       CI: true
       NODE_ENV: test
+      DEBUG: pw:api*
 
     steps:
       - uses: actions/checkout@v4
@@ -45,9 +46,6 @@ jobs:
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
 
-      - name: Create Playwright test results directory
-        run: mkdir -p playwright-report
-
       - name: Run Playwright tests
         run: npm run test
         continue-on-error: true
@@ -57,5 +55,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: playwright-report/
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 30

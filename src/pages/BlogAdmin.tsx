@@ -254,7 +254,7 @@ const ErrorMessage = styled.p`
 	margin: 0;
 `;
 
-export const BlogAdmin: React.FC = () => {
+const BlogAdmin: React.FC = () => {
 	const navigate = useNavigate();
 	const { user, isAdmin, loading } = useAuth();
 	const { toast, showSuccess, showError, hideToast } = useToast();
@@ -366,13 +366,25 @@ export const BlogAdmin: React.FC = () => {
 			};
 
 			if (editingBlog) {
+				console.log("Updating blog with ID:", editingBlog.id);
+				console.log("Update payload:", JSON.stringify(payload, null, 2));
+
 				// 更新
-				const { error } = await supabase
+				const { data, error } = await supabase
 					.from("blogs")
 					.update(payload)
-					.eq("id", editingBlog.id);
+					.eq("id", editingBlog.id)
+					.select();
 
-				if (error) throw error;
+				console.log(
+					"Supabase update result:",
+					JSON.stringify({ data, error }, null, 2)
+				);
+
+				if (error) {
+					console.error("Update error details:", error);
+					throw error;
+				}
 				showSuccess("ブログを更新しました");
 			} else {
 				// 新規作成
@@ -719,3 +731,5 @@ export const BlogAdmin: React.FC = () => {
 		</Container>
 	);
 };
+
+export default BlogAdmin;

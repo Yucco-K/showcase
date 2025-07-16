@@ -370,7 +370,7 @@ const Tag = styled.span`
 	font-size: 14px;
 `;
 
-export const ProductDetail: React.FC = () => {
+const ProductDetail: React.FC = () => {
 	useEffect(() => {
 		document.title = "Dummy App Store";
 	}, []);
@@ -885,3 +885,5 @@ export const ProductDetail: React.FC = () => {
 		</Container>
 	);
 };
+
+export default ProductDetail;

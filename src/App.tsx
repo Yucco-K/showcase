@@ -6,13 +6,13 @@ import NavBar from "./components/ui/NavBar";
 import Top from "./pages/Top";
 import Internship from "./pages/Internship";
 import Portfolio from "./pages/Portfolio";
-import { ProductList } from "./pages/ProductList";
-import { ProductDetail } from "./pages/ProductDetail";
-import { BlogList } from "./pages/BlogList";
-import { BlogAdmin } from "./pages/BlogAdmin";
-import { ProductAdmin } from "./pages/ProductAdmin";
+import ProductList from "./pages/ProductList";
+import ProductDetail from "./pages/ProductDetail";
+import BlogList from "./pages/BlogList";
+import BlogAdmin from "./pages/BlogAdmin";
+import ProductAdmin from "./pages/ProductAdmin";
 import { ContactAdmin } from "./pages/ContactAdmin";
-import { ContactDetail } from "./pages/ContactDetail";
+import ContactDetail from "./pages/ContactDetail";
 import { ContactForm } from "./components/contact/ContactForm";
 import { MyPage } from "./pages/MyPage";
 
@@ -42,10 +42,10 @@ function AppRoutes() {
 				<Route path="/products/:id" element={<ProductDetail />} />
 				<Route path="/blog" element={<BlogList />} />
 				<Route path="/blog-admin" element={<BlogAdmin />} />
-				<Route path="/contact" element={<ContactForm />} />
+				<Route path="/product-admin" element={<ProductAdmin />} />
 				<Route path="/contact-admin" element={<ContactAdmin />} />
 				<Route path="/contact-detail/:id" element={<ContactDetail />} />
-				<Route path="/product-admin" element={<ProductAdmin />} />
+				<Route path="/contact" element={<ContactForm />} />
 				<Route path="/my-page" element={<MyPage />} />
 			</Routes>
 		</>

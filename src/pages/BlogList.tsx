@@ -241,7 +241,7 @@ const NoResultsMessage = styled.div`
 	}
 `;
 
-export const BlogList: React.FC = () => {
+const BlogList: React.FC = () => {
 	const {
 		blogs,
 		filters,
@@ -356,3 +356,5 @@ export const BlogList: React.FC = () => {
 		</Container>
 	);
 };
+
+export default BlogList;

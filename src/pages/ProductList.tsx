@@ -267,7 +267,7 @@ const SectionTitle = styled.h2`
 	text-align: center;
 `;
 
-export const ProductList: React.FC = () => {
+const ProductList: React.FC = () => {
 	useEffect(() => {
 		document.title = "Dummy App Store";
 	}, []);
@@ -455,3 +455,5 @@ export const ProductList: React.FC = () => {
 		</Container>
 	);
 };
+
+export default ProductList;

@@ -118,20 +118,26 @@ export const ContactForm: React.FC = () => {
 	const { toast, showError, showSuccess, hideToast } = useToast();
 	const { user } = useAuth();
 
+	console.log("ContactForm render - toast state:", toast);
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		console.log("handleSubmit called");
 
 		// フォームバリデーションをチェック
 		const form = e.target as HTMLFormElement;
 		const isValid = form.checkValidity();
+		console.log("Form validation result:", isValid);
 
 		// 認証状態をチェック
 		const isAuthenticated = !!user;
+		console.log("Authentication status:", isAuthenticated, "User:", user);
 
 		// バリデーションエラーがある場合
 		if (!isValid) {
 			console.log("Form validation failed, showing error toast");
 			showError("フォームの入力内容を確認してください。");
+			console.log("showError called for validation failure");
 			return;
 		}
 
@@ -141,6 +147,7 @@ export const ContactForm: React.FC = () => {
 				"User not authenticated, showing error toast and opening login modal"
 			);
 			showError("お問い合わせを送信するにはログインが必要です。");
+			console.log("showError called for authentication failure");
 			setIsLoginModalOpen(true);
 			return;
 		}

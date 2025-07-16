@@ -36,7 +36,6 @@ const ToastContainer = styled.div<{ $isVisible: boolean; $type: string }>`
 	transition: all 0.3s ease;
 	max-width: 400px;
 	word-wrap: break-word;
-	position: relative;
 
 	@media (max-width: 768px) {
 		top: 20px;

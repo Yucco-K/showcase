@@ -118,9 +118,14 @@ export const ContactForm: React.FC = () => {
 		e.preventDefault();
 		console.log("Submitting contact form:", { name, email, message });
 		try {
-			const { error } = await supabase
-				.from("contacts")
-				.insert({ name, email, message });
+			const { error } = await supabase.from("contacts").insert({
+				name,
+				email,
+				message,
+				status: "pending",
+				is_checked: false,
+				is_replied: false,
+			});
 			console.log("Supabase response:", { error });
 			if (error) {
 				console.error("Contact form error:", error);

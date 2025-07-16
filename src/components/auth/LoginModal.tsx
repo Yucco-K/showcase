@@ -49,6 +49,11 @@ const Input = styled.input`
 		outline: none;
 		border-color: #3ea8ff;
 	}
+
+	@media (max-width: 768px) {
+		max-width: 280px;
+		width: 280px;
+	}
 `;
 
 const Button = styled.button<{ $variant?: "primary" | "secondary" }>`

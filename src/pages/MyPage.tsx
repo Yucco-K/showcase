@@ -5,6 +5,9 @@ import { useAuth } from "../contexts/AuthProvider";
 import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
 import { AvatarDeleteConfirmationModal } from "../components/auth/AvatarDeleteConfirmationModal";
+import { PurchasedProductCard } from "../components/products/PurchasedProductCard";
+import type { Product } from "../types/product";
+import { useNavigate } from "react-router-dom";
 
 interface Profile {
 	id: string;
@@ -526,6 +529,7 @@ const ProductCard = styled.div`
 	backdrop-filter: blur(10px);
 	position: relative;
 	overflow: hidden;
+	cursor: pointer;
 
 	&::before {
 		content: "";
@@ -545,21 +549,6 @@ const ProductCard = styled.div`
 	@media (max-width: 768px) {
 		padding: 20px;
 		border-radius: 16px;
-	}
-`;
-
-const ProductImage = styled.img`
-	width: 100%;
-	height: 180px;
-	object-fit: cover;
-	border-radius: 16px;
-	margin-bottom: 20px;
-	border: 2px solid #e2e8f0;
-	transition: all 0.3s ease;
-
-	${ProductCard}:hover & {
-		transform: scale(1.05);
-		border-color: #667eea;
 	}
 `;
 
@@ -633,6 +622,59 @@ export const MyPage: React.FC = () => {
 		confirmEmail: "",
 	});
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [purchasedProducts, setPurchasedProducts] = useState<Product[]>([]);
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		if (!user) return;
+		let isMounted = true;
+		(async () => {
+			// 1. 購入履歴を取得
+			const { data: purchases, error: purchasesError } = await supabase
+				.from("product_purchases")
+				.select("product_id")
+				.eq("user_id", user.id);
+			if (purchasesError || !purchases) return;
+			const productIds = purchases.map((p: any) => p.product_id);
+			if (productIds.length === 0) {
+				if (isMounted) setPurchasedProducts([]);
+				return;
+			}
+			// 2. 商品情報を一括取得
+			const { data: products, error: productsError } = await supabase
+				.from("products")
+				.select("*")
+				.in("id", productIds);
+			if (!productsError && products && isMounted) {
+				// DBのsnake_caseをcamelCaseに変換
+				const mapped = products.map((p: any) => ({
+					id: p.id,
+					name: p.name,
+					description: p.description,
+					longDescription: p.long_description ?? "",
+					price: p.price,
+					originalPrice: p.original_price ?? undefined,
+					category: p.category,
+					imageUrl: p.image_url ?? "",
+					screenshots: p.screenshots ?? [],
+					features: p.features ?? [],
+					requirements: p.requirements ?? [],
+					version: p.version ?? "",
+					lastUpdated: p.last_updated ?? "",
+					rating: p.rating ?? 0,
+					reviewCount: p.review_count ?? 0,
+					likes: p.likes ?? 0,
+					tags: p.tags ?? [],
+					isPopular: p.is_popular ?? false,
+					isFeatured: p.is_featured ?? false,
+				}));
+				setPurchasedProducts(mapped);
+			}
+		})();
+		return () => {
+			isMounted = false;
+		};
+	}, [user]);
 
 	const fetchProfile = useCallback(async () => {
 		try {
@@ -1144,8 +1186,19 @@ export const MyPage: React.FC = () => {
 		<Container>
 			<Title>✨ マイページ</Title>
 
-			{/* 購入したアプリ */}
-			{/* 購入したアプリ */}
+			{purchasedProducts.length > 0 && (
+				<Section style={{ marginBottom: 32 }}>
+					<SectionTitle>購入したアプリ</SectionTitle>
+					<div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
+						{purchasedProducts.map((product) => (
+							<PurchasedProductCard
+								key={product.id}
+								product={product as Product}
+							/>
+						))}
+					</div>
+				</Section>
+			)}
 
 			<Grid data-testid="grid">
 				{/* プロフィール情報 */}
@@ -1357,15 +1410,15 @@ export const MyPage: React.FC = () => {
 			</Section>
 
 			{/* いいねしたアプリ */}
-			<Section style={{ marginTop: "32px" }}>
+			<Section style={{ marginTop: "64px", marginBottom: "64px" }}>
 				<SectionTitle>❤️ いいねしたアプリ</SectionTitle>
 				{likedProducts.length > 0 ? (
 					<ProductGrid>
 						{likedProducts.map((product) => (
-							<ProductCard key={product.id}>
-								{product.image_url && (
-									<ProductImage src={product.image_url} alt={product.name} />
-								)}
+							<ProductCard
+								key={product.id}
+								onClick={() => navigate(`/products/${product.id}`)}
+							>
 								<ProductName>{product.name}</ProductName>
 								<ProductDescription>{product.description}</ProductDescription>
 								<ProductPrice>¥{product.price.toLocaleString()}</ProductPrice>

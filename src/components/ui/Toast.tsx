@@ -36,21 +36,40 @@ const ToastContainer = styled.div<{ $isVisible: boolean; $type: string }>`
 	transition: all 0.3s ease;
 	max-width: 400px;
 	word-wrap: break-word;
+	position: relative;
+
+	@media (max-width: 768px) {
+		top: 20px;
+		left: 16px;
+		right: 16px;
+		transform: translateY(${({ $isVisible }) => ($isVisible ? "0" : "-100%")});
+		max-width: none;
+		width: auto;
+	}
 `;
 
 const CloseButton = styled.button`
+	position: absolute;
+	top: 8px;
+	right: 8px;
 	background: none;
 	border: none;
 	color: white;
 	font-size: 18px;
 	cursor: pointer;
-	margin-left: 12px;
-	padding: 0;
+	padding: 4px;
 	opacity: 0.8;
 	transition: opacity 0.2s ease;
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 4px;
 
 	&:hover {
 		opacity: 1;
+		background: rgba(255, 255, 255, 0.1);
 	}
 `;
 
@@ -61,8 +80,6 @@ export const Toast: React.FC<ToastProps> = ({
 	onClose,
 	isVisible,
 }) => {
-	console.log("Toast render:", { message, type, isVisible });
-
 	useEffect(() => {
 		if (isVisible && duration > 0) {
 			const timer = setTimeout(() => {
@@ -77,7 +94,9 @@ export const Toast: React.FC<ToastProps> = ({
 
 	return (
 		<ToastContainer $isVisible={isVisible} $type={type} data-testid="toast">
-			<span>{message}</span>
+			<span style={{ whiteSpace: "pre-line", paddingRight: "32px" }}>
+				{message}
+			</span>
 			<CloseButton onClick={onClose}>&times;</CloseButton>
 		</ToastContainer>
 	);

@@ -333,13 +333,26 @@ const NavBar: React.FC = () => {
 					>
 						Blog
 					</NavLink>
-					<NavLink
-						to="/contact"
-						$active={pathname === "/contact"}
-						onClick={closeMobileMenu}
-					>
-						Contact
-					</NavLink>
+					{user ? (
+						<NavLink
+							to="/contact"
+							$active={pathname === "/contact"}
+							onClick={closeMobileMenu}
+						>
+							Contact
+						</NavLink>
+					) : (
+						<NavLink
+							as="button"
+							to="#"
+							onClick={() => {
+								setLoginOpen(true);
+								closeMobileMenu();
+							}}
+						>
+							Contact
+						</NavLink>
+					)}
 
 					{/* User Section */}
 					{user && (

@@ -207,7 +207,7 @@ const PopularBadge = styled.div`
 	z-index: 1;
 `;
 
-export const ProductCard: React.FC<ProductCardProps> = ({
+export const ProductCardComponent: React.FC<ProductCardProps> = ({
 	product,
 	isFavorite,
 	onToggleFavorite,
@@ -319,3 +319,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 		</>
 	);
 };
+
+// エイリアスとしてProductCardもエクスポート
+export const ProductCard = ProductCardComponent;

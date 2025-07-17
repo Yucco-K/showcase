@@ -373,6 +373,8 @@ const Tag = styled.span`
 const ProductDetail: React.FC = () => {
 	useEffect(() => {
 		document.title = "Dummy App Store";
+		// ページトップにスクロール
+		window.scrollTo(0, 0);
 	}, []);
 
 	const { id } = useParams<{ id: string }>();

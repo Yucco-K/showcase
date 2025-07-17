@@ -114,6 +114,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 		}
 	};
 
+	const handleKeyPress = (e: React.KeyboardEvent) => {
+		if (e.key === "Enter" && !isLoading) {
+			handleSubmit();
+		}
+	};
+
 	if (!isOpen) return null;
 
 	return (
@@ -124,6 +130,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 					placeholder="Email"
 					value={email}
 					onChange={(e) => setEmail(e.target.value)}
+					onKeyPress={handleKeyPress}
 					disabled={isLoading}
 				/>
 				<Input
@@ -131,6 +138,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 					type="password"
 					value={password}
 					onChange={(e) => setPassword(e.target.value)}
+					onKeyPress={handleKeyPress}
 					disabled={isLoading}
 				/>
 				{error && <ErrorMsg>{error}</ErrorMsg>}

@@ -93,9 +93,14 @@ const LoginButton = styled.button`
 const UserMenu = styled.div`
 	position: relative;
 	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	gap: 0.5rem;
+	align-items: center;
+	gap: 1rem;
+
+	@media (max-width: 768px) {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.5rem;
+	}
 `;
 
 const UserButton = styled.button`
@@ -103,11 +108,9 @@ const UserButton = styled.button`
 	border: none;
 	color: rgba(255, 255, 255, 0.7);
 	font-weight: 600;
-	font-size: 1rem;
-	padding: 0.8em 1em;
-	border-radius: 0;
-	text-align: center;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	font-size: 1.2rem;
+	padding: 0.3em 1em;
+	border-radius: 1em;
 	cursor: pointer;
 	transition: background 0.2s, color 0.2s;
 
@@ -121,6 +124,14 @@ const UserButton = styled.button`
 		outline-offset: 2px;
 		background: rgba(255, 255, 255, 0.18);
 		color: #ffd700;
+	}
+
+	@media (max-width: 768px) {
+		font-size: 1rem;
+		padding: 0.8em 1em;
+		border-radius: 0;
+		text-align: center;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
 `;
 

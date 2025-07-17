@@ -282,8 +282,27 @@ const UserBio = styled.div`
 	color: rgba(255, 255, 255, 0.7);
 	font-size: 0.9rem;
 	line-height: 1.4;
-	margin-bottom: 12px;
+	margin-bottom: 8px;
 	word-break: break-word;
+`;
+
+const UserMessage = styled.div`
+	color: rgba(255, 255, 255, 0.8);
+	font-size: 0.85rem;
+	line-height: 1.3;
+	margin-bottom: 12px;
+	font-style: italic;
+	padding: 8px 12px;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 6px;
+	border-left: 3px solid #ffd700;
+`;
+
+const UserEmail = styled.div`
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 0.8rem;
+	margin-bottom: 8px;
+	font-family: monospace;
 `;
 
 const DropdownButton = styled.button`
@@ -500,9 +519,15 @@ const NavBar: React.FC = () => {
 										<UserName>
 											{profile?.full_name || user.email || "User"}
 										</UserName>
+										<UserEmail>{user.email}</UserEmail>
 										{profile?.biography && (
 											<UserBio>{profile.biography}</UserBio>
 										)}
+										<UserMessage>
+											{profile?.full_name
+												? `こんにちは、${profile.full_name}さん！`
+												: "ようこそ！"}
+										</UserMessage>
 									</UserInfo>
 									<DropdownButton onClick={() => setShowLogoutModal(true)}>
 										Logout

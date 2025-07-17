@@ -253,7 +253,7 @@ const AvatarDropdown = styled.div`
 	}
 `;
 
-const AvatarContainer = styled.div`
+const AvatarContainer = styled.div<{ $isOpen?: boolean }>`
 	position: relative;
 
 	&:hover ${AvatarDropdown} {
@@ -263,6 +263,15 @@ const AvatarContainer = styled.div`
 
 		@media (max-width: 768px) {
 			transform: translateY(0);
+		}
+	}
+
+	@media (max-width: 768px) {
+		${AvatarDropdown} {
+			opacity: ${(props) => (props.$isOpen ? 1 : 0)};
+			visibility: ${(props) => (props.$isOpen ? "visible" : "hidden")};
+			transform: ${(props) =>
+				props.$isOpen ? "translateY(0)" : "translateY(100%)"};
 		}
 	}
 `;
@@ -335,6 +344,7 @@ const NavBar: React.FC = () => {
 	const { showToast } = useToast();
 	const [isMobileNavOpen, setIsMobileNavOpen] = useState(true);
 	const [isMobile, setIsMobile] = useState(false);
+	const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = useState(false);
 	const [profile, setProfile] = useState<{
 		avatar_url: string | null;
 		full_name: string | null;
@@ -386,6 +396,7 @@ const NavBar: React.FC = () => {
 	useEffect(() => {
 		// 画面遷移時はナビを自動で閉じる
 		setIsMobileNavOpen(false);
+		setIsAvatarDropdownOpen(false);
 	}, [location.pathname]);
 
 	const handleLogout = async () => {
@@ -499,10 +510,17 @@ const NavBar: React.FC = () => {
 									</UserButton>
 								</>
 							)}
-							<AvatarContainer>
+							<AvatarContainer $isOpen={isAvatarDropdownOpen}>
 								<AvatarButton
-									onClick={() => navigate("/mypage")}
-									aria-label="Go to My Page"
+									onClick={(e) => {
+										e.preventDefault();
+										if (isMobile) {
+											setIsAvatarDropdownOpen(!isAvatarDropdownOpen);
+										} else {
+											navigate("/mypage");
+										}
+									}}
+									aria-label={isMobile ? "Toggle user menu" : "Go to My Page"}
 								>
 									{profile?.avatar_url ? (
 										<AvatarImage src={profile.avatar_url} alt="User avatar" />
@@ -529,6 +547,14 @@ const NavBar: React.FC = () => {
 												: "お帰りなさい！"}
 										</UserMessage>
 									</UserInfo>
+									<DropdownButton
+										onClick={() => {
+											navigate("/mypage");
+											setIsAvatarDropdownOpen(false);
+										}}
+									>
+										My Page
+									</DropdownButton>
 									<DropdownButton onClick={() => setShowLogoutModal(true)}>
 										Logout
 									</DropdownButton>

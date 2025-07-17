@@ -153,7 +153,7 @@ const AvatarButton = styled.button`
 
 	@media (max-width: 768px) {
 		width: 100%;
-		justify-content: flex-start;
+		justify-content: center;
 		padding: 0.8em 1em;
 		border-radius: 0;
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -175,7 +175,7 @@ const AvatarImage = styled.img`
 	@media (max-width: 768px) {
 		width: 32px;
 		height: 32px;
-		margin-right: 12px;
+		margin-right: 0;
 	}
 `;
 
@@ -201,7 +201,7 @@ const AvatarPlaceholder = styled.div`
 		width: 32px;
 		height: 32px;
 		font-size: 1rem;
-		margin-right: 12px;
+		margin-right: 0;
 	}
 `;
 

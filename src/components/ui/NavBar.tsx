@@ -154,7 +154,6 @@ const NavBar: React.FC = () => {
 		{ path: "/portfolio", label: "Portfolio" },
 		{ path: "/products", label: "Products" },
 		{ path: "/blog", label: "Blog" },
-		{ path: "/contact", label: "Contact" },
 		{ path: "/internship", label: "Sample" },
 	];
 
@@ -171,6 +170,23 @@ const NavBar: React.FC = () => {
 						{item.label}
 					</NavLink>
 				))}
+
+				{user ? (
+					<NavLink
+						to="/contact"
+						$active={isActive("/contact")}
+						aria-current={isActive("/contact") ? "page" : undefined}
+					>
+						Contact
+					</NavLink>
+				) : (
+					<LoginButton
+						onClick={() => setShowLoginModal(true)}
+						aria-label="Contact (Login required)"
+					>
+						Contact
+					</LoginButton>
+				)}
 
 				{user ? (
 					<UserMenu>

@@ -731,16 +731,72 @@ export const ContactAdmin: React.FC = () => {
 									</Td>
 									<Td>
 										{contact.is_checked ? (
-											<span style={{ color: "#10b981" }}>✓</span>
+											<span
+												style={{
+													color: "#ffffff",
+													backgroundColor: "#10b981",
+													borderRadius: "50%",
+													padding: "4px 8px",
+													fontSize: "14px",
+													fontWeight: "bold",
+													display: "inline-block",
+													minWidth: "20px",
+													textAlign: "center",
+												}}
+											>
+												✓
+											</span>
 										) : (
-											<span style={{ color: "#fbbf24" }}>未</span>
+											<span
+												style={{
+													color: "#ffffff",
+													backgroundColor: "#fbbf24",
+													borderRadius: "4px",
+													padding: "4px 8px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													display: "inline-block",
+													minWidth: "20px",
+													textAlign: "center",
+												}}
+											>
+												未
+											</span>
 										)}
 									</Td>
 									<Td>
 										{contact.is_replied ? (
-											<span style={{ color: "#10b981" }}>✓</span>
+											<span
+												style={{
+													color: "#ffffff",
+													backgroundColor: "#10b981",
+													borderRadius: "50%",
+													padding: "4px 8px",
+													fontSize: "14px",
+													fontWeight: "bold",
+													display: "inline-block",
+													minWidth: "20px",
+													textAlign: "center",
+												}}
+											>
+												✓
+											</span>
 										) : (
-											<span style={{ color: "#fbbf24" }}>未</span>
+											<span
+												style={{
+													color: "#ffffff",
+													backgroundColor: "#fbbf24",
+													borderRadius: "4px",
+													padding: "4px 8px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													display: "inline-block",
+													minWidth: "20px",
+													textAlign: "center",
+												}}
+											>
+												未
+											</span>
 										)}
 									</Td>
 									<Td>
@@ -818,20 +874,74 @@ export const ContactAdmin: React.FC = () => {
 									<CardLabel>確認状況</CardLabel>
 									<CardValue>
 										{contact.is_checked ? (
-											<span style={{ color: "#10b981" }}>✓ 確認済み</span>
+											<span
+												style={{
+													color: "#ffffff",
+													backgroundColor: "#10b981",
+													borderRadius: "50%",
+													padding: "4px 8px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													display: "inline-block",
+													marginRight: "8px",
+												}}
+											>
+												✓
+											</span>
 										) : (
-											<span style={{ color: "#fbbf24" }}>未確認</span>
+											<span
+												style={{
+													color: "#ffffff",
+													backgroundColor: "#fbbf24",
+													borderRadius: "4px",
+													padding: "4px 8px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													display: "inline-block",
+													marginRight: "8px",
+												}}
+											>
+												未
+											</span>
 										)}
+										{contact.is_checked ? "確認済み" : "未確認"}
 									</CardValue>
 								</CardInfoRow>
 								<CardInfoRow>
 									<CardLabel>返信状況</CardLabel>
 									<CardValue>
 										{contact.is_replied ? (
-											<span style={{ color: "#10b981" }}>✓ 返信済み</span>
+											<span
+												style={{
+													color: "#ffffff",
+													backgroundColor: "#10b981",
+													borderRadius: "50%",
+													padding: "4px 8px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													display: "inline-block",
+													marginRight: "8px",
+												}}
+											>
+												✓
+											</span>
 										) : (
-											<span style={{ color: "#fbbf24" }}>未返信</span>
+											<span
+												style={{
+													color: "#ffffff",
+													backgroundColor: "#fbbf24",
+													borderRadius: "4px",
+													padding: "4px 8px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													display: "inline-block",
+													marginRight: "8px",
+												}}
+											>
+												未
+											</span>
 										)}
+										{contact.is_replied ? "返信済み" : "未返信"}
 									</CardValue>
 								</CardInfoRow>
 								<CardInfoRow>

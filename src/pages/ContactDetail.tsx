@@ -25,10 +25,10 @@ interface Contact {
 const Container = styled.div`
 	max-width: 800px;
 	margin: 0 auto;
-	padding: 24px;
+	padding: 80px 0 40px;
 
 	@media (max-width: 768px) {
-		padding: 16px;
+		padding: 60px 0 16px;
 	}
 `;
 
@@ -284,6 +284,16 @@ const CloseButton = styled.button`
 	color: white;
 	font-size: 24px;
 	cursor: pointer;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+
+	@media (max-width: 768px) {
+		font-size: 32px;
+		width: 56px;
+		height: 56px;
+		padding: 8px;
+	}
 `;
 
 const ContactInfo = styled.div`

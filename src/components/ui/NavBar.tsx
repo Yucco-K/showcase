@@ -205,6 +205,108 @@ const AvatarPlaceholder = styled.div`
 	}
 `;
 
+const AvatarDropdown = styled.div`
+	position: absolute;
+	top: 100%;
+	right: 0;
+	background: rgba(20, 26, 42, 0.95);
+	backdrop-filter: blur(12px) saturate(150%);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 12px;
+	padding: 16px;
+	min-width: 250px;
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+	opacity: 0;
+	visibility: hidden;
+	transform: translateY(-10px);
+	transition: all 0.3s ease;
+	z-index: 1000;
+	margin-top: 8px;
+
+	&::before {
+		content: "";
+		position: absolute;
+		top: -6px;
+		right: 20px;
+		width: 12px;
+		height: 12px;
+		background: rgba(20, 26, 42, 0.95);
+		border-left: 1px solid rgba(255, 255, 255, 0.1);
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
+		transform: rotate(45deg);
+	}
+
+	@media (max-width: 768px) {
+		position: fixed;
+		top: auto;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		border-radius: 12px 12px 0 0;
+		min-width: auto;
+		margin-top: 0;
+		transform: translateY(100%);
+
+		&::before {
+			display: none;
+		}
+	}
+`;
+
+const AvatarContainer = styled.div`
+	position: relative;
+
+	&:hover ${AvatarDropdown} {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0);
+
+		@media (max-width: 768px) {
+			transform: translateY(0);
+		}
+	}
+`;
+
+const UserInfo = styled.div`
+	margin-bottom: 16px;
+`;
+
+const UserName = styled.div`
+	color: #fff;
+	font-weight: 600;
+	font-size: 1.1rem;
+	margin-bottom: 4px;
+`;
+
+const UserBio = styled.div`
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 0.9rem;
+	line-height: 1.4;
+	margin-bottom: 12px;
+	word-break: break-word;
+`;
+
+const DropdownButton = styled.button`
+	width: 100%;
+	padding: 8px 12px;
+	background: rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 0.9rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+
+	&:hover {
+		background: rgba(255, 255, 255, 0.2);
+		border-color: rgba(255, 255, 255, 0.3);
+	}
+
+	&:active {
+		transform: scale(0.98);
+	}
+`;
+
 const NavBar: React.FC = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -217,6 +319,7 @@ const NavBar: React.FC = () => {
 	const [profile, setProfile] = useState<{
 		avatar_url: string | null;
 		full_name: string | null;
+		biography: string | null;
 	} | null>(null);
 
 	useEffect(() => {
@@ -237,7 +340,7 @@ const NavBar: React.FC = () => {
 			try {
 				const { data, error } = await supabase
 					.from("profiles")
-					.select("avatar_url, full_name")
+					.select("avatar_url, full_name, biography")
 					.eq("id", user.id)
 					.single();
 
@@ -249,6 +352,7 @@ const NavBar: React.FC = () => {
 				setProfile({
 					avatar_url: data.avatar_url as string | null,
 					full_name: data.full_name as string | null,
+					biography: data.biography as string | null,
 				});
 			} catch (error) {
 				console.error("Profile fetch error:", error);
@@ -376,26 +480,35 @@ const NavBar: React.FC = () => {
 									</UserButton>
 								</>
 							)}
-							<AvatarButton
-								onClick={() => navigate("/mypage")}
-								aria-label="Go to My Page"
-							>
-								{profile?.avatar_url ? (
-									<AvatarImage src={profile.avatar_url} alt="User avatar" />
-								) : (
-									<AvatarPlaceholder>
-										{profile?.full_name
-											? profile.full_name.charAt(0).toUpperCase()
-											: user.email?.charAt(0).toUpperCase() || "U"}
-									</AvatarPlaceholder>
-								)}
-							</AvatarButton>
-							<UserButton
-								onClick={() => setShowLogoutModal(true)}
-								aria-label="Logout"
-							>
-								Logout
-							</UserButton>
+							<AvatarContainer>
+								<AvatarButton
+									onClick={() => navigate("/mypage")}
+									aria-label="Go to My Page"
+								>
+									{profile?.avatar_url ? (
+										<AvatarImage src={profile.avatar_url} alt="User avatar" />
+									) : (
+										<AvatarPlaceholder>
+											{profile?.full_name
+												? profile.full_name.charAt(0).toUpperCase()
+												: user.email?.charAt(0).toUpperCase() || "U"}
+										</AvatarPlaceholder>
+									)}
+								</AvatarButton>
+								<AvatarDropdown>
+									<UserInfo>
+										<UserName>
+											{profile?.full_name || user.email || "User"}
+										</UserName>
+										{profile?.biography && (
+											<UserBio>{profile.biography}</UserBio>
+										)}
+									</UserInfo>
+									<DropdownButton onClick={() => setShowLogoutModal(true)}>
+										Logout
+									</DropdownButton>
+								</AvatarDropdown>
+							</AvatarContainer>
 						</UserMenu>
 					) : (
 						<LoginButton

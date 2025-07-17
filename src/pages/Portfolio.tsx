@@ -1,4 +1,3 @@
-import YuccoCat from "../components/YuccoCat";
 import { useProjects } from "../hooks/useProjects";
 
 const Portfolio: React.FC = () => {
@@ -64,7 +63,6 @@ const Portfolio: React.FC = () => {
 					))}
 				</div>
 			</main>
-			<YuccoCat />
 		</>
 	);
 };

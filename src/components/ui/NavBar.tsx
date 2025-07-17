@@ -525,8 +525,8 @@ const NavBar: React.FC = () => {
 										)}
 										<UserMessage>
 											{profile?.full_name
-												? `こんにちは、${profile.full_name}さん！`
-												: "ようこそ！"}
+												? `お帰りなさい、${profile.full_name}さん！`
+												: "お帰りなさい！"}
 										</UserMessage>
 									</UserInfo>
 									<DropdownButton onClick={() => setShowLogoutModal(true)}>

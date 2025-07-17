@@ -5,6 +5,7 @@ import { LoginModal } from "../auth/LoginModal";
 import React, { useEffect, useState } from "react";
 import { LogoutConfirmationModal } from "../auth/LogoutConfirmationModal";
 import { useToast } from "../../hooks/useToast";
+import { supabase } from "../../lib/supabase";
 
 const Nav = styled.nav`
 	display: flex;
@@ -135,6 +136,75 @@ const UserButton = styled.button`
 	}
 `;
 
+const AvatarButton = styled.button`
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0;
+	border-radius: 50%;
+	transition: transform 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	&:hover {
+		transform: scale(1.1);
+	}
+
+	@media (max-width: 768px) {
+		width: 100%;
+		justify-content: flex-start;
+		padding: 0.8em 1em;
+		border-radius: 0;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	}
+`;
+
+const AvatarImage = styled.img`
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 2px solid rgba(255, 255, 255, 0.3);
+	transition: border-color 0.2s ease;
+
+	${AvatarButton}:hover & {
+		border-color: #ffd700;
+	}
+
+	@media (max-width: 768px) {
+		width: 32px;
+		height: 32px;
+		margin-right: 12px;
+	}
+`;
+
+const AvatarPlaceholder = styled.div`
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #667eea, #764ba2);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: white;
+	font-size: 1.2rem;
+	font-weight: bold;
+	border: 2px solid rgba(255, 255, 255, 0.3);
+	transition: border-color 0.2s ease;
+
+	${AvatarButton}:hover & {
+		border-color: #ffd700;
+	}
+
+	@media (max-width: 768px) {
+		width: 32px;
+		height: 32px;
+		font-size: 1rem;
+		margin-right: 12px;
+	}
+`;
+
 const NavBar: React.FC = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -144,6 +214,10 @@ const NavBar: React.FC = () => {
 	const { showToast } = useToast();
 	const [isMobileNavOpen, setIsMobileNavOpen] = useState(true);
 	const [isMobile, setIsMobile] = useState(false);
+	const [profile, setProfile] = useState<{
+		avatar_url: string | null;
+		full_name: string | null;
+	} | null>(null);
 
 	useEffect(() => {
 		const checkMobile = () => setIsMobile(window.innerWidth <= 768);
@@ -151,6 +225,38 @@ const NavBar: React.FC = () => {
 		window.addEventListener("resize", checkMobile);
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
+
+	// プロフィール情報を取得
+	useEffect(() => {
+		const fetchProfile = async () => {
+			if (!user) {
+				setProfile(null);
+				return;
+			}
+
+			try {
+				const { data, error } = await supabase
+					.from("profiles")
+					.select("avatar_url, full_name")
+					.eq("id", user.id)
+					.single();
+
+				if (error) {
+					console.error("Profile fetch error:", error);
+					return;
+				}
+
+				setProfile({
+					avatar_url: data.avatar_url as string | null,
+					full_name: data.full_name as string | null,
+				});
+			} catch (error) {
+				console.error("Profile fetch error:", error);
+			}
+		};
+
+		fetchProfile();
+	}, [user]);
 
 	// useEffectの依存配列警告を抑制
 	// eslint-disable-next-line
@@ -270,12 +376,20 @@ const NavBar: React.FC = () => {
 									</UserButton>
 								</>
 							)}
-							<UserButton
+							<AvatarButton
 								onClick={() => navigate("/mypage")}
 								aria-label="Go to My Page"
 							>
-								My Page
-							</UserButton>
+								{profile?.avatar_url ? (
+									<AvatarImage src={profile.avatar_url} alt="User avatar" />
+								) : (
+									<AvatarPlaceholder>
+										{profile?.full_name
+											? profile.full_name.charAt(0).toUpperCase()
+											: user.email?.charAt(0).toUpperCase() || "U"}
+									</AvatarPlaceholder>
+								)}
+							</AvatarButton>
 							<UserButton
 								onClick={() => setShowLogoutModal(true)}
 								aria-label="Logout"

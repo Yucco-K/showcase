@@ -64,6 +64,11 @@ const ContentWrapper = styled.div`
 const Header = styled.div`
 	text-align: center;
 	margin-bottom: 3rem;
+	margin-top: 80px;
+
+	@media (max-width: 768px) {
+		margin-top: 60px;
+	}
 `;
 
 const Title = styled.h1`

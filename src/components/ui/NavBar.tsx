@@ -2,13 +2,14 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthProvider";
 import { LoginModal } from "../auth/LoginModal";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { LogoutConfirmationModal } from "../auth/LogoutConfirmationModal";
 import { useToast } from "../../hooks/useToast";
 
 const Nav = styled.nav`
 	display: flex;
 	justify-content: center;
+	align-items: center;
 	gap: 2rem;
 	padding: 1.2rem 0;
 	background: rgba(20, 26, 42, 0.2); /* さらに透明度を上げる */
@@ -22,6 +23,7 @@ const Nav = styled.nav`
 		flex-direction: column;
 		gap: 0;
 		padding: 0;
+		align-items: stretch;
 	}
 `;
 
@@ -93,6 +95,13 @@ const UserMenu = styled.div`
 	display: flex;
 	align-items: center;
 	gap: 1rem;
+
+	@media (max-width: 768px) [object Object]
+		flex-direction: column;
+		align-items: stretch;
+		width:10;
+		gap: 0;
+	}
 `;
 
 const UserButton = styled.button`
@@ -130,10 +139,26 @@ const UserButton = styled.button`
 const NavBar: React.FC = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
-	const { user, signOut } = useAuth();
+	const { user, signOut, isAdmin } = useAuth();
 	const [showLoginModal, setShowLoginModal] = React.useState(false);
 	const [showLogoutModal, setShowLogoutModal] = React.useState(false);
 	const { showToast } = useToast();
+	const [isMobileNavOpen, setIsMobileNavOpen] = useState(true);
+	const [isMobile, setIsMobile] = useState(false);
+
+	useEffect(() => {
+		const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+		checkMobile();
+		window.addEventListener("resize", checkMobile);
+		return () => window.removeEventListener("resize", checkMobile);
+	}, []);
+
+	// useEffectの依存配列警告を抑制
+	// eslint-disable-next-line
+	useEffect(() => {
+		// 画面遷移時はナビを自動で閉じる
+		setIsMobileNavOpen(false);
+	}, [location.pathname]);
 
 	const handleLogout = async () => {
 		try {
@@ -157,61 +182,118 @@ const NavBar: React.FC = () => {
 		{ path: "/internship", label: "Sample" },
 	];
 
+	// ハンバーガーアイコン
+	const showHamburger = isMobile && location.pathname !== "/";
+
 	return (
 		<>
-			<Nav aria-label="メインナビゲーション">
-				{navItems.map((item) => (
-					<NavLink
-						key={item.path}
-						to={item.path}
-						$active={isActive(item.path)}
-						aria-current={isActive(item.path) ? "page" : undefined}
-					>
-						{item.label}
-					</NavLink>
-				))}
+			{showHamburger && (
+				<button
+					type="button"
+					aria-label="メニューを開く"
+					style={{
+						position: "fixed",
+						top: 0,
+						left: 0,
+						zIndex: 1001,
+						background: "rgba(20, 26, 42, 0.2)",
+						backdropFilter: "blur(12px) saturate(150%)",
+						border: "none",
+						borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+						width: 48,
+						height: 48,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						fontSize: 32,
+						color: "rgba(255, 255, 255, 0.7)",
+						cursor: "pointer",
+						borderRadius: 0,
+					}}
+					onClick={() => setIsMobileNavOpen((v) => !v)}
+				>
+					≡
+				</button>
+			)}
 
-				{user ? (
-					<NavLink
-						to="/contact"
-						$active={isActive("/contact")}
-						aria-current={isActive("/contact") ? "page" : undefined}
-					>
-						Contact
-					</NavLink>
-				) : (
-					<LoginButton
-						onClick={() => setShowLoginModal(true)}
-						aria-label="Contact (Login required)"
-					>
-						Contact
-					</LoginButton>
-				)}
+			{/* NavBar本体の表示制御 */}
+			{(!isMobile || isMobileNavOpen || location.pathname === "/") && (
+				<Nav aria-label="メインナビゲーション">
+					{navItems.map((item) => (
+						<NavLink
+							key={item.path}
+							to={item.path}
+							$active={isActive(item.path)}
+							aria-current={isActive(item.path) ? "page" : undefined}
+						>
+							{item.label}
+						</NavLink>
+					))}
 
-				{user ? (
-					<UserMenu>
-						<UserButton
-							onClick={() => navigate("/mypage")}
-							aria-label="Go to My Page"
+					{user ? (
+						<NavLink
+							to="/contact"
+							$active={isActive("/contact")}
+							aria-current={isActive("/contact") ? "page" : undefined}
 						>
-							My Page
-						</UserButton>
-						<UserButton
-							onClick={() => setShowLogoutModal(true)}
-							aria-label="ログアウト"
+							Contact
+						</NavLink>
+					) : (
+						<LoginButton
+							onClick={() => setShowLoginModal(true)}
+							aria-label="Contact (Login required)"
 						>
-							ログアウト
-						</UserButton>
-					</UserMenu>
-				) : (
-					<LoginButton
-						onClick={() => setShowLoginModal(true)}
-						aria-label="ログイン"
-					>
-						Login
-					</LoginButton>
-				)}
-			</Nav>
+							Contact
+						</LoginButton>
+					)}
+
+					{user ? (
+						<UserMenu>
+							{isAdmin(user) && (
+								<>
+									<UserButton
+										onClick={() => navigate("/product-admin")}
+										aria-label="Product Admin"
+									>
+										Product Admin
+									</UserButton>
+									<UserButton
+										onClick={() => navigate("/blog-admin")}
+										aria-label="Blog Admin"
+									>
+										Blog Admin
+									</UserButton>
+									<UserButton
+										onClick={() => navigate("/contact-admin")}
+										aria-label="Contact Admin"
+									>
+										Contact Admin
+									</UserButton>
+								</>
+							)}
+							<UserButton
+								onClick={() => navigate("/mypage")}
+								aria-label="Go to My Page"
+							>
+								My Page
+							</UserButton>
+							<UserButton
+								onClick={() => setShowLogoutModal(true)}
+								aria-label="Logout"
+							>
+								Logout
+							</UserButton>
+						</UserMenu>
+					) : (
+						<LoginButton
+							onClick={() => setShowLoginModal(true)}
+							aria-label="ログイン"
+						>
+							Login
+						</LoginButton>
+					)}
+				</Nav>
+			)}
 
 			{showLoginModal && (
 				<LoginModal

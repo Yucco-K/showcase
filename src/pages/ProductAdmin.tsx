@@ -160,6 +160,10 @@ const ActionButton = styled.button<{ $variant: "edit" | "delete" }>`
 	&:hover {
 		transform: scale(1.05);
 	}
+
+	@media (max-width: 768px) {
+		${({ $variant }) => $variant === "edit" && "margin-bottom: 12px;"}
+	}
 `;
 
 const Modal = styled.div`

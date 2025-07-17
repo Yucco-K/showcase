@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, ChangeEvent } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
@@ -472,6 +472,7 @@ export const ContactAdmin: React.FC = () => {
 		isChecked: "all" as string,
 		isReplied: "all" as string,
 	});
+	const [searchText, setSearchText] = useState("");
 
 	// お問い合わせ一覧を取得
 	const fetchContacts = useCallback(async () => {
@@ -495,19 +496,15 @@ export const ContactAdmin: React.FC = () => {
 		}
 	}, [user, isAdmin, fetchContacts]);
 
-	// フィルター適用
+	// フィルタリング処理
 	const filteredContacts = contacts.filter((contact) => {
-		if (filters.status !== "all" && contact.status !== filters.status)
-			return false;
-		if (filters.isChecked !== "all") {
-			const shouldBeChecked = filters.isChecked === "true";
-			if (contact.is_checked !== shouldBeChecked) return false;
-		}
-		if (filters.isReplied !== "all") {
-			const shouldBeReplied = filters.isReplied === "true";
-			if (contact.is_replied !== shouldBeReplied) return false;
-		}
-		return true;
+		const q = searchText.toLowerCase();
+		return (
+			contact.name.toLowerCase().includes(q) ||
+			contact.email.toLowerCase().includes(q) ||
+			contact.message.toLowerCase().includes(q) ||
+			(contact.admin_notes?.toLowerCase().includes(q) ?? false)
+		);
 	});
 
 	// 編集モーダルを開く
@@ -600,6 +597,32 @@ export const ContactAdmin: React.FC = () => {
 		<Container>
 			<Title>Contact Admin</Title>
 
+			<div style={{ marginBottom: 24 }}>
+				<input
+					type="text"
+					placeholder="検索"
+					value={searchText}
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+						setSearchText(e.target.value)
+					}
+					style={{
+						padding: 8,
+						borderRadius: 4,
+						border: "1px solid #ccc",
+						width: 240,
+					}}
+				/>
+				<div
+					style={{
+						marginTop: 8,
+						fontSize: "0.9rem",
+						color: "rgba(255, 255, 255, 0.7)",
+					}}
+				>
+					名前・メールアドレス・お問い合わせ内容・管理者メモで検索可能
+				</div>
+			</div>
+
 			<FilterSection>
 				<label htmlFor="status-filter" style={{ display: "none" }}>
 					ステータス選択
@@ -663,135 +686,176 @@ export const ContactAdmin: React.FC = () => {
 				</FilterButton>
 			</FilterSection>
 
-			{/* PC用テーブル */}
-			<TableContainer>
-				<ContactTable>
-					<thead>
-						<tr>
-							<Th>名前</Th>
-							<Th>メール</Th>
-							<Th>ステータス</Th>
-							<Th>確認</Th>
-							<Th>返信</Th>
-							<Th>作成日</Th>
-							<Th>操作</Th>
-						</tr>
-					</thead>
-					<tbody>
-						{filteredContacts.map((contact) => (
-							<tr key={contact.id}>
-								<Td>{contact.name}</Td>
-								<Td>{contact.email}</Td>
-								<Td>
-									<StatusBadge $status={contact.status}>
-										{getStatusLabel(contact.status)}
-									</StatusBadge>
-								</Td>
-								<Td>
-									{contact.is_checked ? (
-										<span style={{ color: "#10b981" }}>✓</span>
-									) : (
-										<span style={{ color: "#fbbf24" }}>未</span>
-									)}
-								</Td>
-								<Td>
-									{contact.is_replied ? (
-										<span style={{ color: "#10b981" }}>✓</span>
-									) : (
-										<span style={{ color: "#fbbf24" }}>未</span>
-									)}
-								</Td>
-								<Td>{new Date(contact.created_at).toLocaleDateString()}</Td>
-								<Td>
-									<ActionButton
-										$variant="view"
-										onClick={() => navigate(`/contact-detail/${contact.id}`)}
-									>
-										👀
-									</ActionButton>
-									<ActionButton
-										$variant="edit"
-										onClick={() => handleEdit(contact)}
-									>
-										✏️
-									</ActionButton>
-									<ActionButton
-										$variant="delete"
-										onClick={() => handleDelete(contact.id)}
-									>
-										🗑️
-									</ActionButton>
-								</Td>
+			{/* テーブル表示 */}
+			{filteredContacts.length > 0 ? (
+				<TableContainer>
+					<ContactTable>
+						<thead>
+							<tr>
+								<Th>名前</Th>
+								<Th>メール</Th>
+								<Th>ステータス</Th>
+								<Th>確認</Th>
+								<Th>返信</Th>
+								<Th>問い合わせ日時</Th>
+								<Th>操作</Th>
 							</tr>
-						))}
-					</tbody>
-				</ContactTable>
-			</TableContainer>
+						</thead>
+						<tbody>
+							{filteredContacts.map((contact) => (
+								<tr key={contact.id}>
+									<Td>{contact.name}</Td>
+									<Td>{contact.email}</Td>
+									<Td>
+										<StatusBadge $status={contact.status}>
+											{getStatusLabel(contact.status)}
+										</StatusBadge>
+									</Td>
+									<Td>
+										{contact.is_checked ? (
+											<span style={{ color: "#10b981" }}>✓</span>
+										) : (
+											<span style={{ color: "#fbbf24" }}>未</span>
+										)}
+									</Td>
+									<Td>
+										{contact.is_replied ? (
+											<span style={{ color: "#10b981" }}>✓</span>
+										) : (
+											<span style={{ color: "#fbbf24" }}>未</span>
+										)}
+									</Td>
+									<Td>
+										{new Date(contact.created_at).toLocaleString("ja-JP", {
+											year: "numeric",
+											month: "2-digit",
+											day: "2-digit",
+											hour: "2-digit",
+											minute: "2-digit",
+											second: "2-digit",
+											hour12: false,
+										})}
+									</Td>
+									<Td>
+										<ActionButton
+											$variant="view"
+											onClick={() => navigate(`/contact-detail/${contact.id}`)}
+										>
+											👀
+										</ActionButton>
+										<ActionButton
+											$variant="edit"
+											onClick={() => handleEdit(contact)}
+										>
+											✏️
+										</ActionButton>
+										<ActionButton
+											$variant="delete"
+											onClick={() => handleDelete(contact.id)}
+										>
+											🗑️
+										</ActionButton>
+									</Td>
+								</tr>
+							))}
+						</tbody>
+					</ContactTable>
+				</TableContainer>
+			) : (
+				<div
+					style={{
+						textAlign: "center",
+						padding: "48px 24px",
+						color: "rgba(255, 255, 255, 0.7)",
+						fontSize: "1.1rem",
+					}}
+				>
+					<div style={{ marginBottom: "16px" }}>
+						お探しのお問い合わせが見つかりませんでした
+					</div>
+					<div style={{ fontSize: "0.9rem" }}>
+						検索条件を変えて、もう一度お試しください。
+					</div>
+				</div>
+			)}
 
-			{/* モバイル用カードレイアウト */}
-			<MobileCardContainer>
-				{filteredContacts.map((contact) => (
-					<ContactCard key={contact.id}>
-						<CardHeader>
-							<CardTitle>{contact.name}</CardTitle>
-							<CardStatus $status={contact.status}>
-								{getStatusLabel(contact.status)}
-							</CardStatus>
-						</CardHeader>
+			{/* モバイルカード表示 */}
+			{filteredContacts.length > 0 && (
+				<MobileCardContainer>
+					{filteredContacts.map((contact) => (
+						<ContactCard key={contact.id}>
+							<CardHeader>
+								<CardTitle>{contact.name}</CardTitle>
+								<CardStatus $status={contact.status}>
+									{getStatusLabel(contact.status)}
+								</CardStatus>
+							</CardHeader>
 
-						<CardInfo>
-							<CardInfoRow>
-								<CardLabel>メール</CardLabel>
-								<CardValue>{contact.email}</CardValue>
-							</CardInfoRow>
-							<CardInfoRow>
-								<CardLabel>確認状況</CardLabel>
-								<CardValue>
-									{contact.is_checked ? (
-										<span style={{ color: "#10b981" }}>✓ 確認済み</span>
-									) : (
-										<span style={{ color: "#fbbf24" }}>未確認</span>
-									)}
-								</CardValue>
-							</CardInfoRow>
-							<CardInfoRow>
-								<CardLabel>返信状況</CardLabel>
-								<CardValue>
-									{contact.is_replied ? (
-										<span style={{ color: "#10b981" }}>✓ 返信済み</span>
-									) : (
-										<span style={{ color: "#fbbf24" }}>未返信</span>
-									)}
-								</CardValue>
-							</CardInfoRow>
-							<CardInfoRow>
-								<CardLabel>作成日</CardLabel>
-								<CardValue>
-									{new Date(contact.created_at).toLocaleDateString()}
-								</CardValue>
-							</CardInfoRow>
-						</CardInfo>
+							<CardInfo>
+								<CardInfoRow>
+									<CardLabel>メール</CardLabel>
+									<CardValue>{contact.email}</CardValue>
+								</CardInfoRow>
+								<CardInfoRow>
+									<CardLabel>確認状況</CardLabel>
+									<CardValue>
+										{contact.is_checked ? (
+											<span style={{ color: "#10b981" }}>✓ 確認済み</span>
+										) : (
+											<span style={{ color: "#fbbf24" }}>未確認</span>
+										)}
+									</CardValue>
+								</CardInfoRow>
+								<CardInfoRow>
+									<CardLabel>返信状況</CardLabel>
+									<CardValue>
+										{contact.is_replied ? (
+											<span style={{ color: "#10b981" }}>✓ 返信済み</span>
+										) : (
+											<span style={{ color: "#fbbf24" }}>未返信</span>
+										)}
+									</CardValue>
+								</CardInfoRow>
+								<CardInfoRow>
+									<CardLabel>問い合わせ日時</CardLabel>
+									<CardValue>
+										{new Date(contact.created_at).toLocaleString("ja-JP", {
+											year: "numeric",
+											month: "2-digit",
+											day: "2-digit",
+											hour: "2-digit",
+											minute: "2-digit",
+											second: "2-digit",
+											hour12: false,
+										})}
+									</CardValue>
+								</CardInfoRow>
+							</CardInfo>
 
-						<CardActions>
-							<ActionButton
-								$variant="view"
-								onClick={() => navigate(`/contact-detail/${contact.id}`)}
-							>
-								👀
-							</ActionButton>
-							<ActionButton $variant="edit" onClick={() => handleEdit(contact)}>
-								✏️
-							</ActionButton>
-							<ActionButton
-								$variant="delete"
-								onClick={() => handleDelete(contact.id)}
-							>
-								🗑️
-							</ActionButton>
-						</CardActions>
-					</ContactCard>
-				))}
-			</MobileCardContainer>
+							<CardActions>
+								<ActionButton
+									$variant="view"
+									onClick={() => navigate(`/contact-detail/${contact.id}`)}
+								>
+									👀
+								</ActionButton>
+								<ActionButton
+									$variant="edit"
+									onClick={() => handleEdit(contact)}
+								>
+									✏️
+								</ActionButton>
+								<ActionButton
+									$variant="delete"
+									onClick={() => handleDelete(contact.id)}
+								>
+									🗑️
+								</ActionButton>
+							</CardActions>
+						</ContactCard>
+					))}
+				</MobileCardContainer>
+			)}
 
 			{isModalOpen && editingContact && (
 				<Modal onClick={() => setIsModalOpen(false)}>

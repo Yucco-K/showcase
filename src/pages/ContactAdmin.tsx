@@ -498,13 +498,31 @@ export const ContactAdmin: React.FC = () => {
 
 	// フィルタリング処理
 	const filteredContacts = contacts.filter((contact) => {
+		// 検索テキストフィルター
 		const q = searchText.toLowerCase();
-		return (
+		const matchesSearch =
 			contact.name.toLowerCase().includes(q) ||
 			contact.email.toLowerCase().includes(q) ||
 			contact.message.toLowerCase().includes(q) ||
-			(contact.admin_notes?.toLowerCase().includes(q) ?? false)
-		);
+			(contact.admin_notes?.toLowerCase().includes(q) ?? false);
+
+		// ステータスフィルター
+		const matchesStatus =
+			filters.status === "all" || contact.status === filters.status;
+
+		// 確認状況フィルター
+		const matchesChecked =
+			filters.isChecked === "all" ||
+			(filters.isChecked === "true" && contact.is_checked) ||
+			(filters.isChecked === "false" && !contact.is_checked);
+
+		// 返信状況フィルター
+		const matchesReplied =
+			filters.isReplied === "all" ||
+			(filters.isReplied === "true" && contact.is_replied) ||
+			(filters.isReplied === "false" && !contact.is_replied);
+
+		return matchesSearch && matchesStatus && matchesChecked && matchesReplied;
 	});
 
 	// 編集モーダルを開く

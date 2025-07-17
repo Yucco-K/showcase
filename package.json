@@ -20,6 +20,7 @@
 		"ci": "npm run type-check && npm run lint && npm run build && npm run test"
 	},
 	"dependencies": {
+		"@notionhq/client": "^4.0.1",
 		"@react-three/drei": "^10.5.0",
 		"@react-three/fiber": "^9.2.0",
 		"@stripe/stripe-js": "^7.4.0",

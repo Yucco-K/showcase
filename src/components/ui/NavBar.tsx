@@ -335,6 +335,12 @@ const DropdownButton = styled.button`
 	}
 `;
 
+const ButtonGroup = styled.div`
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+`;
+
 const NavBar: React.FC = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -390,6 +396,24 @@ const NavBar: React.FC = () => {
 
 		fetchProfile();
 	}, [user]);
+
+	// スマホでアバタードロップダウン外をタップした時に閉じる
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (isMobile && isAvatarDropdownOpen) {
+				const target = event.target as Element;
+				const avatarContainer = target.closest("[data-avatar-container]");
+				if (!avatarContainer) {
+					setIsAvatarDropdownOpen(false);
+				}
+			}
+		};
+
+		document.addEventListener("click", handleClickOutside);
+		return () => {
+			document.removeEventListener("click", handleClickOutside);
+		};
+	}, [isMobile, isAvatarDropdownOpen]);
 
 	// useEffectの依存配列警告を抑制
 	// eslint-disable-next-line
@@ -510,7 +534,10 @@ const NavBar: React.FC = () => {
 									</UserButton>
 								</>
 							)}
-							<AvatarContainer $isOpen={isAvatarDropdownOpen}>
+							<AvatarContainer
+								$isOpen={isAvatarDropdownOpen}
+								data-avatar-container
+							>
 								<AvatarButton
 									onClick={(e) => {
 										e.preventDefault();
@@ -547,17 +574,19 @@ const NavBar: React.FC = () => {
 												: "お帰りなさい！"}
 										</UserMessage>
 									</UserInfo>
-									<DropdownButton
-										onClick={() => {
-											navigate("/mypage");
-											setIsAvatarDropdownOpen(false);
-										}}
-									>
-										My Page
-									</DropdownButton>
-									<DropdownButton onClick={() => setShowLogoutModal(true)}>
-										Logout
-									</DropdownButton>
+									<ButtonGroup>
+										<DropdownButton
+											onClick={() => {
+												navigate("/mypage");
+												setIsAvatarDropdownOpen(false);
+											}}
+										>
+											My Page
+										</DropdownButton>
+										<DropdownButton onClick={() => setShowLogoutModal(true)}>
+											Logout
+										</DropdownButton>
+									</ButtonGroup>
 								</AvatarDropdown>
 							</AvatarContainer>
 						</UserMenu>

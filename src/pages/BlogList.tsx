@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import styled, { keyframes } from "styled-components";
 import { BlogCard } from "../components/blogs/BlogCard";
 import { useBlogs } from "../hooks/useBlogs";
@@ -229,6 +229,22 @@ const LoadingMessage = styled.div`
 	font-size: 1.1rem;
 `;
 
+const ErrorMessage = styled.div`
+	text-align: center;
+	padding: 3rem;
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 1.1rem;
+
+	h3 {
+		color: #ff6b6b;
+		margin-bottom: 1rem;
+	}
+
+	p {
+		margin-bottom: 1.5rem;
+	}
+`;
+
 const NoResultsMessage = styled.div`
 	text-align: center;
 	padding: 3rem;
@@ -246,10 +262,12 @@ const BlogList: React.FC = () => {
 		blogs,
 		filters,
 		isLoading,
+		error,
 		updateFilter,
 		resetFilters,
 		getStats,
 		getPlatformCounts,
+		retry,
 	} = useBlogs();
 
 	const stats = getStats();
@@ -257,9 +275,12 @@ const BlogList: React.FC = () => {
 
 	console.log("BlogList render:", { blogs, isLoading, stats, platformCounts });
 
-	const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		updateFilter({ searchQuery: e.target.value });
-	};
+	const handleSearchChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			updateFilter({ searchQuery: e.target.value });
+		},
+		[updateFilter]
+	);
 
 	const handlePlatformChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 		const value = e.target.value;
@@ -275,7 +296,24 @@ const BlogList: React.FC = () => {
 	if (isLoading) {
 		return (
 			<Container>
-				<LoadingMessage>ブログ記事を読み込んでいます...</LoadingMessage>
+				<LoadingMessage>
+					<div>ブログ記事を読み込んでいます...</div>
+					<div style={{ marginTop: "1rem", fontSize: "0.9rem", opacity: 0.7 }}>
+						しばらくお待ちください
+					</div>
+				</LoadingMessage>
+			</Container>
+		);
+	}
+
+	if (error) {
+		return (
+			<Container>
+				<ErrorMessage>
+					<h3>読み込みエラー</h3>
+					<p>{error}</p>
+					<Button onClick={retry}>再試行</Button>
+				</ErrorMessage>
 			</Container>
 		);
 	}

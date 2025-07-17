@@ -417,7 +417,7 @@ const ProductDetail: React.FC = () => {
 					className="back-button"
 					style={{ marginBottom: "24px" }}
 				>
-					← 商品一覧に戻る
+					← Back to Product List
 				</PreventDoubleClickButton>
 				<NotFound>
 					<h2>商品が見つかりません</h2>
@@ -528,15 +528,17 @@ const ProductDetail: React.FC = () => {
 				className="back-button"
 				style={{ marginBottom: "24px", marginRight: "16px" }}
 			>
-				← 商品一覧に戻る
+				← Back to Product List
 			</PreventDoubleClickButton>
-			<PreventDoubleClickButton
-				onClick={() => navigate("/mypage")}
-				className="back-button"
-				style={{ marginBottom: "24px" }}
-			>
-				← Back to My Page
-			</PreventDoubleClickButton>
+			{user && (
+				<PreventDoubleClickButton
+					onClick={() => navigate("/mypage")}
+					className="back-button"
+					style={{ marginBottom: "24px" }}
+				>
+					← Back to My Page
+				</PreventDoubleClickButton>
+			)}
 
 			<ProductHeader>
 				<ImageSection>

@@ -1,19 +1,49 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { BlogEntry, BlogFilter } from "../types/blog";
 import { supabase } from "../lib/supabase"; // Supabaseクライアントをインポート
+
+// キャッシュ用のグローバル変数
+let blogsCache: BlogEntry[] | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5分
 
 export const useBlogs = () => {
 	const [allBlogs, setAllBlogs] = useState<BlogEntry[]>([]);
 	const [filteredBlogs, setFilteredBlogs] = useState<BlogEntry[]>([]);
 	const [filters, setFilters] = useState<BlogFilter>({});
 	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [retryCount, setRetryCount] = useState(0);
+	const abortControllerRef = useRef<AbortController | null>(null);
 
 	// 初期化: Supabaseからデータを読み込む
 	useEffect(() => {
 		const fetchBlogs = async () => {
+			// 前のリクエストをキャンセル
+			if (abortControllerRef.current) {
+				abortControllerRef.current.abort();
+			}
+			abortControllerRef.current = new AbortController();
+
 			setIsLoading(true);
+			setError(null);
+
 			try {
-				console.log("Fetching blogs from Supabase...");
+				// キャッシュをチェック
+				const now = Date.now();
+				if (blogsCache && now - cacheTimestamp < CACHE_DURATION) {
+					console.log("Using cached blogs data");
+					setAllBlogs(blogsCache);
+					setIsLoading(false);
+					return;
+				}
+
+				console.log(
+					"Fetching blogs from Supabase... (attempt:",
+					retryCount + 1,
+					")"
+				);
+
 				const { data, error } = await supabase
 					.from("blogs")
 					.select("*")
@@ -44,9 +74,23 @@ export const useBlogs = () => {
 				}));
 
 				console.log("Formatted blogs:", formattedBlogs);
+
+				// キャッシュを更新
+				blogsCache = formattedBlogs;
+				cacheTimestamp = now;
+
 				setAllBlogs(formattedBlogs);
+				setRetryCount(0); // 成功時にリトライカウントをリセット
 			} catch (error) {
+				if (error instanceof Error && error.name === "AbortError") {
+					console.log("Request was aborted");
+					return;
+				}
+
 				console.error("Failed to load blogs from Supabase:", error);
+				setError(
+					error instanceof Error ? error.message : "Failed to load blogs"
+				);
 				setAllBlogs([]); // エラー時は空にする
 			} finally {
 				setIsLoading(false);
@@ -54,7 +98,14 @@ export const useBlogs = () => {
 		};
 
 		fetchBlogs();
-	}, []);
+
+		// クリーンアップ関数
+		return () => {
+			if (abortControllerRef.current) {
+				abortControllerRef.current.abort();
+			}
+		};
+	}, [retryCount]);
 
 	// フィルタリング処理
 	useEffect(() => {
@@ -128,12 +179,18 @@ export const useBlogs = () => {
 		};
 	}, [allBlogs, getPlatformCounts]);
 
+	// リトライ機能
+	const retry = useCallback(() => {
+		setRetryCount((prev) => prev + 1);
+	}, []);
+
 	return {
 		// データ
 		blogs: filteredBlogs,
 		allBlogs,
 		filters,
 		isLoading,
+		error,
 
 		// フィルタ操作
 		updateFilter,
@@ -143,5 +200,8 @@ export const useBlogs = () => {
 		getAllTags,
 		getPlatformCounts,
 		getStats,
+
+		// エラーハンドリング
+		retry,
 	};
 };

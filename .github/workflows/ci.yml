@@ -71,13 +71,27 @@ jobs:
       - name: Run E2E tests
         run: |
           mkdir -p test-results playwright-report
+          echo "Starting Playwright tests..."
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "Test directory contents:"
+          ls -la tests/ || echo "No tests directory found"
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "Playwright version: $(npx playwright --version)"
+          echo "Running tests with timeout..."
           timeout 300 npm run test || echo "Tests failed or timed out, but continuing..."
+          echo "Test execution completed"
+          echo "Test results directory contents:"
+          ls -la test-results/ || echo "No test results found"
+          echo "Playwright report directory contents:"
+          ls -la playwright-report/ || echo "No playwright report found"
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://example.supabase.co' }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'dummy-key' }}
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_dummy' }}
           VITE_ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS || 'admin@example.com' }}
-        continue-on-error: true
         timeout-minutes: 10
 
       - name: Upload test results
@@ -94,7 +108,7 @@ jobs:
   deploy:
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.build-and-test.result != 'failure'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4

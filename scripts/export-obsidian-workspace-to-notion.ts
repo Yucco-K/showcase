@@ -3,6 +3,26 @@ import * as fs from "fs";
 import * as path from "path";
 import * as dotenv from "dotenv";
 
+// 型定義
+interface NotionRichText {
+	type: "text";
+	text: { content: string };
+	annotations?: {
+		bold?: boolean;
+		italic?: boolean;
+		strikethrough?: boolean;
+		underline?: boolean;
+		code?: boolean;
+		color?: string;
+	};
+}
+
+interface NotionBlock {
+	object: "block";
+	type: string;
+	[key: string]: unknown;
+}
+
 // .envファイルを読み込み
 dotenv.config();
 
@@ -34,13 +54,13 @@ const USER_GUIDE_EN_PAGE_ID = "234a7adb-d8eb-8166-bf52-ff135a0dc76d";
 /**
  * 太字やイタリックなどのリッチテキストを解析
  */
-const parseRichText = (text: string): any[] => {
-	const richText: any[] = [];
+const parseRichText = (text: string): unknown[] => {
+	const richText: unknown[] = [];
 	let currentPos = 0;
 
 	// 太字 **text** を処理
 	const boldRegex = /\*\*(.*?)\*\*/g;
-	let match;
+	let match: RegExpExecArray | null;
 
 	while ((match = boldRegex.exec(text)) !== null) {
 		// 太字の前のテキスト
@@ -78,9 +98,9 @@ const parseRichText = (text: string): any[] => {
 /**
  * MarkdownをNotionブロックに変換
  */
-const parseMarkdownToBlocks = (markdown: string): any[] => {
+const parseMarkdownToBlocks = (markdown: string): unknown[] => {
 	const lines = markdown.split("\n");
-	const blocks: any[] = [];
+	const blocks: unknown[] = [];
 	let i = 0;
 
 	while (i < lines.length) {
@@ -421,7 +441,7 @@ const clearPageContent = async (pageId: string) => {
 /**
  * Notionブロックを追加
  */
-const addBlocks = async (pageId: string, blocks: any[]) => {
+const addBlocks = async (pageId: string, blocks: unknown[]) => {
 	try {
 		console.log(`📝 Adding ${blocks.length} blocks to page...`);
 

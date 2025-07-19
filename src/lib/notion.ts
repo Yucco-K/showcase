@@ -25,14 +25,19 @@ export interface NotionDatabase {
 /**
  * Notionデータベースからページを取得
  */
-export const getNotionPages = async (): Promise<NotionPage[]> => {
+export const getNotionPages = async (
+	databaseId?: string
+): Promise<NotionPage[]> => {
 	try {
-		if (!DATABASE_ID) {
-			throw new Error("Notion database ID is not configured");
+		const targetDatabaseId = databaseId || DATABASE_ID;
+
+		if (!targetDatabaseId) {
+			console.warn("No database ID provided, returning empty array");
+			return [];
 		}
 
 		const response = await notion.databases.query({
-			database_id: DATABASE_ID,
+			database_id: targetDatabaseId,
 			sorts: [
 				{
 					property: "Last edited time",

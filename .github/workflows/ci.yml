@@ -31,19 +31,40 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "Installing dependencies..."
+          npm ci
+          echo "Dependencies installed successfully"
+          echo "Package.json contents:"
+          cat package.json | head -20
 
       - name: Type check
-        run: npm run type-check
+        run: |
+          echo "Starting TypeScript type check..."
+          npm run type-check
+          echo "TypeScript type check completed"
 
       - name: Lint
-        run: npm run lint
+        run: |
+          echo "Starting ESLint..."
+          npm run lint
+          echo "ESLint completed"
 
       - name: Build
-        run: npm run build
+        run: |
+          echo "Starting build process..."
+          npm run build
+          echo "Build completed"
+          echo "Build output contents:"
+          ls -la dist/ || echo "No dist directory found"
 
       - name: Install Playwright
-        run: npx playwright install --with-deps chromium
+        run: |
+          echo "Installing Playwright..."
+          npx playwright install --with-deps chromium
+          echo "Playwright installation completed"
+          echo "Playwright version:"
+          npx playwright --version
 
       - name: Create test directories
         run: |
@@ -53,9 +74,14 @@ jobs:
 
       - name: Start development server
         run: |
+          echo "Starting development server..."
+          echo "Current directory: $(pwd)"
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
           npm run dev &
-          sleep 10
-          echo "Development server started"
+          echo "Development server started in background"
+          sleep 15
+          echo "Development server startup wait completed"
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://example.supabase.co' }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'dummy-key' }}

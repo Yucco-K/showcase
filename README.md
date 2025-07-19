@@ -1,55 +1,47 @@
-# Portfolio Showcase
+# Portfolio Showcase Documentation
 
-React・TypeScript で構築されたポートフォリオサイトです。Supabase バックエンド、Stripe 決済、Notion 連携機能を備えています。
+## 📚 ドキュメント管理方針
 
-## 機能
+本プロジェクトの全ての技術文書・ユーザーガイド・API 仕様書・ワークフロー・図表は**Obsidian Vault**（`obsidian-vault/`）で一元管理しています。
 
-- 📱 レスポンシブデザイン
-- 🔐 Supabase 認証
-- 💳 Stripe 決済
-- 📝 ブログ機能
-- 🛍️ プロダクト管理
-- 📞 お問い合わせ管理
-- 🔗 Notion 連携
+- **技術文書（日本語・英語）**: `obsidian-vault/技術文書_JA.md`, `obsidian-vault/技術文書_EN.md`
+- **ユーザーガイド（日本語・英語）**: `obsidian-vault/ユーザーガイド_JA.md`, `obsidian-vault/ユーザーガイド_EN.md`
+- **API 仕様書**: `obsidian-vault/API仕様書.md`
+- **ワークフローガイド**: `obsidian-vault/ワークフローガイド.md`
+- **PRD テンプレート**: `obsidian-vault/PRDテンプレート.md`
+- **図表・ER 図・アーキテクチャ図**: `obsidian-vault/図表/`
+- **旧 docs ディレクトリ**: `obsidian-vault/docs_backup/`（参照用バックアップ）
 
-## セットアップ
+## 📝 編集・運用ワークフロー
 
-### 環境変数の設定
+1. **Obsidian で全ドキュメントを編集・管理**
+2. **図表も Mermaid/Excalidraw 等で Vault 内に保存**
+3. **必要に応じてスクリプトで Notion 等にエクスポート**
+4. **外部公開時は Vault 内 Markdown をそのまま利用**
 
-`.env`ファイルを作成し、以下の環境変数を設定してください：
+## 🚀 Obsidian Vault の使い方
 
-```bash
-# Supabase設定
-VITE_SUPABASE_URL=your_supabase_url_here
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+1. `obsidian-vault/`を Obsidian で開く
+2. すべてのドキュメント・図表を一元的に編集・検索・リンク
+3. Mermaid や Excalidraw で図表も管理
+4. 必要に応じてエクスポートスクリプトを実行
 
-# Stripe設定
-VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key_here
+## 🔗 主要ドキュメント一覧
 
-# Notion設定
-VITE_NOTION_TOKEN=your_notion_internal_integration_token_here
-VITE_NOTION_DATABASE_ID=your_notion_database_id_here
-```
+- [技術文書（日本語）](obsidian-vault/技術文書_JA.md)
+- [技術文書（英語）](obsidian-vault/技術文書_EN.md)
+- [ユーザーガイド（日本語）](obsidian-vault/ユーザーガイド_JA.md)
+- [ユーザーガイド（英語）](obsidian-vault/ユーザーガイド_EN.md)
+- [API 仕様書](obsidian-vault/API仕様書.md)
+- [ワークフローガイド](obsidian-vault/ワークフローガイド.md)
+- [PRD テンプレート](obsidian-vault/PRDテンプレート.md)
 
-### Notion 連携の設定
+## 💡 補足
 
-1. [Notion Developers](https://developers.notion.com/) でインテグレーションを作成
-2. Internal Integration Token を取得
-3. 連携したいデータベースをインテグレーションと共有
-4. データベース ID を取得（URL から抽出）
+- 旧`docs/`配下のファイルは`obsidian-vault/docs_backup/`にバックアップ済み
+- 今後は**Obsidian Vault のみ**でドキュメントを管理・更新してください
+- Notion や外部サービスへのエクスポートも Vault から自動化可能
 
-### インストールと起動
+---
 
-```bash
-npm install
-npm run dev
-```
-
-## 技術スタック
-
-- **フロントエンド**: React, TypeScript, Vite
-- **スタイリング**: Styled Components
-- **バックエンド**: Supabase
-- **決済**: Stripe
-- **CMS**: Notion API
-- **デプロイ**: Vercel
+**本リポジトリは Obsidian Vault ベースのドキュメント管理を推奨します**

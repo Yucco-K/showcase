@@ -12,14 +12,27 @@ export interface NotionPage {
 	id: string;
 	title: string;
 	url: string;
-	properties: Record<string, any>;
+	properties: Record<string, unknown>;
 	last_edited_time: string;
 }
 
 export interface NotionDatabase {
 	id: string;
 	title: string;
-	properties: Record<string, any>;
+	properties: Record<string, unknown>;
+}
+
+export interface NotionPageResponse {
+	id: string;
+	properties: Record<string, unknown>;
+	url: string;
+	last_edited_time: string;
+}
+
+export interface NotionBlock {
+	id: string;
+	type: string;
+	[key: string]: unknown;
 }
 
 /**
@@ -46,9 +59,11 @@ export const getNotionPages = async (
 			],
 		});
 
-		return response.results.map((page: any) => ({
+		return response.results.map((page: NotionPageResponse) => ({
 			id: page.id,
-			title: page.properties.Title?.title?.[0]?.plain_text || "Untitled",
+			title:
+				(page.properties.Title as { title?: Array<{ plain_text: string }> })
+					?.title?.[0]?.plain_text || "Untitled",
 			url: page.url,
 			properties: page.properties,
 			last_edited_time: page.last_edited_time,
@@ -62,12 +77,14 @@ export const getNotionPages = async (
 /**
  * 特定のNotionページを取得
  */
-export const getNotionPage = async (pageId: string): Promise<any> => {
+export const getNotionPage = async (
+	pageId: string
+): Promise<NotionPageResponse> => {
 	try {
 		const response = await notion.pages.retrieve({
 			page_id: pageId,
 		});
-		return response;
+		return response as NotionPageResponse;
 	} catch (error) {
 		console.error("Error fetching Notion page:", error);
 		throw error;
@@ -77,12 +94,14 @@ export const getNotionPage = async (pageId: string): Promise<any> => {
 /**
  * Notionページのブロックを取得
  */
-export const getNotionPageBlocks = async (pageId: string): Promise<any[]> => {
+export const getNotionPageBlocks = async (
+	pageId: string
+): Promise<NotionBlock[]> => {
 	try {
 		const response = await notion.blocks.children.list({
 			block_id: pageId,
 		});
-		return response.results;
+		return response.results as NotionBlock[];
 	} catch (error) {
 		console.error("Error fetching Notion page blocks:", error);
 		throw error;

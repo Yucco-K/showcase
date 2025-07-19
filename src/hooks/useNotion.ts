@@ -3,7 +3,11 @@ import {
 	getNotionPages,
 	getNotionPage,
 	getNotionPageBlocks,
+} from "../lib/notion";
+import type {
 	NotionPage,
+	NotionPageResponse,
+	NotionBlock,
 } from "../lib/notion";
 
 export const useNotionPages = () => {
@@ -34,7 +38,7 @@ export const useNotionPages = () => {
 };
 
 export const useNotionPage = (pageId: string | null) => {
-	const [page, setPage] = useState<any>(null);
+	const [page, setPage] = useState<NotionPageResponse | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -66,7 +70,7 @@ export const useNotionPage = (pageId: string | null) => {
 };
 
 export const useNotionPageBlocks = (pageId: string | null) => {
-	const [blocks, setBlocks] = useState<any[]>([]);
+	const [blocks, setBlocks] = useState<NotionBlock[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 

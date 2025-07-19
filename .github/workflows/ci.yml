@@ -44,6 +44,12 @@ jobs:
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
 
+      - name: Create test directories
+        run: |
+          mkdir -p test-results
+          mkdir -p playwright-report
+          echo "Test directories created"
+
       - name: Start development server
         run: |
           npm run dev &
@@ -64,6 +70,7 @@ jobs:
 
       - name: Run E2E tests
         run: |
+          mkdir -p test-results playwright-report
           timeout 300 npm run test || echo "Tests failed or timed out, but continuing..."
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://example.supabase.co' }}
@@ -82,7 +89,7 @@ jobs:
             test-results/
             playwright-report/
           retention-days: 30
-          if-no-files-found: warn
+          if-no-files-found: ignore
 
   deploy:
     needs: build-and-test

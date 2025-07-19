@@ -93,14 +93,14 @@ const addContent = async (pageId: string, content: string) => {
 		for (let i = 0; i < blockChunks.length; i++) {
 			await notion.blocks.children.append({
 				block_id: pageId,
-				children: blockChunks[i] as any,
+				children: blockChunks[i] as unknown[],
 			});
 			console.log(`✅ Added chunk ${i + 1}/${blockChunks.length}`);
 		}
 
 		console.log(`✅ Added all content to page`);
-	} catch (error) {
-		console.error(`❌ Error adding content:`, error);
+	} catch {
+		console.error(`❌ Error adding content`);
 	}
 };
 

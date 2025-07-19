@@ -10,7 +10,6 @@ const notion = new Client({
 
 // ファイルパス
 const OBSIDIAN_FILE = path.join(process.cwd(), "obsidian-workspace.md");
-const DOCS_DIR = path.join(process.cwd(), "docs");
 
 // 環境変数
 const PARENT_PAGE_ID = process.env.VITE_NOTION_PARENT_PAGE_ID;
@@ -44,12 +43,12 @@ const readObsidianFile = (): string => {
 /**
  * マーメイド記法を特別に処理
  */
-const convertMarkdownToNotionBlocks = (markdown: string): any[] => {
+const convertMarkdownToNotionBlocks = (markdown: string): unknown[] => {
 	try {
 		console.log("🔄 Converting Obsidian markdown to Notion blocks...");
 
 		// マーメイド記法を特別に処理
-		const mermaidBlocks: any[] = [];
+		const mermaidBlocks: unknown[] = [];
 		const lines = markdown.split("\n");
 		let inMermaidBlock = false;
 		let mermaidContent = "";
@@ -97,7 +96,7 @@ const convertMarkdownToNotionBlocks = (markdown: string): any[] => {
 		}
 
 		// マーメイド以外のコンテンツをmartianで変換
-		const regularBlocks = markdownToBlocks(nonMermaidContent) as any[];
+		const regularBlocks = markdownToBlocks(nonMermaidContent) as unknown[];
 
 		// マーメイドブロックと通常ブロックを結合
 		const allBlocks = [...regularBlocks, ...mermaidBlocks];

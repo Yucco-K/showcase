@@ -8,6 +8,7 @@ import { AvatarDeleteConfirmationModal } from "../components/auth/AvatarDeleteCo
 import { PurchasedProductCard } from "../components/products/PurchasedProductCard";
 import type { Product } from "../types/product";
 import { useNavigate } from "react-router-dom";
+import { profileUpdateSchema, changePasswordSchema } from "../lib/validation";
 
 interface Profile {
 	id: string;
@@ -1024,6 +1025,37 @@ export const MyPage: React.FC = () => {
 		e.preventDefault();
 		if (!user) return;
 
+		// バリデーション
+		try {
+			profileUpdateSchema.parse({
+				username: formData.full_name || undefined,
+				biography: formData.biography,
+			});
+		} catch (validationError) {
+			if (validationError instanceof Error) {
+				// Zodエラーメッセージを適切に処理
+				const message = validationError.message;
+
+				// JSON形式の場合は最初のエラーメッセージを抽出
+				if (message.startsWith("[") && message.endsWith("]")) {
+					try {
+						const errors = JSON.parse(message);
+						if (errors.length > 0) {
+							const firstError = errors[0];
+							showError(firstError.message);
+						} else {
+							showError("入力内容に問題があります");
+						}
+					} catch {
+						showError("入力内容に問題があります");
+					}
+				} else {
+					showError(message);
+				}
+				return;
+			}
+		}
+
 		setIsSaving(true);
 		try {
 			const { error } = await supabase
@@ -1059,19 +1091,36 @@ export const MyPage: React.FC = () => {
 		e.preventDefault();
 		if (!user) return;
 
-		if (!formData.currentPassword) {
-			showError("現在のパスワードを入力してください");
-			return;
-		}
+		// バリデーション
+		try {
+			changePasswordSchema.parse({
+				currentPassword: formData.currentPassword,
+				newPassword: formData.newPassword,
+				confirmPassword: formData.confirmPassword,
+			});
+		} catch (validationError) {
+			if (validationError instanceof Error) {
+				// Zodエラーメッセージを適切に処理
+				const message = validationError.message;
 
-		if (formData.newPassword !== formData.confirmPassword) {
-			showError("新しいパスワードが一致しません");
-			return;
-		}
-
-		if (formData.newPassword.length < 6) {
-			showError("新しいパスワードは6文字以上で入力してください");
-			return;
+				// JSON形式の場合は最初のエラーメッセージを抽出
+				if (message.startsWith("[") && message.endsWith("]")) {
+					try {
+						const errors = JSON.parse(message);
+						if (errors.length > 0) {
+							const firstError = errors[0];
+							showError(firstError.message);
+						} else {
+							showError("入力内容に問題があります");
+						}
+					} catch {
+						showError("入力内容に問題があります");
+					}
+				} else {
+					showError(message);
+				}
+				return;
+			}
 		}
 
 		setIsSaving(true);

@@ -6,6 +6,8 @@ export default defineConfig({
 	base: "/",
 	plugins: [react()],
 	server: {
+		port: 5173,
+		host: true,
 		hmr: {
 			// 大規模な更新を防ぐ
 			protocol: "ws",

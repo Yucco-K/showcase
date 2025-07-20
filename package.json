@@ -34,6 +34,7 @@
 		"@stripe/stripe-js": "^7.4.0",
 		"@supabase/supabase-js": "^2.44.4",
 		"@tryfabric/martian": "^1.2.4",
+		"@vercel/node": "^5.3.6",
 		"framer-motion": "^12.23.3",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
@@ -41,7 +42,8 @@
 		"react-markdown": "^10.1.0",
 		"react-router-dom": "^7.6.3",
 		"styled-components": "^6.1.19",
-		"three": "^0.178.0"
+		"three": "^0.178.0",
+		"zod": "^4.0.5"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.30.1",

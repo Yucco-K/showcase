@@ -18,7 +18,7 @@ const ToastContainer = styled.div<{ $isVisible: boolean; $type: string }>`
 			case "success":
 				return "linear-gradient(135deg, #10b981, #059669)";
 			case "error":
-				return "linear-gradient(135deg, #f97316, #ea580c)";
+				return "linear-gradient(135deg, #dc2626, #b91c1c)";
 			case "warning":
 				return "linear-gradient(135deg, #f59e0b, #d97706)";
 			default:

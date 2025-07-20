@@ -9,8 +9,11 @@ import { useAuth } from "../contexts/AuthProvider";
 import { useReviews } from "../hooks/useReviews";
 import { useProductPurchase } from "../hooks/useProductPurchase";
 import { PreventDoubleClickButton } from "../components/ui/PreventDoubleClickButton";
+import { ReplyForm } from "../components/reviews/ReplyForm";
+import { ReplyItem } from "../components/reviews/ReplyItem";
 import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
+import { ProductDetailSkeleton } from "../components/ui/Skeleton";
 
 const Container = styled.div`
 	min-height: 100vh;
@@ -233,6 +236,11 @@ const TextArea = styled.textarea`
 	width: 100%;
 	font-size: 16px;
 	line-height: 1.5;
+	word-wrap: break-word;
+	word-break: break-word;
+	overflow-wrap: break-word;
+	white-space: pre-wrap;
+	box-sizing: border-box;
 
 	@media (max-width: 768px) {
 		width: 92%; /* slightly shorter on small screens */
@@ -380,14 +388,18 @@ const ProductDetail: React.FC = () => {
 
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
-	const { product, isFound } = useProduct(id || "");
+	const { product, isFound, isLoading } = useProduct(id || "");
 	const { toggleFavorite, isFavorite, allProducts } = useProducts();
 	const { user, isAdmin } = useAuth();
 	const {
 		reviews,
 		loading: reviewsLoading,
-		upsertReview,
+		addReview,
+		updateReview,
+		addReply,
+		updateReply,
 		deleteOwnReview,
+		deleteReview,
 		myReview,
 	} = useReviews(id || "", user?.id);
 	const { hasPurchased, isLoading: purchaseLoading } = useProductPurchase(
@@ -397,18 +409,26 @@ const ProductDetail: React.FC = () => {
 	const { toast, showSuccess, showError, hideToast } = useToast();
 
 	// 平均評価と件数をリアルタイムで計算
-	const avgRating = reviews.length
-		? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+	const validReviews = reviews.filter(
+		(r) => r.rating !== null && r.rating !== undefined
+	);
+	const avgRating = validReviews.length
+		? validReviews.reduce((sum, r) => sum + (r.rating ?? 0), 0) /
+		  validReviews.length
 		: product?.rating ?? 0;
 	const reviewCount = reviews.length || product?.reviewCount || 0;
 
 	// （後段で product が確定してから likesCount を計算する）
 
-	const [ratingInput, setRatingInput] = useState<number>(myReview?.rating || 3);
+	const [ratingInput, setRatingInput] = useState<number>(myReview?.rating ?? 3);
 	const [commentInput, setCommentInput] = useState<string>(
 		myReview?.comment || ""
 	);
 	const [showReviewForm, setShowReviewForm] = useState(false);
+	const [replyingTo, setReplyingTo] = useState<string | null>(null);
+	const [expandedReplies, setExpandedReplies] = useState<Set<string>>(
+		new Set()
+	);
 
 	const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 	const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -416,7 +436,21 @@ const ProductDetail: React.FC = () => {
 		"description" | "features" | "requirements"
 	>("description");
 
-	if (!id || !isFound || !product) {
+	const formatDate = (dateString: string) => {
+		return new Date(dateString).toLocaleDateString("ja-JP", {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+	};
+
+	if (!id || isLoading) {
+		return <ProductDetailSkeleton />;
+	}
+
+	if (!isFound || !product) {
 		return (
 			<Container>
 				<PreventDoubleClickButton
@@ -443,9 +477,9 @@ const ProductDetail: React.FC = () => {
 		  )
 		: 0;
 
-	const renderStars = (rating: number) => {
+	const renderStars = (rating: number | null) => {
 		return Array.from({ length: 5 }, (_, index) => {
-			const filled = index < Math.floor(rating);
+			const filled = rating !== null && index < Math.floor(rating);
 			return (
 				<Star
 					key={`star-${index}-${filled ? "filled" : "empty"}`}
@@ -500,7 +534,14 @@ const ProductDetail: React.FC = () => {
 		const finalRating = Math.max(1, ratingInput);
 
 		try {
-			const result = await upsertReview(finalRating, commentInput || null);
+			let result: { error?: string | Error | null };
+			if (myReview) {
+				// 既存のレビューがある場合は更新
+				result = await updateReview(finalRating, commentInput || null);
+			} else {
+				// 新規の場合は追加
+				result = await addReview(finalRating, commentInput || null);
+			}
 
 			if (result.error) {
 				throw new Error(
@@ -521,6 +562,35 @@ const ProductDetail: React.FC = () => {
 				showError("投稿に失敗しました...");
 			}
 			console.error("Review submission error:", error);
+		}
+	};
+
+	const handleSubmitReply = async (parentId: string, comment: string) => {
+		if (!user) {
+			showError("ログインが必要です。");
+			return { error: "ログインが必要です。" };
+		}
+
+		try {
+			const result = await addReply(parentId, comment);
+
+			if (result.error) {
+				const errorMessage =
+					typeof result.error === "string"
+						? result.error
+						: result.error.message;
+				showError(errorMessage);
+				return { error: errorMessage };
+			}
+
+			showSuccess("返信を投稿しました！");
+			setReplyingTo(null);
+			return {};
+		} catch (error) {
+			const errorMessage = "返信の投稿に失敗しました...";
+			showError(errorMessage);
+			console.error("Reply submission error:", error);
+			return { error: errorMessage };
 		}
 	};
 
@@ -704,6 +774,15 @@ const ProductDetail: React.FC = () => {
 									<ReviewItem key={rev.id}>
 										<div>
 											{renderStars(rev.rating)}
+											<div
+												style={{
+													marginTop: "4px",
+													fontSize: "12px",
+													color: "rgba(255, 255, 255, 0.5)",
+												}}
+											>
+												{formatDate(rev.created_at)}
+											</div>
 											{rev.comment && (
 												<div>
 													{isAdmin(user) && rev.user_id === user?.id && (
@@ -711,7 +790,7 @@ const ProductDetail: React.FC = () => {
 															style={{
 																color: "#6d28d9",
 																fontWeight: "600",
-																marginBottom: "8px",
+																margin: "8px 0",
 																fontSize: "14px",
 																backgroundColor: "rgba(109, 40, 217, 0.18)",
 																padding: "4px 8px",
@@ -729,7 +808,7 @@ const ProductDetail: React.FC = () => {
 																style={{
 																	color: "#059669",
 																	fontWeight: "600",
-																	marginBottom: "8px",
+																	margin: "8px 0",
 																	fontSize: "14px",
 																	backgroundColor: "rgba(5, 150, 105, 0.18)",
 																	padding: "4px 8px",
@@ -740,23 +819,186 @@ const ProductDetail: React.FC = () => {
 																購入済みユーザー
 															</div>
 														)}
-													<p>{rev.comment}</p>
+													<p
+														style={{
+															wordWrap: "break-word",
+															wordBreak: "break-word",
+															overflowWrap: "break-word",
+															whiteSpace: "pre-wrap",
+															margin: 0,
+															padding: 0,
+														}}
+													>
+														{rev.comment}
+													</p>
+
+													{/* 返信ボタン */}
+													{user && (
+														<button
+															type="button"
+															onClick={() => setReplyingTo(rev.id)}
+															style={{
+																background: "none",
+																border: "none",
+																color: "#3b82f6",
+																cursor: "pointer",
+																fontSize: "16px",
+																marginTop: "8px",
+																padding: "4px 8px",
+																borderRadius: "4px",
+																transition: "all 0.2s ease",
+															}}
+														>
+															💬 返信する
+														</button>
+													)}
+
+													{/* 返信フォーム */}
+													{replyingTo === rev.id && (
+														<ReplyForm
+															onSubmit={(comment) =>
+																handleSubmitReply(rev.id, comment)
+															}
+															onCancel={() => setReplyingTo(null)}
+														/>
+													)}
+
+													{/* 返信一覧 */}
+													{rev.replies && rev.replies.length > 0 && (
+														<div style={{ marginTop: "12px" }}>
+															{/* アコーディオンヘッダー */}
+															<button
+																style={{
+																	cursor: "pointer",
+																	display: "flex",
+																	alignItems: "center",
+																	gap: "8px",
+																	padding: "4px 8px",
+																	borderRadius: "4px",
+																	background: "rgba(255, 255, 255, 0.05)",
+																	marginBottom: expandedReplies.has(rev.id)
+																		? "8px"
+																		: "0",
+																	border: "none",
+																	color: "inherit",
+																	fontSize: "inherit",
+																	fontFamily: "inherit",
+																}}
+																onClick={() => {
+																	const newExpanded = new Set(expandedReplies);
+																	if (newExpanded.has(rev.id)) {
+																		newExpanded.delete(rev.id);
+																	} else {
+																		newExpanded.add(rev.id);
+																	}
+																	setExpandedReplies(newExpanded);
+																}}
+																type="button"
+																aria-label={`${rev.replies.length}件の返信を${
+																	expandedReplies.has(rev.id)
+																		? "閉じる"
+																		: "開く"
+																}`}
+															>
+																<span
+																	style={{
+																		fontSize: "12px",
+																		color: "rgba(255, 255, 255, 0.7)",
+																	}}
+																>
+																	{expandedReplies.has(rev.id) ? "▼" : "▶"}
+																</span>
+																<span
+																	style={{
+																		fontSize: "12px",
+																		color: "rgba(255, 255, 255, 0.7)",
+																	}}
+																>
+																	{rev.replies.length}件の返信
+																</span>
+															</button>
+
+															{/* アコーディオンコンテンツ */}
+															{expandedReplies.has(rev.id) && (
+																<div>
+																	{rev.replies.map((reply) => (
+																		<ReplyItem
+																			key={reply.id}
+																			reply={reply}
+																			onEdit={async (replyId, newComment) => {
+																				console.log(
+																					"Editing reply:",
+																					replyId,
+																					"with comment:",
+																					newComment
+																				);
+																				await updateReply(replyId, newComment);
+																				showSuccess("返信を更新しました！");
+																			}}
+																			onReply={async (replyId, comment) => {
+																				console.log(
+																					"Replying to reply:",
+																					replyId,
+																					"with comment:",
+																					comment
+																				);
+																				const result = await handleSubmitReply(
+																					replyId,
+																					comment
+																				);
+																				return result;
+																			}}
+																			onDelete={async (replyId) => {
+																				try {
+																					console.log(
+																						"Deleting reply:",
+																						replyId
+																					);
+																					await deleteReview(replyId);
+																					showSuccess("返信を削除しました！");
+																				} catch (error) {
+																					showError("削除に失敗しました...");
+																					console.error(
+																						"Reply deletion error:",
+																						error
+																					);
+																				}
+																			}}
+																			canEdit={
+																				user &&
+																				(reply.user_id === user.id ||
+																					isAdmin(user))
+																			}
+																			canReply={user !== null}
+																			canDelete={
+																				user &&
+																				(reply.user_id === user.id ||
+																					isAdmin(user))
+																			}
+																		/>
+																	))}
+																</div>
+															)}
+														</div>
+													)}
 												</div>
 											)}
 										</div>
-										{user && rev.user_id === user.id && (
+										{user && (rev.user_id === user.id || isAdmin(user)) && (
 											<ReviewActions>
-												<button
-													type="button"
-													aria-label="edit review"
-													onClick={() => {
-														setRatingInput(rev.rating);
-														setCommentInput(rev.comment ?? "");
-														setShowReviewForm(true);
-													}}
-												>
-													✏️
-												</button>
+												{rev.user_id === user.id && (
+													<button
+														type="button"
+														aria-label="edit review"
+														onClick={() => {
+															setRatingInput(rev.rating ?? 3);
+															setCommentInput(rev.comment ?? "");
+															setShowReviewForm(true);
+														}}
+													>
+														✏️
+													</button>
+												)}
 												<button
 													type="button"
 													aria-label="delete review"
@@ -767,8 +1009,55 @@ const ProductDetail: React.FC = () => {
 														setCommentInput("");
 														// レビュー削除を非同期で実行
 														try {
-															await deleteOwnReview();
-															showSuccess("レビューを削除しました！");
+															console.log(
+																"Deleting review:",
+																rev.id,
+																"by user:",
+																user.id,
+																"isAdmin:",
+																isAdmin(user)
+															);
+															let result:
+																| { error: string | Error | null }
+																| undefined;
+															if (rev.user_id === user.id) {
+																console.log("Deleting own review");
+																result = await deleteOwnReview();
+																console.log(
+																	"Delete own review result:",
+																	result
+																);
+															} else {
+																console.log("Deleting other user's review");
+																result = await deleteReview(rev.id);
+																console.log("Delete review result:", result);
+																console.log("Delete review error details:", {
+																	hasError: !!result.error,
+																	errorMessage:
+																		typeof result.error === "string"
+																			? result.error
+																			: result.error?.message,
+																	errorCode:
+																		typeof result.error === "object" &&
+																		result.error
+																			? (result.error as { code?: string })
+																					?.code
+																			: undefined,
+																});
+															}
+
+															if (result.error) {
+																throw new Error(
+																	typeof result.error === "string"
+																		? result.error
+																		: result.error.message
+																);
+															}
+
+															// 削除処理の完了を少し待ってから成功メッセージを表示
+															setTimeout(() => {
+																showSuccess("レビューを削除しました！");
+															}, 100);
 														} catch (error) {
 															showError("削除に失敗しました...");
 															console.error("Review deletion error:", error);
@@ -808,9 +1097,20 @@ const ProductDetail: React.FC = () => {
 							<>
 								{!showReviewForm ? (
 									<PreventDoubleClickButton
-										onClick={() => setShowReviewForm(true)}
+										onClick={() => {
+											setShowReviewForm(true);
+											// 既存のレビューがある場合は、その内容を設定
+											if (myReview) {
+												setRatingInput(myReview.rating ?? 3);
+												setCommentInput(myReview.comment || "");
+											} else {
+												// 新規レビューの場合はデフォルト値を設定
+												setRatingInput(3);
+												setCommentInput("");
+											}
+										}}
 									>
-										レビューを書く
+										{myReview ? "レビューを編集" : "レビューを書く"}
 									</PreventDoubleClickButton>
 								) : showReviewForm ? (
 									<ReviewForm
@@ -878,7 +1178,7 @@ const ProductDetail: React.FC = () => {
 												}}
 												onClick={() => {
 													setShowReviewForm(false);
-													setRatingInput(myReview?.rating || 3);
+													setRatingInput(myReview?.rating ?? 3);
 													setCommentInput(myReview?.comment || "");
 												}}
 											>

@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import { useAuth } from "../../contexts/AuthProvider";
 import type { Review } from "../../types/review";
 import { ReplyForm } from "./ReplyForm";
 
@@ -107,6 +108,7 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
 	canEdit = false,
 	canReply = false,
 }) => {
+	const { user, isAdmin } = useAuth();
 	const [isEditing, setIsEditing] = React.useState(false);
 	const [isReplying, setIsReplying] = React.useState(false);
 	const [editComment, setEditComment] = React.useState(reply.comment ?? "");
@@ -177,6 +179,57 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
 
 	return (
 		<ReplyContainer>
+			{/* アバターと名前 */}
+			<div
+				style={{
+					display: "flex",
+					alignItems: "center",
+					gap: "8px",
+					marginBottom: "8px",
+				}}
+			>
+				{reply.profiles?.avatar_url ? (
+					<img
+						src={reply.profiles.avatar_url}
+						alt="avatar"
+						style={{
+							width: "20px",
+							height: "20px",
+							borderRadius: "50%",
+							objectFit: "cover",
+						}}
+					/>
+				) : (
+					<div
+						style={{
+							width: "20px",
+							height: "20px",
+							borderRadius: "50%",
+							background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							fontSize: "10px",
+							color: "white",
+							fontWeight: "600",
+						}}
+					>
+						{reply.profiles?.full_name
+							? reply.profiles.full_name.charAt(0).toUpperCase()
+							: "U"}
+					</div>
+				)}
+				<span
+					style={{
+						fontSize: "12px",
+						color: "rgba(255, 255, 255, 0.8)",
+						fontWeight: "500",
+					}}
+				>
+					{reply.profiles?.full_name || "匿名ユーザー"}
+				</span>
+			</div>
+
 			{isEditing ? (
 				<div>
 					<textarea
@@ -328,9 +381,13 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
 										onEdit={onEdit}
 										onReply={onReply}
 										onDelete={onDelete}
-										canEdit={canEdit}
-										canReply={canReply}
-										canDelete={canDelete}
+										canEdit={
+											user && (nestedReply.user_id === user.id || isAdmin(user))
+										}
+										canDelete={
+											user && (nestedReply.user_id === user.id || isAdmin(user))
+										}
+										canReply={!!user}
 									/>
 								);
 							})}

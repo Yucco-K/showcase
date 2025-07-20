@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "../../hooks/useToast";
 import { Toast } from "../ui/Toast";
+import { useAuth } from "../../contexts/AuthProvider";
 
 const Container = styled.div`
 	max-width: 600px;
@@ -107,8 +108,9 @@ const CheckboxLabel = styled.label`
 `;
 
 export const ContactForm: React.FC = () => {
+	const { user } = useAuth();
 	const [name, setName] = useState("");
-	const [email, setEmail] = useState("");
+	const [email, setEmail] = useState(user?.email || "");
 	const [message, setMessage] = useState("");
 	const [sent, setSent] = useState(false);
 	const [agree, setAgree] = useState(false);
@@ -155,12 +157,10 @@ export const ContactForm: React.FC = () => {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		console.log("Submitting contact form:", { name, email, message });
 
 		// バリデーションチェック
 		const validationErrors = validateForm();
 		if (validationErrors.length > 0) {
-			console.log("Validation errors:", validationErrors);
 			showError(validationErrors.join("\n"));
 			return;
 		}
@@ -175,12 +175,11 @@ export const ContactForm: React.FC = () => {
 				is_checked: false,
 				is_replied: false,
 			});
-			console.log("Supabase response:", { error });
+
 			if (error) {
 				console.error("Contact form error:", error);
 				showError("送信に失敗しました...");
 			} else {
-				console.log("Contact form submitted successfully");
 				showSuccess("お問い合わせを送信しました。ありがとうございます。");
 				setSent(true);
 			}

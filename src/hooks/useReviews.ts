@@ -31,13 +31,6 @@ export const useReviews = (productId: string, userId?: string) => {
 	const upsertReview = async (rating: number, comment: string | null) => {
 		if (!userId) return { error: "user not logged in" };
 
-		console.log("useReviews upsertReview called:", {
-			productId,
-			userId,
-			rating,
-			comment,
-		});
-
 		const payload = {
 			product_id: productId,
 			user_id: userId,

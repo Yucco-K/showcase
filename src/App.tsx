@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+	BrowserRouter as Router,
+	Routes,
+	Route,
+	Navigate,
+} from "react-router-dom";
 import { createGlobalStyle } from "styled-components";
 import { useBgColor } from "./hooks/useBgColor";
 import NavBar from "./components/ui/NavBar";
@@ -15,6 +20,9 @@ import { ContactAdmin } from "./pages/ContactAdmin";
 import ContactDetail from "./pages/ContactDetail";
 import { ContactForm } from "./components/contact/ContactForm";
 import { MyPage } from "./pages/MyPage";
+import ResetPassword from "./pages/ResetPassword";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { AdminProtectedRoute } from "./components/auth/AdminProtectedRoute";
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -41,12 +49,49 @@ function AppRoutes() {
 				<Route path="/products" element={<ProductList />} />
 				<Route path="/products/:id" element={<ProductDetail />} />
 				<Route path="/blog" element={<BlogList />} />
-				<Route path="/blog-admin" element={<BlogAdmin />} />
-				<Route path="/product-admin" element={<ProductAdmin />} />
-				<Route path="/contact-admin" element={<ContactAdmin />} />
-				<Route path="/contact-detail/:id" element={<ContactDetail />} />
-				<Route path="/contact" element={<ContactForm />} />
+				<Route
+					path="/blog-admin"
+					element={
+						<AdminProtectedRoute>
+							<BlogAdmin />
+						</AdminProtectedRoute>
+					}
+				/>
+				<Route
+					path="/product-admin"
+					element={
+						<AdminProtectedRoute>
+							<ProductAdmin />
+						</AdminProtectedRoute>
+					}
+				/>
+				<Route
+					path="/contact-admin"
+					element={
+						<AdminProtectedRoute>
+							<ContactAdmin />
+						</AdminProtectedRoute>
+					}
+				/>
+				<Route
+					path="/contact-detail/:id"
+					element={
+						<AdminProtectedRoute>
+							<ContactDetail />
+						</AdminProtectedRoute>
+					}
+				/>
+				<Route
+					path="/contact"
+					element={
+						<ProtectedRoute>
+							<ContactForm />
+						</ProtectedRoute>
+					}
+				/>
 				<Route path="/mypage" element={<MyPage />} />
+				<Route path="/reset-password" element={<ResetPassword />} />
+				<Route path="*" element={<Navigate to="/" replace />} />
 			</Routes>
 		</>
 	);

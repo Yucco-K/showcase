@@ -478,9 +478,8 @@ const ProductDetail: React.FC = () => {
 		}
 	};
 
-	const handlePaymentSuccess = (productId: string) => {
+	const handlePaymentSuccess = () => {
 		showSuccess(`${product.name}の購入が完了しました！ありがとうございます。`);
-		console.log(`Product ${productId} purchased successfully`);
 	};
 
 	const handleSubmitReview = async (e: React.FormEvent) => {
@@ -490,16 +489,7 @@ const ProductDetail: React.FC = () => {
 		const finalRating = Math.max(1, ratingInput);
 
 		try {
-			console.log("Submitting review:", {
-				rating: finalRating,
-				comment: commentInput,
-				userId: user?.id,
-				isAdmin: isAdmin(user),
-				userEmail: user?.email,
-			});
-
 			const result = await upsertReview(finalRating, commentInput || null);
-			console.log("Upsert result:", result);
 
 			if (result.error) {
 				throw new Error(

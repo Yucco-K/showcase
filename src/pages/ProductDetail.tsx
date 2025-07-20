@@ -490,9 +490,9 @@ const ProductDetail: React.FC = () => {
 	const handleSubmitReview = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		// レビュー権限チェック
-		if (!isAdmin(user) && !hasPurchased) {
-			showError("この商品を購入したユーザーのみレビューを投稿できます。");
+		// レビュー権限チェック（ログインユーザーであれば投稿可能）
+		if (!user) {
+			showError("ログインが必要です。");
 			return;
 		}
 
@@ -722,47 +722,63 @@ const ProductDetail: React.FC = () => {
 															管理者より
 														</div>
 													)}
+													{!isAdmin(user) &&
+														rev.user_id === user?.id &&
+														hasPurchased && (
+															<div
+																style={{
+																	color: "#059669",
+																	fontWeight: "600",
+																	marginBottom: "8px",
+																	fontSize: "14px",
+																	backgroundColor: "rgba(5, 150, 105, 0.18)",
+																	padding: "4px 8px",
+																	borderRadius: "4px",
+																	border: "1px solid #059669",
+																}}
+															>
+																購入済みユーザー
+															</div>
+														)}
 													<p>{rev.comment}</p>
 												</div>
 											)}
 										</div>
-										{user &&
-											rev.user_id === user.id &&
-											(isAdmin(user) || hasPurchased) && (
-												<ReviewActions>
-													<button
-														type="button"
-														aria-label="edit review"
-														onClick={() => {
-															setRatingInput(rev.rating);
-															setCommentInput(rev.comment ?? "");
-															setShowReviewForm(true);
-														}}
-													>
-														✏️
-													</button>
-													<button
-														type="button"
-														aria-label="delete review"
-														onClick={async () => {
-															// 即時にフォームを閉じて初期化
-															setShowReviewForm(false);
-															setRatingInput(3);
-															setCommentInput("");
-															// レビュー削除を非同期で実行
-															try {
-																await deleteOwnReview();
-																showSuccess("レビューを削除しました！");
-															} catch (error) {
-																showError("削除に失敗しました...");
-																console.error("Review deletion error:", error);
-															}
-														}}
-													>
-														🗑️
-													</button>
-												</ReviewActions>
-											)}
+										{user && rev.user_id === user.id && (
+											<ReviewActions>
+												<button
+													type="button"
+													aria-label="edit review"
+													onClick={() => {
+														setRatingInput(rev.rating);
+														setCommentInput(rev.comment ?? "");
+														setShowReviewForm(true);
+													}}
+												>
+													✏️
+												</button>
+												<button
+													type="button"
+													aria-label="delete review"
+													onClick={async () => {
+														// 即時にフォームを閉じて初期化
+														setShowReviewForm(false);
+														setRatingInput(3);
+														setCommentInput("");
+														// レビュー削除を非同期で実行
+														try {
+															await deleteOwnReview();
+															showSuccess("レビューを削除しました！");
+														} catch (error) {
+															showError("削除に失敗しました...");
+															console.error("Review deletion error:", error);
+														}
+													}}
+												>
+													🗑️
+												</button>
+											</ReviewActions>
+										)}
 									</ReviewItem>
 								))}
 							</>
@@ -790,26 +806,13 @@ const ProductDetail: React.FC = () => {
 
 						{user && !purchaseLoading && (
 							<>
-								{!isAdmin(user) && !hasPurchased ? (
-									<div
-										style={{
-											color: "rgba(255, 255, 255, 0.7)",
-											fontSize: "14px",
-											padding: "16px",
-											background: "rgba(255, 255, 255, 0.05)",
-											borderRadius: "8px",
-											border: "1px solid rgba(255, 255, 255, 0.1)",
-										}}
-									>
-										📝 この商品を購入したユーザーのみレビューを投稿できます。
-									</div>
-								) : (isAdmin(user) || hasPurchased) && !showReviewForm ? (
+								{!showReviewForm ? (
 									<PreventDoubleClickButton
 										onClick={() => setShowReviewForm(true)}
 									>
 										レビューを書く
 									</PreventDoubleClickButton>
-								) : (isAdmin(user) || hasPurchased) && showReviewForm ? (
+								) : showReviewForm ? (
 									<ReviewForm
 										onSubmit={handleSubmitReview}
 										data-testid="review-form"

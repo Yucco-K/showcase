@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthProvider";
 import type { Review } from "../../types/review";
 import { ReplyForm } from "./ReplyForm";
+import { DeleteConfirmationModal } from "../ui/DeleteConfirmationModal";
 
 const ReplyContainer = styled.div`
 	margin-top: 8px;
@@ -12,6 +13,11 @@ const ReplyContainer = styled.div`
 	border-radius: 0 8px 8px 0;
 	width: 100%;
 	box-sizing: border-box;
+	word-wrap: break-word;
+	word-break: break-word;
+	overflow-wrap: break-word;
+	max-width: 100%;
+	overflow: hidden;
 `;
 
 const ReplyContent = styled.div`
@@ -48,6 +54,11 @@ const ReplyActions = styled.div`
 	display: flex;
 	gap: 8px;
 	align-items: center;
+	word-wrap: break-word;
+	word-break: break-word;
+	overflow-wrap: break-word;
+	max-width: 100%;
+	overflow: hidden;
 `;
 
 const ReplyActionButton = styled.button`
@@ -113,6 +124,7 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
 	const [isReplying, setIsReplying] = React.useState(false);
 	const [editComment, setEditComment] = React.useState(reply.comment ?? "");
 	const [isRepliesExpanded, setIsRepliesExpanded] = React.useState(false);
+	const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
 	// 編集モードに入るたびに最新コメントをロード
 	const startEdit = () => {
@@ -309,7 +321,7 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
 						)}
 						{canDelete && !isEditing && !isReplying && (
 							<ReplyActionButton
-								onClick={() => onDelete?.(reply.id)}
+								onClick={() => setShowDeleteConfirm(true)}
 								aria-label="delete reply"
 							>
 								🗑️
@@ -395,6 +407,17 @@ export const ReplyItem: React.FC<ReplyItemProps> = ({
 					)}
 				</div>
 			)}
+
+			<DeleteConfirmationModal
+				isOpen={showDeleteConfirm}
+				title="返信削除の確認"
+				message="本当に返信を削除しますか？"
+				onCancel={() => setShowDeleteConfirm(false)}
+				onConfirm={() => {
+					setShowDeleteConfirm(false);
+					onDelete?.(reply.id);
+				}}
+			/>
 		</ReplyContainer>
 	);
 };

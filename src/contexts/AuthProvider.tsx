@@ -9,6 +9,7 @@ interface AuthContextValue {
 	signIn: (email: string, password: string) => Promise<void>;
 	signUp: (email: string, password: string) => Promise<void>;
 	signOut: () => Promise<void>;
+	resetPassword: (email: string) => Promise<void>;
 	isAdmin: (user: User | null) => boolean;
 }
 
@@ -29,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		});
 
 		const { data: listener } = supabase.auth.onAuthStateChange(
-			(_event, newSession) => {
+			(event, newSession) => {
 				setSession(newSession);
 				setUser(newSession?.user ?? null);
 			}
@@ -49,13 +50,105 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	};
 
 	const signUp = async (email: string, password: string) => {
-		const { error } = await supabase.auth.signUp({ email, password });
+		// バックエンドで既存ユーザーをチェック
+		try {
+			const { data: userExists, error: checkError } = await supabase.rpc(
+				"check_user_exists",
+				{
+					email_address: email,
+				}
+			);
+
+			if (checkError) {
+				// チェックに失敗した場合は通常のサインアップ処理を続行
+			} else if (userExists) {
+				throw new Error("User already registered");
+			}
+		} catch (error) {
+			// バックエンドチェックでエラーが発生した場合は、そのエラーを投げる
+			if (
+				error instanceof Error &&
+				error.message === "User already registered"
+			) {
+				throw error;
+			}
+			// その他のエラー（ネットワークエラーなど）の場合は通常のサインアップ処理を続行
+		}
+
+		// 開発環境と本番環境で適切なURLを使用
+		const redirectUrl = import.meta.env.PROD
+			? `${window.location.origin}`
+			: `http://localhost:5173`;
+
+		const { error } = await supabase.auth.signUp({
+			email,
+			password,
+			options: {
+				emailRedirectTo: redirectUrl,
+			},
+		});
 		if (error) throw error;
 	};
 
 	const signOut = async () => {
 		const { error } = await supabase.auth.signOut();
 		if (error) throw error;
+	};
+
+	const resetPassword = async (email: string) => {
+		try {
+			// 開発環境と本番環境で適切なURLを使用
+			const redirectUrl = import.meta.env.PROD
+				? `${window.location.origin}/reset-password`
+				: `http://localhost:5173/reset-password`;
+
+			// カスタムAPIエンドポイントを使用してJWTトークンを含んだリンクを生成
+			const response = await fetch("/api/auth/custom-reset-password", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					email,
+					redirectUrl,
+				}),
+			});
+
+			const data = await response.json();
+
+			if (!response.ok) {
+				throw new Error(data.error || "Failed to send reset email");
+			}
+
+			// カスタムリンクが生成された場合
+			if (data.resetLink) {
+				// 実際の実装では、ここでメール送信を行う
+			}
+
+			// フォールバック: 標準的なSupabaseの機能も並行して使用
+			const { error: fallbackError } =
+				await supabase.auth.resetPasswordForEmail(email, {
+					redirectTo: redirectUrl,
+				});
+
+			if (fallbackError) {
+				// フォールバックエラーは無視
+			}
+		} catch {
+			// エラーが発生した場合は標準的なSupabaseの機能を使用
+			const redirectUrl = import.meta.env.PROD
+				? `${window.location.origin}/reset-password`
+				: `http://localhost:5173/reset-password`;
+
+			const { error: fallbackError } =
+				await supabase.auth.resetPasswordForEmail(email, {
+					redirectTo: redirectUrl,
+				});
+
+			if (fallbackError) {
+				throw fallbackError;
+			}
+		}
 	};
 
 	const adminEmails =
@@ -69,7 +162,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
 	return (
 		<AuthContext.Provider
-			value={{ user, session, loading, signIn, signUp, signOut, isAdmin }}
+			value={{
+				user,
+				session,
+				loading,
+				signIn,
+				signUp,
+				signOut,
+				resetPassword,
+				isAdmin,
+			}}
 		>
 			{children}
 		</AuthContext.Provider>

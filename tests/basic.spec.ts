@@ -6,7 +6,7 @@ test.describe("基本的なE2Eテスト", () => {
 	});
 
 	test("トップページの表示確認", async ({ page }) => {
-		await expect(page).toHaveTitle(/Dummy App Store/);
+		await expect(page).toHaveTitle(/Yucco's Portfolio/);
 		await expect(page.locator("text=Top").first()).toBeVisible();
 		await expect(page.locator("text=Portfolio").first()).toBeVisible();
 		await expect(page.locator("text=Products").first()).toBeVisible();
@@ -41,7 +41,7 @@ test.describe("基本的なE2Eテスト", () => {
 	});
 
 	test("ナビゲーションの動作確認", async ({ page }) => {
-		await page.goto("http://localhost:5175");
+		await page.goto("http://localhost:5173");
 		await page.click("text=Portfolio");
 		await expect(page).toHaveURL(/.*\/portfolio/);
 		await page.click("text=Products");
@@ -52,7 +52,7 @@ test.describe("基本的なE2Eテスト", () => {
 
 	test("レスポンシブデザインの確認", async ({ page }) => {
 		await page.setViewportSize({ width: 375, height: 667 });
-		await page.goto("http://localhost:5175");
+		await page.goto("http://localhost:5173");
 		const mobileMenuBtn = page.locator("button:has-text('☰')");
 		if ((await mobileMenuBtn.count()) > 0) {
 			await expect(mobileMenuBtn.first()).toBeVisible();

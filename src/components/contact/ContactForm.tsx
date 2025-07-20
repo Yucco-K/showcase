@@ -211,24 +211,108 @@ export const ContactForm: React.FC = () => {
 						<strong>Q1:</strong> サービスの利用は無料ですか？
 					</summary>
 					<p style={{ marginTop: "8px" }}>
-						<strong>A:</strong> はい、基本機能はすべて無料でご利用いただけます。
+						<strong>A:</strong>{" "}
+						はい、基本機能はすべて無料でご利用いただけます。一部のプレミアム機能や商品購入には料金が発生する場合があります。
 					</p>
 				</details>
 				<details>
 					<summary>
-						<strong>Q2:</strong> 退会方法を教えてください。
+						<strong>Q2:</strong> アカウント登録は必要ですか？
 					</summary>
 					<p style={{ marginTop: "8px" }}>
-						<strong>A:</strong> お問い合わせフォームより退会の旨ご連絡ください。
+						<strong>A:</strong>{" "}
+						商品の閲覧やブログの閲覧は登録不要です。商品の購入、お気に入り登録、レビュー投稿にはアカウント登録が必要です。
 					</p>
 				</details>
 				<details>
 					<summary>
-						<strong>Q3:</strong> 問い合わせの返答はいつもらえますか？
+						<strong>Q3:</strong> 商品の購入方法を教えてください。
 					</summary>
 					<p style={{ marginTop: "8px" }}>
-						<strong>A:</strong> 原則として 2
-						営業日以内にメールでご連絡いたします。
+						<strong>A:</strong>{" "}
+						商品詳細ページで「購入する」ボタンをクリックし、Stripe決済システムでクレジットカード情報を入力して購入できます。購入後はマイページで購入履歴を確認できます。
+					</p>
+				</details>
+				<details>
+					<summary>
+						<strong>Q4:</strong> 商品の返品・交換は可能ですか？
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong>{" "}
+						デジタル商品のため、原則として返品・交換はお受けできません。商品に不具合がある場合は、お問い合わせフォームよりご連絡ください。
+					</p>
+				</details>
+				<details>
+					<summary>
+						<strong>Q5:</strong> お気に入り機能の使い方を教えてください。
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong>{" "}
+						商品カードのハートマークをクリックするとお気に入りに追加できます。ログインが必要で、マイページでお気に入り商品を一覧表示できます。
+					</p>
+				</details>
+				<details>
+					<summary>
+						<strong>Q6:</strong> レビューを投稿するにはどうすればいいですか？
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong>{" "}
+						商品詳細ページのレビューセクションで、星評価（1〜5）とコメントを入力して投稿できます。ログインが必要で、購入済み商品のみレビュー可能です。
+					</p>
+				</details>
+				<details>
+					<summary>
+						<strong>Q7:</strong> ブログの投稿はできますか？
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong>{" "}
+						現在、ブログの投稿は管理者のみが可能です。一般ユーザーはブログの閲覧のみ可能です。
+					</p>
+				</details>
+				<details>
+					<summary>
+						<strong>Q8:</strong> パスワードを忘れた場合はどうすればいいですか？
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong>{" "}
+						ログインページで「パスワードを忘れた場合」をクリックし、登録済みのメールアドレスを入力すると、パスワードリセット用のメールが送信されます。
+					</p>
+				</details>
+				<details>
+					<summary>
+						<strong>Q9:</strong> 退会方法を教えてください。
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong>{" "}
+						お問い合わせフォームより退会の旨ご連絡ください。退会後はアカウント情報とデータが削除されます。
+					</p>
+				</details>
+				<details>
+					<summary>
+						<strong>Q10:</strong> 問い合わせの返答はいつもらえますか？
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong>{" "}
+						原則として2営業日以内にメールでご連絡いたします。緊急の場合は、お問い合わせ内容に「緊急」と記載してください。
+					</p>
+				</details>
+				<details>
+					<summary>
+						<strong>Q11:</strong> データのバックアップはされていますか？
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong> はい、Supabase
+						Proプランを使用して1日1回のバックアップを取得し、過去7日間分を保持しています。システム障害時は数分〜数十分で復旧可能です。
+					</p>
+				</details>
+				<details>
+					<summary>
+						<strong>Q12:</strong> 対応ブラウザを教えてください。
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong>{" "}
+						Chrome、Firefox、Safari、Edgeの最新版に対応しています。Internet
+						Explorerはサポートしていません。
 					</p>
 				</details>
 

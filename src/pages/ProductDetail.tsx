@@ -7,6 +7,7 @@ import { PaymentModal } from "../components/payment/PaymentModal";
 import { LoginModal } from "../components/auth/LoginModal";
 import { useAuth } from "../contexts/AuthProvider";
 import { useReviews } from "../hooks/useReviews";
+import { useProductPurchase } from "../hooks/useProductPurchase";
 import { PreventDoubleClickButton } from "../components/ui/PreventDoubleClickButton";
 import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
@@ -389,6 +390,10 @@ const ProductDetail: React.FC = () => {
 		deleteOwnReview,
 		myReview,
 	} = useReviews(id || "", user?.id);
+	const { hasPurchased, isLoading: purchaseLoading } = useProductPurchase(
+		id || "",
+		user?.id
+	);
 	const { toast, showSuccess, showError, hideToast } = useToast();
 
 	// 平均評価と件数をリアルタイムで計算
@@ -484,6 +489,12 @@ const ProductDetail: React.FC = () => {
 
 	const handleSubmitReview = async (e: React.FormEvent) => {
 		e.preventDefault();
+
+		// レビュー権限チェック
+		if (!isAdmin(user) && !hasPurchased) {
+			showError("この商品を購入したユーザーのみレビューを投稿できます。");
+			return;
+		}
 
 		// 最小値を1に制限
 		const finalRating = Math.max(1, ratingInput);
@@ -715,41 +726,43 @@ const ProductDetail: React.FC = () => {
 												</div>
 											)}
 										</div>
-										{user && rev.user_id === user.id && (
-											<ReviewActions>
-												<button
-													type="button"
-													aria-label="edit review"
-													onClick={() => {
-														setRatingInput(rev.rating);
-														setCommentInput(rev.comment ?? "");
-														setShowReviewForm(true);
-													}}
-												>
-													✏️
-												</button>
-												<button
-													type="button"
-													aria-label="delete review"
-													onClick={async () => {
-														// 即時にフォームを閉じて初期化
-														setShowReviewForm(false);
-														setRatingInput(3);
-														setCommentInput("");
-														// レビュー削除を非同期で実行
-														try {
-															await deleteOwnReview();
-															showSuccess("レビューを削除しました！");
-														} catch (error) {
-															showError("削除に失敗しました...");
-															console.error("Review deletion error:", error);
-														}
-													}}
-												>
-													🗑️
-												</button>
-											</ReviewActions>
-										)}
+										{user &&
+											rev.user_id === user.id &&
+											(isAdmin(user) || hasPurchased) && (
+												<ReviewActions>
+													<button
+														type="button"
+														aria-label="edit review"
+														onClick={() => {
+															setRatingInput(rev.rating);
+															setCommentInput(rev.comment ?? "");
+															setShowReviewForm(true);
+														}}
+													>
+														✏️
+													</button>
+													<button
+														type="button"
+														aria-label="delete review"
+														onClick={async () => {
+															// 即時にフォームを閉じて初期化
+															setShowReviewForm(false);
+															setRatingInput(3);
+															setCommentInput("");
+															// レビュー削除を非同期で実行
+															try {
+																await deleteOwnReview();
+																showSuccess("レビューを削除しました！");
+															} catch (error) {
+																showError("削除に失敗しました...");
+																console.error("Review deletion error:", error);
+															}
+														}}
+													>
+														🗑️
+													</button>
+												</ReviewActions>
+											)}
 									</ReviewItem>
 								))}
 							</>
@@ -775,15 +788,28 @@ const ProductDetail: React.FC = () => {
 							</PreventDoubleClickButton>
 						)}
 
-						{user && (
+						{user && !purchaseLoading && (
 							<>
-								{!showReviewForm ? (
+								{!isAdmin(user) && !hasPurchased ? (
+									<div
+										style={{
+											color: "rgba(255, 255, 255, 0.7)",
+											fontSize: "14px",
+											padding: "16px",
+											background: "rgba(255, 255, 255, 0.05)",
+											borderRadius: "8px",
+											border: "1px solid rgba(255, 255, 255, 0.1)",
+										}}
+									>
+										📝 この商品を購入したユーザーのみレビューを投稿できます。
+									</div>
+								) : (isAdmin(user) || hasPurchased) && !showReviewForm ? (
 									<PreventDoubleClickButton
 										onClick={() => setShowReviewForm(true)}
 									>
 										レビューを書く
 									</PreventDoubleClickButton>
-								) : (
+								) : (isAdmin(user) || hasPurchased) && showReviewForm ? (
 									<ReviewForm
 										onSubmit={handleSubmitReview}
 										data-testid="review-form"
@@ -814,7 +840,11 @@ const ProductDetail: React.FC = () => {
 										/>
 										<input type="hidden" name="rating" value={ratingInput} />
 										<div
-											style={{ display: "flex", gap: "12px", marginTop: "8px" }}
+											style={{
+												display: "flex",
+												gap: "12px",
+												marginTop: "8px",
+											}}
 										>
 											<button
 												type="submit"
@@ -853,7 +883,7 @@ const ProductDetail: React.FC = () => {
 											</button>
 										</div>
 									</ReviewForm>
-								)}
+								) : null}
 							</>
 						)}
 					</ReviewsSection>

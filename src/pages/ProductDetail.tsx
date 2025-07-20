@@ -6,6 +6,7 @@ import { useProducts } from "../hooks/useProducts";
 import { PaymentModal } from "../components/payment/PaymentModal";
 import { LoginModal } from "../components/auth/LoginModal";
 import { useAuth } from "../contexts/AuthProvider";
+import { DeleteConfirmationModal } from "../components/ui/DeleteConfirmationModal";
 import { useReviews } from "../hooks/useReviews";
 import { useProductPurchase } from "../hooks/useProductPurchase";
 import { PreventDoubleClickButton } from "../components/ui/PreventDoubleClickButton";
@@ -198,11 +199,21 @@ const ReviewItem = styled.div`
 	display: flex;
 	justify-content: space-between;
 	align-items: flex-start;
+	word-wrap: break-word;
+	word-break: break-word;
+	overflow-wrap: break-word;
+	max-width: 100%;
+	overflow: hidden;
 `;
 
 const ReviewActions = styled.div`
 	display: flex;
 	gap: 8px;
+	word-wrap: break-word;
+	word-break: break-word;
+	overflow-wrap: break-word;
+	max-width: 100%;
+	overflow: hidden;
 	button {
 		background: none;
 		border: none;
@@ -435,6 +446,9 @@ const ProductDetail: React.FC = () => {
 	const [activeTab, setActiveTab] = useState<
 		"description" | "features" | "requirements"
 	>("description");
+	const [deleteTargetReview, setDeleteTargetReview] = useState<null | string>(
+		null
+	);
 
 	const formatDate = (dateString: string) => {
 		return new Date(dateString).toLocaleDateString("ja-JP", {
@@ -1054,67 +1068,7 @@ const ProductDetail: React.FC = () => {
 												<button
 													type="button"
 													aria-label="delete review"
-													onClick={async () => {
-														// 即時にフォームを閉じて初期化
-														setShowReviewForm(false);
-														setRatingInput(3);
-														setCommentInput("");
-														// レビュー削除を非同期で実行
-														try {
-															console.log(
-																"Deleting review:",
-																rev.id,
-																"by user:",
-																user.id,
-																"isAdmin:",
-																isAdmin(user)
-															);
-															let result:
-																| { error: string | Error | null }
-																| undefined;
-															if (rev.user_id === user.id) {
-																console.log("Deleting own review");
-																result = await deleteOwnReview();
-																console.log(
-																	"Delete own review result:",
-																	result
-																);
-															} else {
-																console.log("Deleting other user's review");
-																result = await deleteReview(rev.id);
-																console.log("Delete review result:", result);
-																console.log("Delete review error details:", {
-																	hasError: !!result.error,
-																	errorMessage:
-																		typeof result.error === "string"
-																			? result.error
-																			: result.error?.message,
-																	errorCode:
-																		typeof result.error === "object" &&
-																		result.error
-																			? (result.error as { code?: string })
-																					?.code
-																			: undefined,
-																});
-															}
-
-															if (result.error) {
-																throw new Error(
-																	typeof result.error === "string"
-																		? result.error
-																		: result.error.message
-																);
-															}
-
-															// 削除処理の完了を少し待ってから成功メッセージを表示
-															setTimeout(() => {
-																showSuccess("レビューを削除しました！");
-															}, 100);
-														} catch (error) {
-															showError("削除に失敗しました...");
-															console.error("Review deletion error:", error);
-														}
-													}}
+													onClick={() => setDeleteTargetReview(rev.id)}
 												>
 													🗑️
 												</button>
@@ -1242,6 +1196,32 @@ const ProductDetail: React.FC = () => {
 							</>
 						)}
 					</ReviewsSection>
+					<DeleteConfirmationModal
+						isOpen={deleteTargetReview !== null}
+						title="レビュー削除の確認"
+						message="本当にレビューを削除しますか？"
+						onCancel={() => setDeleteTargetReview(null)}
+						onConfirm={async () => {
+							if (!deleteTargetReview) return;
+							const revId = deleteTargetReview;
+							setDeleteTargetReview(null);
+							// find review object
+							const targetRev = reviews.find((r) => r.id === revId);
+							if (!targetRev) return;
+							try {
+								let result: { error: unknown } | undefined;
+								if (targetRev.user_id === user?.id) {
+									result = await deleteOwnReview();
+								} else {
+									result = await deleteReview(revId);
+								}
+								if (result?.error) throw result.error;
+								showSuccess("レビューを削除しました！");
+							} catch {
+								showError("削除に失敗しました...");
+							}
+						}}
+					/>
 				</InfoSection>
 			</ProductHeader>
 

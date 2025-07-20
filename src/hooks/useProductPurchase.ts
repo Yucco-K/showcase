@@ -23,7 +23,7 @@ export const useProductPurchase = (
 					.select("id")
 					.eq("user_id", userId)
 					.eq("product_id", productId)
-					.single();
+					.maybeSingle();
 
 				if (dbError && dbError.code !== "PGRST116") {
 					console.error("Database purchase check error:", dbError);

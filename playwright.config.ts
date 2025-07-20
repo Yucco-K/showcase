@@ -5,12 +5,12 @@ export default defineConfig({
 	timeout: 60000,
 	webServer: {
 		command: "npm run dev",
-		url: "http://localhost:5175",
+		url: "http://localhost:5173",
 		reuseExistingServer: !process.env.CI,
 		timeout: 120000,
 	},
 	use: {
-		baseURL: "http://localhost:5175",
+		baseURL: "http://localhost:5173",
 		headless: true,
 	},
 	reporter: process.env.CI

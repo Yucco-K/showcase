@@ -11,10 +11,14 @@
             "id": "11e5a9bf8f27994c",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "obsidian-workspace.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "新規タブ"
+              "title": "obsidian-workspace"
             }
           }
         ]
@@ -91,6 +95,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "obsidian-workspace.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -100,7 +105,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "バックリンク"
+              "title": "obsidian-workspaceへのバックリンク"
             }
           },
           {
@@ -109,11 +114,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "obsidian-workspace.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "アウトゴーイングリンク"
+              "title": "obsidian-workspaceからのアウトゴーイングリンク"
             }
           },
           {
@@ -137,12 +143,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "obsidian-workspace.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "アウトライン"
+              "title": "obsidian-workspaceのアウトライン"
             }
           }
         ]
@@ -164,6 +171,8 @@
   },
   "active": "11e5a9bf8f27994c",
   "lastOpenFiles": [
+    "obsidian-workspace.pdf.sb-f18bca99-3Uao4J",
+    "obsidian-workspace.pdf",
     "技術文書_JA.md",
     "2025-07-18.md",
     "無題のファイル.canvas",

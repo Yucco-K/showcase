@@ -280,7 +280,17 @@ export const ContactForm: React.FC = () => {
 				</details>
 				<details>
 					<summary>
-						<strong>Q9:</strong> 退会方法を教えてください。
+						<strong>Q9:</strong>{" "}
+						メールアドレスやパスワードを変更したい場合はどうすればいいですか？
+					</summary>
+					<p style={{ marginTop: "8px" }}>
+						<strong>A:</strong>{" "}
+						マイページからメールアドレスやパスワードの変更が可能です。ログイン後、マイページにアクセスして設定を変更してください。
+					</p>
+				</details>
+				<details>
+					<summary>
+						<strong>Q10:</strong> 退会方法を教えてください。
 					</summary>
 					<p style={{ marginTop: "8px" }}>
 						<strong>A:</strong>{" "}
@@ -289,7 +299,7 @@ export const ContactForm: React.FC = () => {
 				</details>
 				<details>
 					<summary>
-						<strong>Q10:</strong> 問い合わせの返答はいつもらえますか？
+						<strong>Q11:</strong> 問い合わせの返答はいつもらえますか？
 					</summary>
 					<p style={{ marginTop: "8px" }}>
 						<strong>A:</strong>{" "}
@@ -298,7 +308,7 @@ export const ContactForm: React.FC = () => {
 				</details>
 				<details>
 					<summary>
-						<strong>Q11:</strong> データのバックアップはされていますか？
+						<strong>Q12:</strong> データのバックアップはされていますか？
 					</summary>
 					<p style={{ marginTop: "8px" }}>
 						<strong>A:</strong> はい、Supabase
@@ -307,7 +317,7 @@ export const ContactForm: React.FC = () => {
 				</details>
 				<details>
 					<summary>
-						<strong>Q12:</strong> 対応ブラウザを教えてください。
+						<strong>Q13:</strong> 対応ブラウザを教えてください。
 					</summary>
 					<p style={{ marginTop: "8px" }}>
 						<strong>A:</strong>{" "}

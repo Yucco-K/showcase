@@ -773,6 +773,58 @@ const ProductDetail: React.FC = () => {
 								{reviews.map((rev) => (
 									<ReviewItem key={rev.id}>
 										<div>
+											{/* アバターと名前 */}
+											<div
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "8px",
+													marginBottom: "8px",
+												}}
+											>
+												{rev.profiles?.avatar_url ? (
+													<img
+														src={rev.profiles.avatar_url}
+														alt="avatar"
+														style={{
+															width: "24px",
+															height: "24px",
+															borderRadius: "50%",
+															objectFit: "cover",
+														}}
+													/>
+												) : (
+													<div
+														style={{
+															width: "24px",
+															height: "24px",
+															borderRadius: "50%",
+															background:
+																"linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															fontSize: "12px",
+															color: "white",
+															fontWeight: "600",
+														}}
+													>
+														{rev.profiles?.full_name
+															? rev.profiles.full_name.charAt(0).toUpperCase()
+															: "U"}
+													</div>
+												)}
+												<span
+													style={{
+														fontSize: "14px",
+														color: "rgba(255, 255, 255, 0.8)",
+														fontWeight: "500",
+													}}
+												>
+													{rev.profiles?.full_name || "匿名ユーザー"}
+												</span>
+											</div>
+
 											{renderStars(rev.rating)}
 											<div
 												style={{

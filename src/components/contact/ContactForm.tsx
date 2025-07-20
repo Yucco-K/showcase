@@ -219,8 +219,7 @@ export const ContactForm: React.FC = () => {
 						<strong>Q2:</strong> 退会方法を教えてください。
 					</summary>
 					<p style={{ marginTop: "8px" }}>
-						<strong>A:</strong> You can unsubscribe anytime from "Account
-						Settings" in My Page.
+						<strong>A:</strong> お問い合わせフォームより退会の旨ご連絡ください。
 					</p>
 				</details>
 				<details>

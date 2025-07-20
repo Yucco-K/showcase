@@ -415,8 +415,6 @@ const NavBar: React.FC = () => {
 		};
 	}, [isMobile, isAvatarDropdownOpen]);
 
-	// useEffectの依存配列警告を抑制
-	// eslint-disable-next-line
 	useEffect(() => {
 		// 画面遷移時はナビを自動で閉じる
 		setIsMobileNavOpen(false);

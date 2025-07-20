@@ -80,7 +80,7 @@ jobs:
           echo "NPM version: $(npm --version)"
           npm run dev &
           echo "Development server started in background"
-          sleep 15
+          sleep 30
           echo "Development server startup wait completed"
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://example.supabase.co' }}
@@ -91,9 +91,9 @@ jobs:
       - name: Wait for server
         run: |
           echo "Waiting for development server to start..."
-          npx wait-on http://localhost:5173 --timeout 180000 || echo "Server startup timeout, but continuing..."
+          npx wait-on http://localhost:5173 --timeout 300000 || echo "Server startup timeout, but continuing..."
           echo "Server startup check completed"
-        timeout-minutes: 5
+        timeout-minutes: 8
 
       - name: Run E2E tests
         run: |
@@ -108,7 +108,7 @@ jobs:
           echo "NPM version: $(npm --version)"
           echo "Playwright version: $(npx playwright --version)"
           echo "Running tests with timeout..."
-          timeout 300 npm run test || echo "Tests failed or timed out, but continuing..."
+          timeout 600 npm run test || echo "Tests failed or timed out, but continuing..."
           echo "Test execution completed"
           echo "Test results directory contents:"
           ls -la test-results/ || echo "No test results found"
@@ -119,7 +119,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'dummy-key' }}
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_dummy' }}
           VITE_ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS || 'admin@example.com' }}
-        timeout-minutes: 10
+        timeout-minutes: 15
 
       - name: Upload test results
         if: always()

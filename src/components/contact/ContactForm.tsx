@@ -305,6 +305,7 @@ export const ContactForm: React.FC = () => {
 	const { user } = useAuth();
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState(user?.email || "");
+	const [title, setTitle] = useState("");
 	const [message, setMessage] = useState("");
 	const [category, setCategory] = useState<ContactCategory>("other");
 	const [sent, setSent] = useState(false);
@@ -331,6 +332,11 @@ export const ContactForm: React.FC = () => {
 			if (!emailRegex.test(email.trim())) {
 				errors.push("正しいメールアドレスの形式で入力してください");
 			}
+		}
+
+		// タイトルのバリデーション（任意項目）
+		if (title.trim() && title.trim().length > 100) {
+			errors.push("タイトルは100文字以内で入力してください");
 		}
 
 		// メッセージのバリデーション
@@ -365,6 +371,7 @@ export const ContactForm: React.FC = () => {
 			const { error } = await supabase.from("contacts").insert({
 				name: name.trim(),
 				email: email.trim(),
+				title: title.trim() || "お問い合わせ",
 				message: message.trim(),
 				category: category,
 			});
@@ -731,6 +738,15 @@ export const ContactForm: React.FC = () => {
 						type="email"
 						value={email}
 						onChange={(e) => setEmail(e.target.value)}
+					/>
+				</Field>
+				<Field>
+					<label htmlFor="title">タイトル（任意）</label>
+					<input
+						id="title"
+						type="text"
+						value={title}
+						onChange={(e) => setTitle(e.target.value)}
 					/>
 				</Field>
 				<Field>

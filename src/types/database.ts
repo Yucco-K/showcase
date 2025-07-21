@@ -62,6 +62,7 @@ export interface Contact {
 	id: string;
 	name: string;
 	email: string;
+	title?: string;
 	message: string;
 	category: ContactCategory;
 	created_at: string;

@@ -10,6 +10,7 @@ interface Contact {
 	id: string;
 	name: string;
 	email: string;
+	title?: string;
 	message: string;
 	created_at: string;
 	is_checked: boolean;
@@ -607,6 +608,11 @@ const ContactDetail: React.FC = () => {
 
 			<Section>
 				<SectionTitle>お問い合わせ内容</SectionTitle>
+				{contact.title && (
+					<h3 style={{ color: "white", marginBottom: "12px" }}>
+						{contact.title}
+					</h3>
+				)}
 				<MessageContent>
 					<p>{contact.message}</p>
 				</MessageContent>

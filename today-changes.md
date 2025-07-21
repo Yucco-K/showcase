@@ -1,3 +1,208 @@
+# 2025 年 1 月 27 日の変更内容
+
+## 主要な機能強化
+
+### 1. レビューフィルタリング・ソート機能の実装
+
+#### レビューフィルター機能
+
+- **ファイル**: `src/hooks/useReviews.ts`, `src/pages/ProductDetail.tsx`
+- **変更内容**:
+  - 星数による絞り込み機能（★ 以上の評価）
+  - 日付順・星数順での並び替え機能
+  - 昇順・降順での表示切り替え
+  - 管理者レビューの特別扱い（常に最後に表示）
+
+```typescript
+// フィルター機能の実装例
+export interface ReviewFilter {
+	rating?: number; // 指定した星数以上のレビューのみ表示
+	sortBy?: "date" | "rating"; // 日付順 or 星数順
+	sortOrder?: "asc" | "desc"; // 昇順 or 降順
+}
+
+const filteredAndSortedReviews = useMemo(() => {
+	let result = [...reviews];
+	if (filter.rating !== undefined) {
+		result = result.filter((review) => {
+			if (review.profiles?.role === "admin") return true;
+			return review.rating !== null && review.rating >= filter.rating!;
+		});
+	}
+	// ... ソート処理
+}, [reviews, filter]);
+```
+
+#### レビューソート機能
+
+- **日付順**: 古い順/新しい順での表示
+- **星数順**: 低評価/高評価順での表示
+- **管理者レビュー**: 星数順の場合は常に最後に表示
+
+### 2. コンタクトフォーム機能の大幅強化
+
+#### カテゴリ選択機能の実装
+
+- **ファイル**: `supabase/migrations/20250723000000_add_category_to_contacts.sql`
+- **変更内容**:
+  - `contact_category` ENUM 型の追加
+  - 7 つのカテゴリを定義（緊急、退会申請、機能提案など）
+  - デフォルト値'other'の設定
+
+```sql
+-- カテゴリのenum型を作成
+CREATE TYPE contact_category AS ENUM (
+  'urgent',        -- 緊急
+  'account_delete', -- 退会申請
+  'feature_request', -- 機能追加の提案
+  'account_related', -- アカウント関連
+  'billing',       -- 支払いや請求
+  'support',       -- サポート依頼
+  'other'
+);
+
+ALTER TABLE contacts
+ADD COLUMN category contact_category DEFAULT 'other';
+```
+
+#### タイトル機能の追加
+
+- **ファイル**: `supabase/migrations/20250723040000_add_title_to_contacts.sql`
+- **変更内容**:
+  - `title` VARCHAR(200)カラムの追加
+  - お問い合わせの件名機能を実装
+
+#### ピン留め機能の実装
+
+- **ファイル**: `supabase/migrations/20250723010000_add_pinning_to_contacts.sql`
+- **変更内容**:
+  - `is_pinned` boolean 型カラムの追加
+  - `pinned_at` TIMESTAMP 型カラムの追加
+  - `pinned_by` UUID 型カラムの追加
+  - 緊急カテゴリの自動ピン留め機能
+
+### 3. ContactAdmin UI/UX の大幅改善
+
+#### レスポンシブデザインの最適化
+
+- **ファイル**: `src/pages/ContactAdmin.tsx`
+- **変更内容**:
+  - タイトル表示の 1 行制限（スマホ対応）
+  - 全バッジ・タグ・ボタンの 1 行表示統一
+  - テーブル列幅の最適化
+
+```typescript
+// タイトル1行表示の実装
+const CardTitle = styled.h3`
+	color: white;
+	margin: 0;
+	font-size: 1.1rem;
+	font-weight: 600;
+	flex: 1;
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+
+	@media (max-width: 768px) {
+		font-size: 1rem;
+	}
+
+	@media (max-width: 480px) {
+		font-size: 0.95rem;
+	}
+`;
+```
+
+#### ピン留め機能 UI
+
+- **変更内容**:
+  - ピン留めボタンの視覚的フィードバック
+  - 緊急カテゴリの自動ピン留め表示
+  - ピン留め状態のアニメーション効果
+
+#### テーブルレイアウトの最適化
+
+- **変更内容**:
+  - ステータス列の固定幅設定（86px）
+  - min-width 設定によるレイアウト安定性確保
+  - レスポンシブ対応の幅調整
+
+## セキュリティ・パフォーマンス改善
+
+### 1. UI 要素の 1 行表示統一
+
+- 全てのボタン、バッジ、タグに`white-space: nowrap`を適用
+- `text-overflow: ellipsis`による省略表示
+- レイアウト崩れの防止
+
+### 2. アクセシビリティの向上
+
+- `aria-label`属性の追加
+- `title`属性による補足情報
+- キーボードナビゲーション対応
+
+### 3. データベーススキーマの改善
+
+- ENUM 型による型安全性の確保
+- 適切なデフォルト値の設定
+- 外部キー制約による整合性確保
+
+## 技術的な改善点
+
+### 1. TypeScript 型定義の強化
+
+```typescript
+export interface Contact {
+	id: string;
+	name: string;
+	email: string;
+	title?: string; // 新規追加
+	message: string;
+	category: ContactCategory; // ENUM型対応
+	created_at: string;
+	is_checked: boolean;
+	is_replied: boolean;
+	status: "pending" | "in_progress" | "completed" | "closed";
+	admin_notes: string | null;
+	replied_at: string | null;
+	checked_at: string | null;
+	checked_by: string | null;
+	replied_by: string | null;
+	is_pinned: boolean; // 新規追加
+	pinned_at: string | null; // 新規追加
+	pinned_by: string | null; // 新規追加
+}
+```
+
+### 2. Styled Components の最適化
+
+- 共通スタイルパターンの統一
+- レスポンシブブレークポイントの標準化
+- パフォーマンス向上のための memo 化
+
+### 3. フック関数の改善
+
+- `useMemo`によるパフォーマンス最適化
+- `useCallback`による関数の安定化
+- 状態管理の効率化
+
+## 今後の展望
+
+### 短期的な改善予定
+
+1. コンタクトフォームのリアルタイム検索
+2. バルク操作機能の実装
+3. エクスポート機能の追加
+
+### 中長期的な機能拡張
+
+1. 通知システムの実装
+2. ワークフロー管理機能
+3. 分析・レポート機能
+
+---
+
 # 2025 年 7 月 21 日の変更内容
 
 ## 主要な機能強化

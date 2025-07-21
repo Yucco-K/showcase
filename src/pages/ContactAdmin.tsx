@@ -92,6 +92,17 @@ const Th = styled.th`
 			width: 120px;
 		}
 	}
+
+	/* ステータスカラムを固定幅で広めに */
+	&:nth-child(5) {
+		width: 86px;
+		min-width: 86px;
+
+		@media (max-width: 1024px) {
+			width: 66px;
+			min-width: 66px;
+		}
+	}
 `;
 
 const Td = styled.td`
@@ -105,6 +116,17 @@ const Td = styled.td`
 
 		@media (max-width: 1024px) {
 			padding: 8px 6px;
+		}
+	}
+
+	/* ステータスカラムを固定幅で広めに */
+	&:nth-child(5) {
+		width: 102px;
+		min-width: 102px;
+
+		@media (max-width: 1024px) {
+			width: 82px;
+			min-width: 82px;
 		}
 	}
 `;
@@ -142,6 +164,9 @@ const PinButton = styled.button<{ $isPinned: boolean }>`
 	z-index: 10;
 	box-shadow: ${({ $isPinned }) =>
 		$isPinned ? "0 2px 8px rgba(220, 118, 51, 0.3)" : "none"};
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 
 	&:hover {
 		background: ${({ $isPinned }) =>
@@ -171,11 +196,7 @@ const PinButton = styled.button<{ $isPinned: boolean }>`
 	`}
 
 	@media (max-width: 480px) {
-		width: 28px;
-		height: 28px;
-		font-size: 12px;
-		top: 6px;
-		left: 6px;
+		margin-bottom: 8px;
 	}
 `;
 
@@ -271,6 +292,17 @@ const CardTitle = styled.h3`
 	font-weight: 600;
 	flex: 1;
 	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+
+	@media (max-width: 768px) {
+		font-size: 1rem;
+	}
+
+	@media (max-width: 480px) {
+		font-size: 0.95rem;
+	}
 `;
 
 const CardStatus = styled.span<{ $status: Contact["status"] }>`
@@ -319,6 +351,14 @@ const CardValue = styled.span`
 	color: white;
 	font-size: 0.9rem;
 	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 200px;
+
+	@media (max-width: 480px) {
+		max-width: 150px;
+	}
 `;
 
 const CardActions = styled.div`
@@ -345,21 +385,46 @@ const ActionButton = styled.button<{ $variant: "edit" | "delete" | "view" }>`
 	border-radius: 6px;
 	padding: 8px 12px;
 	margin-left: 8px;
-	margin-bottom: ${({ $variant }) => ($variant === "edit" ? "8px" : "0")};
+	transform: ${({ $variant }) => {
+		switch ($variant) {
+			case "edit":
+				return "translateY(2px)";
+			case "delete":
+				return "translateY(1px)";
+			default:
+				return "none";
+		}
+	}};
 	cursor: pointer;
 	font-size: 14px;
 	transition: all 0.2s ease;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 
 	&:hover {
-		transform: scale(1.05);
+		transform: ${({ $variant }) => {
+			switch ($variant) {
+				case "edit":
+					return "translateY(2px) scale(1.05)";
+				case "delete":
+					return "translateY(1px) scale(1.05)";
+				default:
+					return "scale(1.05)";
+			}
+		}};
 	}
 
 	@media (max-width: 768px) {
 		padding: 10px 14px;
 		font-size: 16px;
 		margin-left: 0;
-		margin-bottom: 0;
+		transform: none;
 		flex: 1;
+
+		&:hover {
+			transform: scale(1.05);
+		}
 	}
 `;
 
@@ -603,6 +668,9 @@ const FilterSelect = styled.select.attrs({
 	color: white;
 	font-size: 14px;
 	min-width: 150px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 
 	&:focus {
 		outline: none;
@@ -612,6 +680,7 @@ const FilterSelect = styled.select.attrs({
 	option {
 		background: #1f2937;
 		color: white;
+		white-space: nowrap;
 	}
 
 	@media (max-width: 768px) {
@@ -637,6 +706,8 @@ const FilterButton = styled.button`
 	cursor: pointer;
 	transition: all 0.2s ease;
 	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 
 	&:hover {
 		background: rgba(255, 255, 255, 0.2);
@@ -691,8 +762,15 @@ const CategoryBadge = styled.span<{ $isUrgent: boolean }>`
 const CategoryRow = styled.div`
 	display: flex;
 	justify-content: flex-start;
+	align-items: center;
+	gap: 12px;
 	margin-bottom: 12px;
 	width: 100%;
+	flex-wrap: wrap;
+
+	@media (max-width: 480px) {
+		gap: 8px;
+	}
 `;
 
 interface ContactFormData {
@@ -776,6 +854,7 @@ export const ContactAdmin: React.FC = () => {
 				id: String(item.id),
 				name: String(item.name),
 				email: String(item.email),
+				title: item.title ? String(item.title) : "お問い合わせ",
 				message: String(item.message),
 				category: item.category || "other",
 				created_at: String(item.created_at),
@@ -1114,6 +1193,7 @@ export const ContactAdmin: React.FC = () => {
 							<tr>
 								<Th>カテゴリ</Th>
 								<Th>名前</Th>
+								<Th>タイトル</Th>
 								<Th>メール</Th>
 								<Th>ステータス</Th>
 								<Th>確認</Th>
@@ -1134,11 +1214,86 @@ export const ContactAdmin: React.FC = () => {
 										</CategoryBadge>
 									</Td>
 									<Td>{contact.name}</Td>
+									<Td>
+										{contact.title && contact.title.length > 30
+											? `${contact.title.slice(0, 30)}...`
+											: contact.title || "お問い合わせ"}
+									</Td>
 									<Td>{contact.email}</Td>
 									<Td>
-										{contact.message.length > 50
-											? `${contact.message.slice(0, 50)}...`
-											: contact.message}
+										<StatusBadge $status={contact.status}>
+											{getStatusLabel(contact.status)}
+										</StatusBadge>
+									</Td>
+									<Td>
+										{contact.is_checked ? (
+											<span
+												style={{
+													color: "#ffffff",
+													backgroundColor: "#10b981",
+													borderRadius: "50%",
+													padding: "4px 8px",
+													fontSize: "14px",
+													fontWeight: "bold",
+													display: "inline-block",
+													minWidth: "20px",
+													textAlign: "center",
+												}}
+											>
+												✓
+											</span>
+										) : (
+											<span
+												style={{
+													color: "#ffffff",
+													backgroundColor: "#fbbf24",
+													borderRadius: "4px",
+													padding: "4px 8px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													display: "inline-block",
+													minWidth: "20px",
+													textAlign: "center",
+												}}
+											>
+												未
+											</span>
+										)}
+									</Td>
+									<Td>
+										{contact.is_replied ? (
+											<span
+												style={{
+													color: "#ffffff",
+													backgroundColor: "#10b981",
+													borderRadius: "50%",
+													padding: "4px 8px",
+													fontSize: "14px",
+													fontWeight: "bold",
+													display: "inline-block",
+													minWidth: "20px",
+													textAlign: "center",
+												}}
+											>
+												✓
+											</span>
+										) : (
+											<span
+												style={{
+													color: "#ffffff",
+													backgroundColor: "#fbbf24",
+													borderRadius: "4px",
+													padding: "4px 8px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													display: "inline-block",
+													minWidth: "20px",
+													textAlign: "center",
+												}}
+											>
+												未
+											</span>
+										)}
 									</Td>
 									<Td>
 										{new Date(contact.created_at).toLocaleString("ja-JP", {
@@ -1182,18 +1337,27 @@ export const ContactAdmin: React.FC = () => {
 												📌
 											</PinButton>
 											<ActionButton
+												$variant="view"
+												onClick={() =>
+													navigate(`/contact-detail/${contact.id}`)
+												}
+												aria-label={`${contact.name}のお問い合わせを表示`}
+											>
+												👀
+											</ActionButton>
+											<ActionButton
 												onClick={() => handleEdit(contact)}
 												$variant="edit"
 												aria-label={`${contact.name}のお問い合わせを編集`}
 											>
-												編集
+												✏️
 											</ActionButton>
 											<ActionButton
 												onClick={() => setDeleteConfirmId(contact.id)}
 												$variant="delete"
 												aria-label={`${contact.name}のお問い合わせを削除`}
 											>
-												削除
+												🗑️
 											</ActionButton>
 										</div>
 									</Td>
@@ -1247,19 +1411,23 @@ export const ContactAdmin: React.FC = () => {
 								📌
 							</PinButton>
 							<CardHeader>
-								<CardTitle>{contact.name}</CardTitle>
-								<CardStatus $status={contact.status}>
-									{getStatusLabel(contact.status)}
-								</CardStatus>
+								<CardTitle>{contact.title || "お問い合わせ"}</CardTitle>
 							</CardHeader>
 
 							<CategoryRow>
 								<CategoryBadge $isUrgent={contact.category === "urgent"}>
 									{CATEGORY_LABELS[contact.category]}
 								</CategoryBadge>
+								<CardStatus $status={contact.status}>
+									{getStatusLabel(contact.status)}
+								</CardStatus>
 							</CategoryRow>
 
 							<CardInfo>
+								<CardInfoRow>
+									<CardLabel>お名前</CardLabel>
+									<CardValue>{contact.name}</CardValue>
+								</CardInfoRow>
 								<CardInfoRow>
 									<CardLabel>メール</CardLabel>
 									<CardValue>{contact.email}</CardValue>
@@ -1402,7 +1570,7 @@ export const ContactAdmin: React.FC = () => {
 						</ContactInfo>
 
 						<MessageContent>
-							<h4>お問い合わせ内容</h4>
+							<h4>{editingContact.title || "お問い合わせ"}</h4>
 							<p>{editingContact.message}</p>
 						</MessageContent>
 

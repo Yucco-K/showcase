@@ -223,6 +223,7 @@ const BlogGrid = styled.div`
 	flex-wrap: wrap;
 	justify-content: center;
 	margin-top: 2rem;
+	margin-bottom: 3rem; /* 最下部に余白を追加 */
 	width: 100%;
 	box-sizing: border-box;
 `;

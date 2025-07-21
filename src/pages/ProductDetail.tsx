@@ -390,6 +390,70 @@ const Tag = styled.span`
 	font-size: 14px;
 `;
 
+const ReviewControls = styled.div`
+	display: flex;
+	gap: 16px;
+	align-items: center;
+	margin-bottom: 24px;
+	flex-wrap: wrap;
+
+	@media (max-width: 768px) {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
+	}
+`;
+
+const FilterGroup = styled.div`
+	display: flex;
+	gap: 8px;
+	align-items: center;
+`;
+
+const FilterLabel = styled.label`
+	color: rgba(255, 255, 255, 0.8);
+	font-size: 14px;
+	font-weight: 500;
+	white-space: nowrap;
+`;
+
+const FilterSelect = styled.select`
+	background: rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 6px;
+	color: white;
+	padding: 6px 12px;
+	font-size: 14px;
+	cursor: pointer;
+	min-width: 120px;
+
+	option {
+		background: #1a1a1a;
+		color: white;
+	}
+
+	&:focus {
+		outline: none;
+		border-color: #3b82f6;
+	}
+`;
+
+const ClearFilterButton = styled.button`
+	background: rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 6px;
+	color: rgba(255, 255, 255, 0.8);
+	padding: 6px 12px;
+	font-size: 14px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+
+	&:hover {
+		background: rgba(255, 255, 255, 0.15);
+		color: white;
+	}
+`;
+
 const ProductDetail: React.FC = () => {
 	useEffect(() => {
 		document.title = "Dummy App Store";
@@ -402,9 +466,14 @@ const ProductDetail: React.FC = () => {
 	const { product, isFound, isLoading } = useProduct(id || "");
 	const { toggleFavorite, isFavorite, allProducts } = useProducts();
 	const { user, isAdmin } = useAuth();
+	const reviewsHook = useReviews(id || "", user?.id);
 	const {
 		reviews,
+		allReviews,
 		loading: reviewsLoading,
+		filter,
+		updateFilter,
+		clearFilter,
 		addReview,
 		updateReview,
 		addReply,
@@ -412,7 +481,7 @@ const ProductDetail: React.FC = () => {
 		deleteOwnReview,
 		deleteReview,
 		myReview,
-	} = useReviews(id || "", user?.id);
+	} = reviewsHook;
 	const { hasPurchased, isLoading: purchaseLoading } = useProductPurchase(
 		id || "",
 		user?.id
@@ -719,10 +788,6 @@ const ProductDetail: React.FC = () => {
 							<MetaLabel>最終更新</MetaLabel>
 							<MetaValue>{product.lastUpdated}</MetaValue>
 						</MetaItem>
-						<MetaItem>
-							<MetaLabel>評価</MetaLabel>
-							<MetaValue>{product.rating}/5.0</MetaValue>
-						</MetaItem>
 					</MetaInfo>
 
 					<TagsContainer>
@@ -782,11 +847,77 @@ const ProductDetail: React.FC = () => {
 					{/* Reviews */}
 					<ReviewsSection>
 						<h3>レビュー</h3>
+
+						{/* レビューコントロール */}
+						<ReviewControls>
+							<FilterGroup>
+								<FilterLabel>星数フィルター:</FilterLabel>
+								<FilterSelect
+									value={filter.rating || ""}
+									onChange={(e) => {
+										const value = e.target.value;
+										updateFilter({
+											rating: value ? parseInt(value) : undefined,
+										});
+									}}
+									aria-label="星数フィルター"
+								>
+									<option value="">すべて</option>
+									<option value="5">★★★★★ 以上</option>
+									<option value="4">★★★★ 以上</option>
+									<option value="3">★★★ 以上</option>
+									<option value="2">★★ 以上</option>
+									<option value="1">★ 以上</option>
+								</FilterSelect>
+							</FilterGroup>
+
+							<FilterGroup>
+								<FilterLabel>ソート:</FilterLabel>
+								<FilterSelect
+									value={filter.sortBy || "date"}
+									onChange={(e) => {
+										updateFilter({
+											sortBy: e.target.value as "date" | "rating",
+										});
+									}}
+									aria-label="ソート方法"
+								>
+									<option value="date">日付順</option>
+									<option value="rating">星数順</option>
+								</FilterSelect>
+							</FilterGroup>
+
+							<FilterGroup>
+								<FilterLabel>順序:</FilterLabel>
+								<FilterSelect
+									value={filter.sortOrder || "desc"}
+									onChange={(e) => {
+										updateFilter({
+											sortOrder: e.target.value as "asc" | "desc",
+										});
+									}}
+									aria-label="ソート順序"
+								>
+									<option value="desc">降順</option>
+									<option value="asc">昇順</option>
+								</FilterSelect>
+							</FilterGroup>
+
+							<ClearFilterButton onClick={() => clearFilter()} type="button">
+								フィルターをクリア
+							</ClearFilterButton>
+						</ReviewControls>
+
 						{reviewsLoading ? (
 							<p>Loading...</p>
 						) : (
 							<>
-								{reviews.length === 0 && <p>まだレビューがありません。</p>}
+								{reviews.length === 0 && allReviews.length === 0 && (
+									<p>まだレビューがありません。</p>
+								)}
+								{reviews.length === 0 && allReviews.length > 0 && (
+									<p>フィルター条件に合うレビューがありません。</p>
+								)}
 								{reviews.map((rev) => (
 									<ReviewItem key={rev.id}>
 										<div>

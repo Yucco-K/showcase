@@ -142,6 +142,13 @@ export const useProducts = () => {
 			result = result.filter((product) => product.price <= filter.maxPrice!);
 		}
 
+		// 評価フィルター
+		if (filter.minRating !== undefined) {
+			result = result.filter(
+				(product) => (product.rating ?? 0) >= filter.minRating!
+			);
+		}
+
 		// 検索クエリ
 		if (filter.searchQuery) {
 			const searchTerm = filter.searchQuery.toLowerCase();

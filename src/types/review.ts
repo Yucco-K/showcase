@@ -9,4 +9,9 @@ export interface Review {
 	created_at: string;
 	updated_at: string;
 	replies?: Review[]; // 返信の配列
+	profiles?: {
+		full_name: string | null;
+		avatar_url: string | null;
+		role?: string | null;
+	} | null;
 }

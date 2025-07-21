@@ -5,29 +5,18 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthProvider";
 import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
+import type { Contact, ContactCategory } from "../types/database";
 
-interface Contact {
-	id: string;
-	name: string;
-	email: string;
-	message: string;
-	created_at: string;
-	is_checked: boolean;
-	is_replied: boolean;
-	status: "pending" | "in_progress" | "completed" | "closed";
-	admin_notes: string | null;
-	replied_at: string | null;
-	checked_at: string | null;
-	checked_by: string | null;
-	replied_by: string | null;
-}
-
-interface ContactFormData {
-	is_checked: boolean;
-	is_replied: boolean;
-	status: Contact["status"];
-	admin_notes: string;
-}
+// カテゴリラベルの定義
+const CATEGORY_LABELS: Record<ContactCategory, string> = {
+	urgent: "🚨 緊急",
+	account_delete: "🚪 退会申請",
+	feature_request: "💡 機能追加の提案",
+	account_related: "👤 アカウント関連",
+	billing: "💳 支払いや請求",
+	support: "🛟 サポート依頼",
+	other: "📝 その他",
+};
 
 const Container = styled.div`
 	max-width: 1200px;
@@ -67,6 +56,25 @@ const ContactTable = styled.table`
 	@media (max-width: 768px) {
 		display: none;
 	}
+
+	/* 緊急カテゴリの行スタイル */
+	tr.urgent-row {
+		background: rgba(239, 68, 68, 0.05);
+		border-left: 4px solid #ef4444;
+
+		td:first-child {
+			position: relative;
+
+			&::before {
+				content: "📌";
+				position: absolute;
+				left: -2px;
+				top: 50%;
+				transform: translateY(-50%);
+				font-size: 10px;
+			}
+		}
+	}
 `;
 
 const Th = styled.th`
@@ -75,12 +83,30 @@ const Th = styled.th`
 	padding: 16px;
 	text-align: left;
 	font-weight: 600;
+
+	/* カテゴリカラムを狭めに */
+	&:first-child {
+		width: 140px;
+
+		@media (max-width: 1024px) {
+			width: 120px;
+		}
+	}
 `;
 
 const Td = styled.td`
 	color: white;
 	padding: 16px;
 	border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+	/* カテゴリカラムの調整 */
+	&:first-child {
+		padding: 12px 8px;
+
+		@media (max-width: 1024px) {
+			padding: 8px 6px;
+		}
+	}
 `;
 
 // モバイル用カードレイアウト
@@ -94,11 +120,139 @@ const MobileCardContainer = styled.div`
 	}
 `;
 
+const PinButton = styled.button<{ $isPinned: boolean }>`
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	background: ${({ $isPinned }) =>
+		$isPinned ? "#dc7633" : "rgba(255, 255, 255, 0.1)"};
+	border: 2px solid
+		${({ $isPinned }) => ($isPinned ? "#dc7633" : "rgba(255, 255, 255, 0.2)")};
+	color: ${({ $isPinned }) =>
+		$isPinned ? "white" : "rgba(255, 255, 255, 0.7)"};
+	border-radius: 50%;
+	width: 32px;
+	height: 32px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 14px;
+	transition: all 0.3s ease;
+	z-index: 10;
+	box-shadow: ${({ $isPinned }) =>
+		$isPinned ? "0 2px 8px rgba(220, 118, 51, 0.3)" : "none"};
+
+	&:hover {
+		background: ${({ $isPinned }) =>
+			$isPinned ? "#b8621f" : "rgba(255, 255, 255, 0.2)"};
+		transform: scale(1.1);
+		box-shadow: ${({ $isPinned }) =>
+			$isPinned
+				? "0 4px 12px rgba(220, 118, 51, 0.4)"
+				: "0 4px 12px rgba(0, 0, 0, 0.3)"};
+	}
+
+	&:active {
+		transform: scale(0.95);
+	}
+
+	/* ピン留め済みの場合、アイコンを少し傾ける */
+	${({ $isPinned }) =>
+		$isPinned &&
+		`
+		transform: rotate(-15deg);
+		&:hover {
+			transform: rotate(-15deg) scale(1.1);
+		}
+		&:active {
+			transform: rotate(-15deg) scale(0.95);
+		}
+	`}
+
+	@media (max-width: 480px) {
+		width: 28px;
+		height: 28px;
+		font-size: 12px;
+		top: 6px;
+		left: 6px;
+	}
+`;
+
 const ContactCard = styled.div`
 	background: rgba(255, 255, 255, 0.05);
 	border-radius: 12px;
 	padding: 20px;
+	padding-top: 50px; /* ピン留めボタンのためのマージン */
 	border: 1px solid rgba(255, 255, 255, 0.1);
+	position: relative;
+
+	/* 緊急カテゴリの特別スタイル */
+	&.urgent-contact {
+		border: 2px solid #ef4444;
+		background: rgba(239, 68, 68, 0.05);
+		position: relative;
+
+		&::before {
+			content: "📌";
+			position: absolute;
+			top: -8px;
+			right: 16px;
+			background: #dc7633;
+			color: white;
+			padding: 4px 8px;
+			border-radius: 0 0 8px 8px;
+			font-size: 12px;
+			font-weight: 600;
+		}
+
+		@media (max-width: 480px) {
+			&::before {
+				font-size: 10px;
+				padding: 2px 6px;
+				top: -6px;
+				right: 12px;
+			}
+		}
+
+		/* 緊急カテゴリではピン留めボタンを非表示（既に最優先表示のため不要） */
+		${PinButton} {
+			display: none;
+		}
+	}
+
+	/* ピン留めされたカードの特別スタイル */
+	&.pinned-contact {
+		border: 2px solid #dc7633;
+		background: rgba(220, 118, 51, 0.05);
+
+		&::after {
+			content: "📌";
+			position: absolute;
+			top: -8px;
+			right: 16px;
+			background: #dc7633;
+			color: white;
+			padding: 4px 8px;
+			border-radius: 0 0 8px 8px;
+			font-size: 12px;
+			font-weight: 600;
+		}
+
+		@media (max-width: 480px) {
+			&::after {
+				font-size: 10px;
+				padding: 2px 6px;
+				top: -6px;
+				right: 12px;
+			}
+		}
+	}
+
+	@media (max-width: 480px) {
+		padding: 16px;
+		padding-top: 44px; /* モバイルでのピン留めボタンマージン */
+	}
 `;
 
 const CardHeader = styled.div`
@@ -106,6 +260,8 @@ const CardHeader = styled.div`
 	justify-content: space-between;
 	align-items: flex-start;
 	margin-bottom: 16px;
+	flex-wrap: wrap;
+	gap: 8px;
 `;
 
 const CardTitle = styled.h3`
@@ -113,6 +269,8 @@ const CardTitle = styled.h3`
 	margin: 0;
 	font-size: 1.1rem;
 	font-weight: 600;
+	flex: 1;
+	min-width: 0;
 `;
 
 const CardStatus = styled.span<{ $status: Contact["status"] }>`
@@ -121,6 +279,7 @@ const CardStatus = styled.span<{ $status: Contact["status"] }>`
 	font-size: 0.8rem;
 	font-weight: 600;
 	display: inline-block;
+	white-space: nowrap;
 	${({ $status }) => {
 		switch ($status) {
 			case "pending":
@@ -144,6 +303,7 @@ const CardInfo = styled.div`
 	margin-bottom: 16px;
 `;
 
+// モバイルカード内の情報行をより柔軟に
 const CardInfoRow = styled.div`
 	display: flex;
 	justify-content: space-between;
@@ -414,10 +574,21 @@ const FilterSection = styled.div`
 	flex-wrap: wrap;
 	align-items: center;
 
+	@media (max-width: 1024px) {
+		padding: 16px;
+		gap: 12px;
+	}
+
 	@media (max-width: 768px) {
 		padding: 16px;
 		flex-direction: column;
 		align-items: stretch;
+		gap: 12px;
+	}
+
+	@media (max-width: 480px) {
+		padding: 12px;
+		gap: 8px;
 	}
 `;
 
@@ -431,6 +602,7 @@ const FilterSelect = styled.select.attrs({
 	background: rgba(255, 255, 255, 0.1);
 	color: white;
 	font-size: 14px;
+	min-width: 150px;
 
 	&:focus {
 		outline: none;
@@ -440,6 +612,18 @@ const FilterSelect = styled.select.attrs({
 	option {
 		background: #1f2937;
 		color: white;
+	}
+
+	@media (max-width: 768px) {
+		width: 100%;
+		min-width: unset;
+		padding: 12px 16px;
+		font-size: 16px; /* iOS でのズーム防止 */
+	}
+
+	@media (max-width: 480px) {
+		font-size: 14px;
+		padding: 10px 12px;
 	}
 `;
 
@@ -452,9 +636,108 @@ const FilterButton = styled.button`
 	font-size: 14px;
 	cursor: pointer;
 	transition: all 0.2s ease;
+	white-space: nowrap;
 
 	&:hover {
 		background: rgba(255, 255, 255, 0.2);
+	}
+
+	@media (max-width: 768px) {
+		width: 100%;
+		padding: 12px 16px;
+		font-size: 16px;
+	}
+
+	@media (max-width: 480px) {
+		padding: 10px 12px;
+		font-size: 14px;
+	}
+`;
+
+const CategoryBadge = styled.span<{ $isUrgent: boolean }>`
+	font-size: 14px;
+	padding: 6px 12px;
+	border-radius: 16px;
+	background: ${({ $isUrgent }) =>
+		$isUrgent ? "rgba(239, 68, 68, 0.2)" : "rgba(255, 255, 255, 0.1)"};
+	color: ${({ $isUrgent }) =>
+		$isUrgent ? "#ef4444" : "rgba(255, 255, 255, 0.8)"};
+	font-weight: 600;
+	white-space: nowrap;
+	display: inline-block;
+
+	@media (max-width: 768px) {
+		font-size: 13px;
+		padding: 5px 10px;
+		border-radius: 12px;
+	}
+
+	@media (max-width: 480px) {
+		font-size: 12px;
+		padding: 4px 8px;
+		border-radius: 10px;
+
+		/* 緊急カテゴリの場合はより目立つように */
+		${({ $isUrgent }) =>
+			$isUrgent &&
+			`
+			background: rgba(239, 68, 68, 0.3);
+			border: 1px solid #ef4444;
+			box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+		`}
+	}
+`;
+
+const CategoryRow = styled.div`
+	display: flex;
+	justify-content: flex-start;
+	margin-bottom: 12px;
+	width: 100%;
+`;
+
+interface ContactFormData {
+	is_checked: boolean;
+	is_replied: boolean;
+	status: "pending" | "in_progress" | "completed" | "closed";
+	admin_notes: string;
+}
+
+const SearchInput = styled.input`
+	padding: 8px;
+	border-radius: 4px;
+	border: 1px solid #ccc;
+	width: 240px;
+	font-size: 14px;
+
+	@media (max-width: 768px) {
+		width: 100%;
+		padding: 12px;
+		font-size: 16px; /* iOS でのズーム防止 */
+		box-sizing: border-box;
+	}
+
+	@media (max-width: 480px) {
+		padding: 10px;
+		font-size: 14px;
+	}
+`;
+
+const SearchContainer = styled.div`
+	margin-bottom: 24px;
+
+	@media (max-width: 768px) {
+		margin-bottom: 20px;
+	}
+`;
+
+const SearchHint = styled.div`
+	margin-top: 8px;
+	font-size: 0.9rem;
+	color: rgba(255, 255, 255, 0.7);
+
+	@media (max-width: 480px) {
+		font-size: 0.8rem;
+		margin-top: 6px;
 	}
 `;
 
@@ -469,6 +752,7 @@ export const ContactAdmin: React.FC = () => {
 	const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 	const [filters, setFilters] = useState({
 		status: "all" as string,
+		category: "all" as string,
 		isChecked: "all" as string,
 		isReplied: "all" as string,
 	});
@@ -482,8 +766,32 @@ export const ContactAdmin: React.FC = () => {
 				.select("*")
 				.order("created_at", { ascending: false });
 
-			if (error) throw error;
-			setContacts(data || []);
+			if (error) {
+				console.error("Error fetching contacts:", error);
+				showError("お問い合わせ一覧の取得に失敗しました");
+				return;
+			}
+
+			const contactsData: Contact[] = data.map((item: any) => ({
+				id: String(item.id),
+				name: String(item.name),
+				email: String(item.email),
+				message: String(item.message),
+				category: item.category || "other",
+				created_at: String(item.created_at),
+				is_checked: Boolean(item.is_checked),
+				is_replied: Boolean(item.is_replied),
+				status: item.status || "pending",
+				admin_notes: item.admin_notes ? String(item.admin_notes) : null,
+				replied_at: item.replied_at ? String(item.replied_at) : null,
+				checked_at: item.checked_at ? String(item.checked_at) : null,
+				checked_by: item.checked_by ? String(item.checked_by) : null,
+				replied_by: item.replied_by ? String(item.replied_by) : null,
+				is_pinned: Boolean(item.is_pinned),
+				pinned_at: item.pinned_at ? String(item.pinned_at) : null,
+				pinned_by: item.pinned_by ? String(item.pinned_by) : null,
+			}));
+			setContacts(contactsData);
 		} catch (error) {
 			console.error("Failed to fetch contacts:", error);
 			showError("お問い合わせ一覧の取得に失敗しました");
@@ -503,12 +811,15 @@ export const ContactAdmin: React.FC = () => {
 		const matchesSearch =
 			contact.name.toLowerCase().includes(q) ||
 			contact.email.toLowerCase().includes(q) ||
-			contact.message.toLowerCase().includes(q) ||
-			(contact.admin_notes?.toLowerCase().includes(q) ?? false);
+			contact.message.toLowerCase().includes(q);
 
 		// ステータスフィルター
 		const matchesStatus =
 			filters.status === "all" || contact.status === filters.status;
+
+		// カテゴリフィルター
+		const matchesCategory =
+			filters.category === "all" || contact.category === filters.category;
 
 		// 確認状況フィルター
 		const matchesChecked =
@@ -522,8 +833,86 @@ export const ContactAdmin: React.FC = () => {
 			(filters.isReplied === "true" && contact.is_replied) ||
 			(filters.isReplied === "false" && !contact.is_replied);
 
-		return matchesSearch && matchesStatus && matchesChecked && matchesReplied;
+		return (
+			matchesSearch &&
+			matchesStatus &&
+			matchesCategory &&
+			matchesChecked &&
+			matchesReplied
+		);
 	});
+
+	// ソート処理：緊急カテゴリを最上位にピン留め
+	const sortedContacts = [...filteredContacts].sort((a, b) => {
+		// 緊急カテゴリの判定
+		const aIsUrgent = a.category === "urgent";
+		const bIsUrgent = b.category === "urgent";
+
+		// 緊急カテゴリを最上位に配置
+		if (aIsUrgent && !bIsUrgent) return -1;
+		if (!aIsUrgent && bIsUrgent) return 1;
+
+		// 両方とも緊急または両方とも非緊急の場合
+		if (aIsUrgent && bIsUrgent) {
+			// 緊急カテゴリ内では作成日時の降順（新しい順）
+			const dateA = new Date(a.created_at).getTime();
+			const dateB = new Date(b.created_at).getTime();
+			return dateB - dateA;
+		}
+
+		// 非緊急カテゴリの場合：ピン留めを次に優先
+		const aPinned = a.is_pinned || false;
+		const bPinned = b.is_pinned || false;
+
+		if (aPinned && !bPinned) return -1;
+		if (!aPinned && bPinned) return 1;
+
+		// 両方ともピン留めまたは両方とも非ピン留めの場合は作成日時の降順（新しい順）
+		const dateA = new Date(a.created_at).getTime();
+		const dateB = new Date(b.created_at).getTime();
+		return dateB - dateA;
+	});
+
+	// ピン留めトグル処理
+	const handleTogglePin = async (contactId: string, currentPinned: boolean) => {
+		try {
+			const { error } = await supabase
+				.from("contacts")
+				.update({
+					is_pinned: !currentPinned,
+					pinned_at: !currentPinned ? new Date().toISOString() : null,
+					pinned_by: !currentPinned ? user?.id : null,
+				})
+				.eq("id", contactId);
+
+			if (error) {
+				console.error("Failed to toggle pin:", error);
+				showError("ピン留めの更新に失敗しました");
+				return;
+			}
+
+			// 成功時にローカル状態を更新
+			setContacts((prevContacts) =>
+				prevContacts.map((contact) =>
+					contact.id === contactId
+						? {
+								...contact,
+								is_pinned: !currentPinned,
+								pinned_at: !currentPinned ? new Date().toISOString() : null,
+								pinned_by: !currentPinned ? user?.id : null,
+						  }
+						: contact
+				)
+			);
+
+			showSuccess(
+				!currentPinned ? "ピン留めしました" : "ピン留めを解除しました"
+			);
+		} catch (error) {
+			console.error("Failed to toggle pin:", error);
+			showError("ピン留めの更新に失敗しました");
+		}
+	};
 
 	// 編集モーダルを開く
 	const handleEdit = (contact: Contact) => {
@@ -600,7 +989,7 @@ export const ContactAdmin: React.FC = () => {
 			completed: "完了",
 			closed: "終了",
 		};
-		return labels[status];
+		return labels[status || "pending"];
 	};
 
 	if (loading) return <p style={{ color: "white" }}>Loading...</p>;
@@ -615,33 +1004,41 @@ export const ContactAdmin: React.FC = () => {
 		<Container>
 			<Title>Contact Admin</Title>
 
-			<div style={{ marginBottom: 24 }}>
-				<input
+			<SearchContainer>
+				<SearchInput
 					type="text"
 					placeholder="検索"
 					value={searchText}
 					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 						setSearchText(e.target.value)
 					}
-					style={{
-						padding: 8,
-						borderRadius: 4,
-						border: "1px solid #ccc",
-						width: 240,
-					}}
 				/>
-				<div
-					style={{
-						marginTop: 8,
-						fontSize: "0.9rem",
-						color: "rgba(255, 255, 255, 0.7)",
-					}}
-				>
+				<SearchHint>
 					名前・メールアドレス・お問い合わせ内容・管理者メモで検索可能
-				</div>
-			</div>
+				</SearchHint>
+			</SearchContainer>
 
 			<FilterSection>
+				<label htmlFor="category-filter" style={{ display: "none" }}>
+					カテゴリ選択
+				</label>
+				<FilterSelect
+					id="category-filter"
+					aria-label="カテゴリ選択"
+					title="カテゴリ選択"
+					value={filters.category}
+					onChange={(e) =>
+						setFilters((prev) => ({ ...prev, category: e.target.value }))
+					}
+				>
+					<option value="all">すべてのカテゴリ</option>
+					{Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+						<option key={value} value={value}>
+							{label}
+						</option>
+					))}
+				</FilterSelect>
+
 				<label htmlFor="status-filter" style={{ display: "none" }}>
 					ステータス選択
 				</label>
@@ -697,7 +1094,12 @@ export const ContactAdmin: React.FC = () => {
 
 				<FilterButton
 					onClick={() =>
-						setFilters({ status: "all", isChecked: "all", isReplied: "all" })
+						setFilters({
+							status: "all",
+							category: "all",
+							isChecked: "all",
+							isReplied: "all",
+						})
 					}
 				>
 					フィルターリセット
@@ -705,11 +1107,12 @@ export const ContactAdmin: React.FC = () => {
 			</FilterSection>
 
 			{/* テーブル表示 */}
-			{filteredContacts.length > 0 ? (
+			{sortedContacts.length > 0 ? (
 				<TableContainer>
 					<ContactTable>
 						<thead>
 							<tr>
+								<Th>カテゴリ</Th>
 								<Th>名前</Th>
 								<Th>メール</Th>
 								<Th>ステータス</Th>
@@ -720,84 +1123,22 @@ export const ContactAdmin: React.FC = () => {
 							</tr>
 						</thead>
 						<tbody>
-							{filteredContacts.map((contact) => (
-								<tr key={contact.id}>
+							{sortedContacts.map((contact) => (
+								<tr
+									key={contact.id}
+									className={contact.category === "urgent" ? "urgent-row" : ""}
+								>
+									<Td>
+										<CategoryBadge $isUrgent={contact.category === "urgent"}>
+											{CATEGORY_LABELS[contact.category]}
+										</CategoryBadge>
+									</Td>
 									<Td>{contact.name}</Td>
 									<Td>{contact.email}</Td>
 									<Td>
-										<StatusBadge $status={contact.status}>
-											{getStatusLabel(contact.status)}
-										</StatusBadge>
-									</Td>
-									<Td>
-										{contact.is_checked ? (
-											<span
-												style={{
-													color: "#ffffff",
-													backgroundColor: "#10b981",
-													borderRadius: "50%",
-													padding: "4px 8px",
-													fontSize: "14px",
-													fontWeight: "bold",
-													display: "inline-block",
-													minWidth: "20px",
-													textAlign: "center",
-												}}
-											>
-												✓
-											</span>
-										) : (
-											<span
-												style={{
-													color: "#ffffff",
-													backgroundColor: "#fbbf24",
-													borderRadius: "4px",
-													padding: "4px 8px",
-													fontSize: "12px",
-													fontWeight: "bold",
-													display: "inline-block",
-													minWidth: "20px",
-													textAlign: "center",
-												}}
-											>
-												未
-											</span>
-										)}
-									</Td>
-									<Td>
-										{contact.is_replied ? (
-											<span
-												style={{
-													color: "#ffffff",
-													backgroundColor: "#10b981",
-													borderRadius: "50%",
-													padding: "4px 8px",
-													fontSize: "14px",
-													fontWeight: "bold",
-													display: "inline-block",
-													minWidth: "20px",
-													textAlign: "center",
-												}}
-											>
-												✓
-											</span>
-										) : (
-											<span
-												style={{
-													color: "#ffffff",
-													backgroundColor: "#fbbf24",
-													borderRadius: "4px",
-													padding: "4px 8px",
-													fontSize: "12px",
-													fontWeight: "bold",
-													display: "inline-block",
-													minWidth: "20px",
-													textAlign: "center",
-												}}
-											>
-												未
-											</span>
-										)}
+										{contact.message.length > 50
+											? `${contact.message.slice(0, 50)}...`
+											: contact.message}
 									</Td>
 									<Td>
 										{new Date(contact.created_at).toLocaleString("ja-JP", {
@@ -811,24 +1152,50 @@ export const ContactAdmin: React.FC = () => {
 										})}
 									</Td>
 									<Td>
-										<ActionButton
-											$variant="view"
-											onClick={() => navigate(`/contact-detail/${contact.id}`)}
+										<div
+											style={{
+												display: "flex",
+												gap: "8px",
+												alignItems: "center",
+											}}
 										>
-											👀
-										</ActionButton>
-										<ActionButton
-											$variant="edit"
-											onClick={() => handleEdit(contact)}
-										>
-											✏️
-										</ActionButton>
-										<ActionButton
-											$variant="delete"
-											onClick={() => handleDelete(contact.id)}
-										>
-											🗑️
-										</ActionButton>
+											<PinButton
+												$isPinned={contact.is_pinned || false}
+												onClick={() =>
+													handleTogglePin(
+														contact.id,
+														contact.is_pinned || false
+													)
+												}
+												aria-label={
+													contact.is_pinned ? "ピン留めを解除" : "ピン留めする"
+												}
+												title={
+													contact.is_pinned ? "ピン留めを解除" : "ピン留めする"
+												}
+												style={{
+													position: "relative",
+													top: "auto",
+													left: "auto",
+												}}
+											>
+												📌
+											</PinButton>
+											<ActionButton
+												onClick={() => handleEdit(contact)}
+												$variant="edit"
+												aria-label={`${contact.name}のお問い合わせを編集`}
+											>
+												編集
+											</ActionButton>
+											<ActionButton
+												onClick={() => setDeleteConfirmId(contact.id)}
+												$variant="delete"
+												aria-label={`${contact.name}のお問い合わせを削除`}
+											>
+												削除
+											</ActionButton>
+										</div>
 									</Td>
 								</tr>
 							))}
@@ -854,16 +1221,43 @@ export const ContactAdmin: React.FC = () => {
 			)}
 
 			{/* モバイルカード表示 */}
-			{filteredContacts.length > 0 && (
+			{sortedContacts.length > 0 && (
 				<MobileCardContainer>
-					{filteredContacts.map((contact) => (
-						<ContactCard key={contact.id}>
+					{sortedContacts.map((contact) => (
+						<ContactCard
+							key={contact.id}
+							className={`${
+								contact.category === "urgent" ? "urgent-contact" : ""
+							} ${
+								contact.is_pinned && contact.category !== "urgent"
+									? "pinned-contact"
+									: ""
+							}`}
+						>
+							<PinButton
+								$isPinned={contact.is_pinned || false}
+								onClick={() =>
+									handleTogglePin(contact.id, contact.is_pinned || false)
+								}
+								aria-label={
+									contact.is_pinned ? "ピン留めを解除" : "ピン留めする"
+								}
+								title={contact.is_pinned ? "ピン留めを解除" : "ピン留めする"}
+							>
+								📌
+							</PinButton>
 							<CardHeader>
 								<CardTitle>{contact.name}</CardTitle>
 								<CardStatus $status={contact.status}>
 									{getStatusLabel(contact.status)}
 								</CardStatus>
 							</CardHeader>
+
+							<CategoryRow>
+								<CategoryBadge $isUrgent={contact.category === "urgent"}>
+									{CATEGORY_LABELS[contact.category]}
+								</CategoryBadge>
+							</CategoryRow>
 
 							<CardInfo>
 								<CardInfoRow>
@@ -1016,9 +1410,9 @@ export const ContactAdmin: React.FC = () => {
 							onSubmit={(e) => {
 								e.preventDefault();
 								onSubmit({
-									is_checked: editingContact.is_checked,
-									is_replied: editingContact.is_replied,
-									status: editingContact.status,
+									is_checked: editingContact.is_checked || false,
+									is_replied: editingContact.is_replied || false,
+									status: editingContact.status || "pending",
 									admin_notes: editingContact.admin_notes || "",
 								});
 							}}

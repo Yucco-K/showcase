@@ -46,3 +46,36 @@ export interface Subscription {
 	created_at: string;
 	updated_at: string;
 }
+
+// お問い合わせカテゴリ
+export type ContactCategory =
+	| "urgent" // 緊急
+	| "account_delete" // 退会申請
+	| "feature_request" // 機能追加の提案
+	| "account_related" // アカウント関連
+	| "billing" // 支払いや請求
+	| "support" // サポート依頼
+	| "other"; // その他
+
+// お問い合わせ
+export interface Contact {
+	id: string;
+	name: string;
+	email: string;
+	message: string;
+	category: ContactCategory;
+	created_at: string;
+	// 管理用フィールド
+	is_checked?: boolean;
+	is_replied?: boolean;
+	status?: "pending" | "in_progress" | "completed" | "closed";
+	admin_notes?: string | null;
+	replied_at?: string | null;
+	checked_at?: string | null;
+	checked_by?: string | null;
+	replied_by?: string | null;
+	// ピン留め関連フィールド
+	is_pinned?: boolean;
+	pinned_at?: string | null;
+	pinned_by?: string | null;
+}

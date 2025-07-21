@@ -35,6 +35,7 @@ export interface ProductFilter {
 	minPrice?: number;
 	maxPrice?: number;
 	searchQuery?: string;
+	minRating?: number; // 1-5 の最小評価
 	sortBy?: "name" | "price" | "rating" | "popular";
 	sortOrder?: "asc" | "desc";
 }

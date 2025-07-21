@@ -21,7 +21,7 @@ const Card = styled.div`
 
 	@media (max-width: 768px) {
 		width: 280px;
-		height: 220px;
+		height: 260px; /* モバイルで縦を少し長く */
 		padding: 0.8rem;
 	}
 
@@ -96,7 +96,7 @@ const BlogTitle = styled.h3`
 	color: white;
 	line-height: 1.4;
 	display: -webkit-box;
-	-webkit-line-clamp: 2;
+	-webkit-line-clamp: 3; /* モバイル縦長に合わせて3行まで表示 */
 	-webkit-box-orient: vertical;
 	overflow: hidden;
 `;

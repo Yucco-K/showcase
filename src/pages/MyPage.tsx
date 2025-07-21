@@ -29,6 +29,22 @@ interface LikedProduct {
 	category: string;
 }
 
+interface Contact {
+	id: string;
+	title?: string;
+	message: string;
+	created_at: string;
+	status: string;
+}
+interface ContactReplyThread {
+	id: string;
+	contact_id: string;
+	sender_type: string;
+	sender_id: string | null;
+	message: string;
+	created_at: string;
+}
+
 // アニメーション定義
 const fadeInUp = keyframes`
   from {
@@ -604,6 +620,101 @@ const ErrorMessage = styled.div`
 	font-weight: 500;
 `;
 
+const ThreadSection = styled(Section)`
+	border-left: 4px solid #3ea8ff;
+	margin-bottom: 32px;
+	@media (max-width: 600px) {
+		padding: 12px;
+		border-left-width: 2px;
+		margin-bottom: 20px;
+	}
+`;
+const ThreadList = styled.div`
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	@media (max-width: 600px) {
+		gap: 10px;
+	}
+`;
+const ThreadItem = styled.div<{ $isUser: boolean }>`
+	align-self: ${({ $isUser }) => ($isUser ? "flex-end" : "flex-start")};
+	background: ${({ $isUser }) =>
+		$isUser ? "rgba(102,126,234,0.15)" : "rgba(255,255,255,0.07)"};
+	color: #2d3748;
+	border-radius: 10px;
+	padding: 12px 16px;
+	max-width: 80%;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	word-break: break-word;
+	@media (max-width: 600px) {
+		padding: 8px 10px;
+		font-size: 0.95rem;
+		max-width: 98%;
+	}
+`;
+const ThreadMeta = styled.div`
+	font-size: 0.85rem;
+	color: #718096;
+	margin-top: 4px;
+	text-align: right;
+	@media (max-width: 600px) {
+		font-size: 0.8rem;
+		margin-top: 2px;
+	}
+`;
+const ThreadForm = styled.form`
+	display: flex;
+	gap: 8px;
+	margin-top: 16px;
+	@media (max-width: 600px) {
+		flex-direction: column;
+		gap: 6px;
+		margin-top: 10px;
+	}
+`;
+const ThreadTextarea = styled.textarea`
+	flex: 1;
+	border-radius: 8px;
+	border: 1px solid #667eea;
+	padding: 10px;
+	font-size: 1rem;
+	resize: vertical;
+	@media (max-width: 600px) {
+		font-size: 0.95rem;
+		padding: 8px;
+		min-height: 60px;
+	}
+`;
+
+// アバター用コンポーネント
+const MessageAvatar = styled.img`
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	object-fit: cover;
+	margin-right: 8px;
+	background: #eee;
+	display: inline-block;
+`;
+const AdminAvatar = styled.div`
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: #667eea;
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.2rem;
+	font-weight: bold;
+	margin-right: 8px;
+`;
+const ThreadItemRow = styled.div`
+	display: flex;
+	align-items: flex-start;
+`;
+
 export const MyPage: React.FC = () => {
 	const { user } = useAuth();
 	const { toast, showError, showSuccess, hideToast } = useToast();
@@ -625,6 +736,18 @@ export const MyPage: React.FC = () => {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [purchasedProducts, setPurchasedProducts] = useState<Product[]>([]);
 	const navigate = useNavigate();
+	const [contacts, setContacts] = useState<Contact[]>([]);
+	const [threadsMap, setThreadsMap] = useState<
+		Record<string, ContactReplyThread[]>
+	>({});
+	const [threadMessages, setThreadMessages] = useState<Record<string, string>>(
+		{}
+	);
+	const [threadSending, setThreadSending] = useState<Record<string, boolean>>(
+		{}
+	);
+	const [threadLoading, setThreadLoading] = useState(false);
+	const [threadError, setThreadError] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (!user) return;
@@ -1216,6 +1339,80 @@ export const MyPage: React.FC = () => {
 		}
 	};
 
+	// お問い合わせ一覧取得
+	useEffect(() => {
+		if (!user) return;
+		setThreadLoading(true);
+		setThreadError(null);
+		(async () => {
+			try {
+				const { data: contactsData, error: contactsError } = await supabase
+					.from("contacts")
+					.select("id, title, message, created_at, status")
+					.eq("email", user.email);
+				if (contactsError) throw contactsError;
+				setContacts(contactsData || []);
+				// 各contactのやりとり履歴を取得
+				const threadsObj: Record<string, ContactReplyThread[]> = {};
+				for (const c of contactsData || []) {
+					const { data: tData, error: tError } = await supabase
+						.from("contact_reply_threads")
+						.select("*")
+						.eq("contact_id", c.id)
+						.order("created_at", { ascending: true });
+					if (tError) throw tError;
+					threadsObj[c.id] = tData || [];
+				}
+				setThreadsMap(threadsObj);
+			} catch (e) {
+				setThreadError("お問い合わせ履歴の取得に失敗しました");
+			} finally {
+				setThreadLoading(false);
+			}
+		})();
+	}, [user]);
+
+	// 返信送信
+	const handleSendThread = async (contactId: string, e: React.FormEvent) => {
+		e.preventDefault();
+		if (!user || !threadMessages[contactId]?.trim()) return;
+		setThreadSending((prev) => ({ ...prev, [contactId]: true }));
+		try {
+			const { error } = await supabase.from("contact_reply_threads").insert({
+				contact_id: contactId,
+				sender_type: "user",
+				sender_id: user.id,
+				message: threadMessages[contactId].trim(),
+			});
+			if (error) throw error;
+			setThreadMessages((prev) => ({ ...prev, [contactId]: "" }));
+			// 再取得
+			const { data: tData } = await supabase
+				.from("contact_reply_threads")
+				.select("*")
+				.eq("contact_id", contactId)
+				.order("created_at", { ascending: true });
+			setThreadsMap((prev) => ({ ...prev, [contactId]: tData || [] }));
+			showSuccess("返信を送信しました");
+		} catch (e) {
+			showError("返信に失敗しました");
+		} finally {
+			setThreadSending((prev) => ({ ...prev, [contactId]: false }));
+		}
+	};
+
+	// ヘルパー: 送信者種別に応じたアバター要素を返す
+	const getAvatar = (sender: "user" | "admin") => {
+		if (sender === "user") {
+			return profile && profile.avatar_url ? (
+				<MessageAvatar src={profile.avatar_url} alt="あなた" />
+			) : (
+				<AdminAvatar>👤</AdminAvatar>
+			);
+		}
+		return <AdminAvatar>🧑‍💼</AdminAvatar>;
+	};
+
 	if (isLoading) {
 		return (
 			<Container>
@@ -1231,6 +1428,10 @@ export const MyPage: React.FC = () => {
 			</Container>
 		);
 	}
+
+	// デバッグ用
+	console.log("profile", profile);
+	console.log("profile.avatar_url", profile?.avatar_url);
 
 	return (
 		<Container>
@@ -1477,6 +1678,105 @@ export const MyPage: React.FC = () => {
 					</ProductGrid>
 				) : (
 					<EmptyMessage>まだいいねしたアプリはありません</EmptyMessage>
+				)}
+			</Section>
+
+			{/* お問い合わせやりとり履歴 */}
+			<Section style={{ marginTop: 64, marginBottom: 64 }}>
+				<SectionTitle>📨 お問い合わせやりとり履歴</SectionTitle>
+				{threadLoading ? (
+					<LoadingMessage>履歴を読み込み中...</LoadingMessage>
+				) : threadError ? (
+					<ErrorMessage>{threadError}</ErrorMessage>
+				) : contacts.length === 0 ? (
+					<EmptyMessage>お問い合わせ履歴はありません</EmptyMessage>
+				) : (
+					contacts.map((c) => (
+						<ThreadSection key={c.id} style={{ marginBottom: 32 }}>
+							{/* 件数表示を最上部に移動 */}
+							<div
+								style={{
+									color: "#667eea",
+									fontWeight: 600,
+									marginBottom: 6,
+									fontSize: "0.98rem",
+								}}
+							>
+								全{threadsMap[c.id]?.length || 0}件
+							</div>
+							<div
+								style={{
+									marginBottom: 8,
+									color: "#2d3748",
+									fontWeight: 600,
+									wordBreak: "break-word",
+									overflowWrap: "anywhere",
+								}}
+							>
+								{c.title || "お問い合わせ"}（
+								{new Date(c.created_at).toLocaleString("ja-JP")}）
+							</div>
+							<ThreadItemRow style={{ marginBottom: 8 }}>
+								{getAvatar("user")}
+								<div
+									style={{
+										color: "#4a5568",
+										wordBreak: "break-word",
+										overflowWrap: "anywhere",
+									}}
+								>
+									{c.message}
+								</div>
+							</ThreadItemRow>
+							<ThreadList>
+								{/* やりとりが0件でも何も表示しない */}
+								{[...(threadsMap[c.id] || [])]
+									.sort(
+										(a, b) =>
+											new Date(a.created_at).getTime() -
+											new Date(b.created_at).getTime()
+									)
+									.map((t) => (
+										<ThreadItem key={t.id} $isUser={t.sender_type === "user"}>
+											<ThreadItemRow>
+												{getAvatar(t.sender_type as "user" | "admin")}
+												<div style={{ flex: 1 }}>
+													{t.message}
+													<ThreadMeta>
+														{t.sender_type === "admin" ? "管理者" : "あなた"}・
+														{new Date(t.created_at).toLocaleString("ja-JP")}
+													</ThreadMeta>
+												</div>
+											</ThreadItemRow>
+										</ThreadItem>
+									))}
+							</ThreadList>
+							<ThreadForm onSubmit={(e) => handleSendThread(c.id, e)}>
+								<ThreadTextarea
+									value={threadMessages[c.id] || ""}
+									onChange={(e) =>
+										setThreadMessages((prev) => ({
+											...prev,
+											[c.id]: e.target.value,
+										}))
+									}
+									placeholder="返信内容を入力"
+									required
+									rows={2}
+									disabled={threadSending[c.id]}
+								/>
+								<Button
+									type="submit"
+									$variant="primary"
+									disabled={
+										threadSending[c.id] || !threadMessages[c.id]?.trim()
+									}
+								>
+									{threadSending[c.id] ? "送信中..." : "送信"}
+								</Button>
+							</ThreadForm>
+						</ThreadSection>
+					))
 				)}
 			</Section>
 

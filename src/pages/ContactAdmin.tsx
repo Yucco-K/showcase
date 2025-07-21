@@ -6,6 +6,13 @@ import { useAuth } from "../contexts/AuthProvider";
 import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
 import type { Contact, ContactCategory } from "../types/database";
+import { Menu, rem } from "@mantine/core";
+import {
+	IconDotsVertical,
+	IconEye,
+	IconPencil,
+	IconTrash,
+} from "@tabler/icons-react";
 
 // カテゴリラベルの定義
 const CATEGORY_LABELS: Record<ContactCategory, string> = {
@@ -31,6 +38,7 @@ const Container = styled.div`
 const Title = styled.h1`
 	color: white;
 	margin-bottom: 24px;
+	font-size: 1.5rem;
 `;
 
 const TableContainer = styled.div`
@@ -51,7 +59,7 @@ const ContactTable = styled.table`
 	background: rgba(255, 255, 255, 0.05);
 	border-radius: 12px;
 	overflow: hidden;
-	min-width: 1000px;
+	min-width: 800px;
 
 	@media (max-width: 768px) {
 		display: none;
@@ -80,9 +88,10 @@ const ContactTable = styled.table`
 const Th = styled.th`
 	background: rgba(255, 255, 255, 0.1);
 	color: white;
-	padding: 16px;
+	padding: 12px;
 	text-align: left;
 	font-weight: 600;
+	font-size: 0.9rem;
 
 	/* カテゴリカラムを狭めに */
 	&:first-child {
@@ -90,6 +99,30 @@ const Th = styled.th`
 
 		@media (max-width: 1024px) {
 			width: 120px;
+		}
+	}
+
+	/* 名前カラムをPCで広く固定幅に */
+	&:nth-child(2) {
+		width: 160px;
+		min-width: 160px;
+		max-width: 180px;
+		@media (max-width: 768px) {
+			width: auto;
+			min-width: unset;
+			max-width: unset;
+		}
+	}
+
+	/* タイトルカラムをPCで広く固定幅に */
+	&:nth-child(3) {
+		width: 180px;
+		min-width: 160px;
+		max-width: 200px;
+		@media (max-width: 768px) {
+			width: auto;
+			min-width: unset;
+			max-width: unset;
 		}
 	}
 
@@ -107,8 +140,9 @@ const Th = styled.th`
 
 const Td = styled.td`
 	color: white;
-	padding: 16px;
+	padding: 12px;
 	border-top: 1px solid rgba(255, 255, 255, 0.1);
+	font-size: 0.9rem;
 
 	/* カテゴリカラムの調整 */
 	&:first-child {
@@ -144,8 +178,11 @@ const MobileCardContainer = styled.div`
 
 const PinButton = styled.button<{ $isPinned: boolean }>`
 	position: absolute;
-	top: 8px;
-	left: 8px;
+	top: 12px;
+	right: 52px; /* 3点Menu分の余白を確保 */
+	@media (min-width: 481px) {
+		margin-right: 8px;
+	}
 	background: ${({ $isPinned }) =>
 		$isPinned ? "#dc7633" : "rgba(255, 255, 255, 0.1)"};
 	border: 2px solid
@@ -161,7 +198,7 @@ const PinButton = styled.button<{ $isPinned: boolean }>`
 	justify-content: center;
 	font-size: 14px;
 	transition: all 0.3s ease;
-	z-index: 10;
+	z-index: 9;
 	box-shadow: ${({ $isPinned }) =>
 		$isPinned ? "0 2px 8px rgba(220, 118, 51, 0.3)" : "none"};
 	white-space: nowrap;
@@ -196,17 +233,20 @@ const PinButton = styled.button<{ $isPinned: boolean }>`
 	`}
 
 	@media (max-width: 480px) {
-		margin-bottom: 8px;
+		top: 8px;
+		right: 44px;
+		margin-right: 0;
 	}
 `;
 
 const ContactCard = styled.div`
 	background: rgba(255, 255, 255, 0.05);
 	border-radius: 12px;
-	padding: 20px;
-	padding-top: 50px; /* ピン留めボタンのためのマージン */
+	padding: 16px;
+	padding-top: 46px; /* ピン留めボタンのためのマージン */
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	position: relative;
+	font-size: 0.9rem;
 
 	/* 緊急カテゴリの特別スタイル */
 	&.urgent-contact {
@@ -223,13 +263,13 @@ const ContactCard = styled.div`
 			color: white;
 			padding: 4px 8px;
 			border-radius: 0 0 8px 8px;
-			font-size: 12px;
+			font-size: 10px;
 			font-weight: 600;
 		}
 
 		@media (max-width: 480px) {
 			&::before {
-				font-size: 10px;
+				font-size: 9px;
 				padding: 2px 6px;
 				top: -6px;
 				right: 12px;
@@ -256,16 +296,17 @@ const ContactCard = styled.div`
 			color: white;
 			padding: 4px 8px;
 			border-radius: 0 0 8px 8px;
-			font-size: 12px;
+			font-size: 10px;
 			font-weight: 600;
 		}
 
 		@media (max-width: 480px) {
 			&::after {
-				font-size: 10px;
+				font-size: 9px;
 				padding: 2px 6px;
 				top: -6px;
 				right: 12px;
+				display: none;
 			}
 		}
 	}
@@ -288,7 +329,7 @@ const CardHeader = styled.div`
 const CardTitle = styled.h3`
 	color: white;
 	margin: 0;
-	font-size: 1.1rem;
+	font-size: 1rem;
 	font-weight: 600;
 	flex: 1;
 	min-width: 0;
@@ -297,18 +338,18 @@ const CardTitle = styled.h3`
 	text-overflow: ellipsis;
 
 	@media (max-width: 768px) {
-		font-size: 1rem;
+		font-size: 0.95rem;
 	}
 
 	@media (max-width: 480px) {
-		font-size: 0.95rem;
+		font-size: 0.9rem;
 	}
 `;
 
 const CardStatus = styled.span<{ $status: Contact["status"] }>`
 	padding: 4px 8px;
 	border-radius: 4px;
-	font-size: 0.8rem;
+	font-size: 0.75rem;
 	font-weight: 600;
 	display: inline-block;
 	white-space: nowrap;
@@ -344,88 +385,17 @@ const CardInfoRow = styled.div`
 
 const CardLabel = styled.span`
 	color: rgba(255, 255, 255, 0.7);
-	font-size: 0.9rem;
+	font-size: 0.85rem;
 `;
 
 const CardValue = styled.span`
 	color: white;
-	font-size: 0.9rem;
+	font-size: 0.85rem;
 	font-weight: 500;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	max-width: 200px;
-
-	@media (max-width: 480px) {
-		max-width: 150px;
-	}
-`;
-
-const CardActions = styled.div`
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
-`;
-
-const ActionButton = styled.button<{ $variant: "edit" | "delete" | "view" }>`
-	background: ${({ $variant }) => {
-		switch ($variant) {
-			case "edit":
-				return "linear-gradient(135deg, #3b82f6, #1d4ed8)";
-			case "view":
-				return "linear-gradient(135deg, #10b981, #059669)";
-			case "delete":
-				return "linear-gradient(135deg, #f97316, #ea580c)";
-			default:
-				return "linear-gradient(135deg, #6b7280, #4b5563)";
-		}
-	}};
-	color: white;
-	border: none;
-	border-radius: 6px;
-	padding: 8px 12px;
-	margin-left: 8px;
-	transform: ${({ $variant }) => {
-		switch ($variant) {
-			case "edit":
-				return "translateY(2px)";
-			case "delete":
-				return "translateY(1px)";
-			default:
-				return "none";
-		}
-	}};
-	cursor: pointer;
-	font-size: 14px;
-	transition: all 0.2s ease;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-
-	&:hover {
-		transform: ${({ $variant }) => {
-			switch ($variant) {
-				case "edit":
-					return "translateY(2px) scale(1.05)";
-				case "delete":
-					return "translateY(1px) scale(1.05)";
-				default:
-					return "scale(1.05)";
-			}
-		}};
-	}
-
-	@media (max-width: 768px) {
-		padding: 10px 14px;
-		font-size: 16px;
-		margin-left: 0;
-		transform: none;
-		flex: 1;
-
-		&:hover {
-			transform: scale(1.05);
-		}
-	}
 `;
 
 const Modal = styled.div`
@@ -619,6 +589,8 @@ const MessageContent = styled.div`
 	h4 {
 		color: white;
 		margin: 0 0 8px 0;
+		word-break: break-word;
+		overflow-wrap: anywhere;
 	}
 
 	p {
@@ -626,6 +598,8 @@ const MessageContent = styled.div`
 		margin: 0;
 		white-space: pre-wrap;
 		line-height: 1.5;
+		word-break: break-word;
+		overflow-wrap: anywhere;
 	}
 `;
 
@@ -819,6 +793,23 @@ const SearchHint = styled.div`
 	}
 `;
 
+const MenuButtonWrapper = styled.div`
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	z-index: 9;
+	/* ピン留めボタンと重ならないよう余白を確保 */
+	@media (max-width: 480px) {
+		top: 8px;
+		right: 8px;
+		margin-top: 8px;
+		margin-left: 0;
+	}
+	@media (min-width: 481px) {
+		margin-left: 16px;
+	}
+`;
+
 export const ContactAdmin: React.FC = () => {
 	const navigate = useNavigate();
 	const { user, isAdmin, loading } = useAuth();
@@ -850,7 +841,7 @@ export const ContactAdmin: React.FC = () => {
 				return;
 			}
 
-			const contactsData: Contact[] = data.map((item: any) => ({
+			const contactsData: Contact[] = (data as any[]).map((item) => ({
 				id: String(item.id),
 				name: String(item.name),
 				email: String(item.email),
@@ -1310,55 +1301,93 @@ export const ContactAdmin: React.FC = () => {
 										<div
 											style={{
 												display: "flex",
-												gap: "8px",
 												alignItems: "center",
+												gap: "0",
+												position: "relative",
+												minWidth: 80,
 											}}
 										>
-											<PinButton
-												$isPinned={contact.is_pinned || false}
-												onClick={() =>
-													handleTogglePin(
-														contact.id,
-														contact.is_pinned || false
-													)
-												}
-												aria-label={
-													contact.is_pinned ? "ピン留めを解除" : "ピン留めする"
-												}
-												title={
-													contact.is_pinned ? "ピン留めを解除" : "ピン留めする"
-												}
-												style={{
-													position: "relative",
-													top: "auto",
-													left: "auto",
-												}}
-											>
-												📌
-											</PinButton>
-											<ActionButton
-												$variant="view"
-												onClick={() =>
-													navigate(`/contact-detail/${contact.id}`)
-												}
-												aria-label={`${contact.name}のお問い合わせを表示`}
-											>
-												👀
-											</ActionButton>
-											<ActionButton
-												onClick={() => handleEdit(contact)}
-												$variant="edit"
-												aria-label={`${contact.name}のお問い合わせを編集`}
-											>
-												✏️
-											</ActionButton>
-											<ActionButton
-												onClick={() => setDeleteConfirmId(contact.id)}
-												$variant="delete"
-												aria-label={`${contact.name}のお問い合わせを削除`}
-											>
-												🗑️
-											</ActionButton>
+											{contact.category !== "urgent" && (
+												<PinButton
+													$isPinned={contact.is_pinned || false}
+													onClick={() =>
+														handleTogglePin(
+															contact.id,
+															contact.is_pinned || false
+														)
+													}
+													aria-label={
+														contact.is_pinned
+															? "ピン留めを解除"
+															: "ピン留めする"
+													}
+													title={
+														contact.is_pinned
+															? "ピン留めを解除"
+															: "ピン留めする"
+													}
+													style={{
+														position: "absolute",
+														right: 40,
+														top: 4,
+														zIndex: 2,
+													}}
+												>
+													📌
+												</PinButton>
+											)}
+											<MenuButtonWrapper>
+												<Menu
+													shadow="md"
+													width={160}
+													withinPortal
+													position="bottom-end"
+													offset={4}
+												>
+													<Menu.Target>
+														<button
+															type="button"
+															style={{
+																background: "none",
+																border: "none",
+																padding: 0,
+																cursor: "pointer",
+																display: "flex",
+																alignItems: "center",
+																justifyContent: "center",
+																width: rem(32),
+																height: rem(32),
+															}}
+															aria-label="操作メニュー"
+														>
+															<IconDotsVertical size={22} color="#fff" />
+														</button>
+													</Menu.Target>
+													<Menu.Dropdown>
+														<Menu.Item
+															leftSection={<IconEye size={18} />}
+															onClick={() =>
+																navigate(`/contact-detail/${contact.id}`)
+															}
+														>
+															表示
+														</Menu.Item>
+														<Menu.Item
+															leftSection={<IconPencil size={18} />}
+															onClick={() => handleEdit(contact)}
+														>
+															編集
+														</Menu.Item>
+														<Menu.Item
+															leftSection={<IconTrash size={18} />}
+															color="red"
+															onClick={() => setDeleteConfirmId(contact.id)}
+														>
+															削除
+														</Menu.Item>
+													</Menu.Dropdown>
+												</Menu>
+											</MenuButtonWrapper>
 										</div>
 									</Td>
 								</tr>
@@ -1410,6 +1439,56 @@ export const ContactAdmin: React.FC = () => {
 							>
 								📌
 							</PinButton>
+							<MenuButtonWrapper>
+								<Menu
+									shadow="md"
+									width={160}
+									withinPortal
+									position="bottom-end"
+									offset={4}
+								>
+									<Menu.Target>
+										<button
+											type="button"
+											style={{
+												background: "none",
+												border: "none",
+												padding: 0,
+												cursor: "pointer",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												width: rem(32),
+												height: rem(32),
+											}}
+											aria-label="操作メニュー"
+										>
+											<IconDotsVertical size={22} color="#fff" />
+										</button>
+									</Menu.Target>
+									<Menu.Dropdown>
+										<Menu.Item
+											leftSection={<IconEye size={18} />}
+											onClick={() => navigate(`/contact-detail/${contact.id}`)}
+										>
+											表示
+										</Menu.Item>
+										<Menu.Item
+											leftSection={<IconPencil size={18} />}
+											onClick={() => handleEdit(contact)}
+										>
+											編集
+										</Menu.Item>
+										<Menu.Item
+											leftSection={<IconTrash size={18} />}
+											color="red"
+											onClick={() => handleDelete(contact.id)}
+										>
+											削除
+										</Menu.Item>
+									</Menu.Dropdown>
+								</Menu>
+							</MenuButtonWrapper>
 							<CardHeader>
 								<CardTitle>{contact.title || "お問い合わせ"}</CardTitle>
 							</CardHeader>
@@ -1522,26 +1601,7 @@ export const ContactAdmin: React.FC = () => {
 								</CardInfoRow>
 							</CardInfo>
 
-							<CardActions>
-								<ActionButton
-									$variant="view"
-									onClick={() => navigate(`/contact-detail/${contact.id}`)}
-								>
-									👀
-								</ActionButton>
-								<ActionButton
-									$variant="edit"
-									onClick={() => handleEdit(contact)}
-								>
-									✏️
-								</ActionButton>
-								<ActionButton
-									$variant="delete"
-									onClick={() => handleDelete(contact.id)}
-								>
-									🗑️
-								</ActionButton>
-							</CardActions>
+							{/* <CardActions>...</CardActions> は削除または非表示 */}
 						</ContactCard>
 					))}
 				</MobileCardContainer>

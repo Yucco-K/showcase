@@ -23,6 +23,15 @@ interface Contact {
 	replied_by: string | null;
 }
 
+interface ContactReplyThread {
+	id: string;
+	contact_id: string;
+	sender_type: string;
+	sender_id: string | null;
+	message: string;
+	created_at: string;
+}
+
 const Container = styled.div`
 	max-width: 800px;
 	margin: 0 auto;
@@ -106,7 +115,7 @@ const InfoItem = styled.div`
 `;
 
 const InfoLabel = styled.span`
-	color: rgba(255, 255, 255, 0.7);
+	color: rgba(255, 255, 255, 0.85);
 	font-size: 0.9rem;
 	font-weight: 500;
 `;
@@ -152,6 +161,8 @@ const MessageContent = styled.div`
 		white-space: pre-wrap;
 		line-height: 1.6;
 		font-size: 1rem;
+		word-break: break-word;
+		overflow-wrap: anywhere;
 	}
 `;
 
@@ -174,11 +185,13 @@ const AdminNotes = styled.div`
 		white-space: pre-wrap;
 		line-height: 1.6;
 		font-size: 1rem;
+		word-break: break-word;
+		overflow-wrap: anywhere;
 	}
 `;
 
 const EmptyNotes = styled.div`
-	color: rgba(255, 255, 255, 0.5);
+	color: rgba(255, 255, 255, 0.75);
 	font-style: italic;
 	text-align: center;
 	padding: 20px;
@@ -222,7 +235,7 @@ const Button = styled.button<{ $variant?: "primary" | "secondary" | "danger" }>`
 const LoadingMessage = styled.div`
 	text-align: center;
 	padding: 60px 20px;
-	color: rgba(255, 255, 255, 0.7);
+	color: rgba(255, 255, 255, 0.85);
 	font-size: 1.1rem;
 `;
 
@@ -325,6 +338,8 @@ const ModalMessageContent = styled.div`
 		padding: 16px;
 		border-radius: 8px;
 		white-space: pre-wrap;
+		word-break: break-word;
+		overflow-wrap: anywhere;
 	}
 `;
 
@@ -357,6 +372,9 @@ const FormField = styled.div`
 	textarea {
 		min-height: 100px;
 		resize: vertical;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+		white-space: pre-wrap;
 	}
 `;
 
@@ -405,6 +423,62 @@ const ModalButton = styled.button<{ $variant?: "primary" | "secondary" }>`
 	}
 `;
 
+const ThreadSection = styled(Section)`
+	border-left: 4px solid #3ea8ff;
+`;
+
+const ThreadList = styled.div`
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+`;
+
+const ThreadItem = styled.div<{ $isAdmin: boolean }>`
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 8px;
+	padding: 16px;
+	border-left: 4px solid ${({ $isAdmin }) => ($isAdmin ? "#3EA8FF" : "#10b981")};
+`;
+
+const ThreadMeta = styled.div`
+	color: rgba(255, 255, 255, 0.8);
+	font-size: 0.8rem;
+	margin-top: 8px;
+`;
+
+const ThreadForm = styled.form`
+	display: flex;
+	gap: 12px;
+	margin-top: 24px;
+
+	@media (max-width: 768px) {
+		flex-direction: column;
+	}
+`;
+
+const ThreadTextarea = styled.textarea`
+	flex: 1;
+	padding: 12px;
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	background: rgba(255, 255, 255, 0.05);
+	color: white;
+	font-size: 14px;
+	min-height: 100px;
+	resize: vertical;
+
+	&::placeholder {
+		color: rgba(255, 255, 255, 0.8);
+		opacity: 1;
+	}
+
+	&:focus {
+		outline: none;
+		border-color: rgba(255, 255, 255, 0.4);
+		box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+	}
+`;
+
 const ContactDetail: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
@@ -416,6 +490,11 @@ const ContactDetail: React.FC = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingContact, setEditingContact] = useState<Contact | null>(null);
 	const [isUpdating, setIsUpdating] = useState(false);
+	const [threadMessage, setThreadMessage] = useState("");
+	const [threadSending, setThreadSending] = useState(false);
+	const [threads, setThreads] = useState<ContactReplyThread[]>([]);
+	const [threadLoading, setThreadLoading] = useState(false);
+	const [threadError, setThreadError] = useState<string | null>(null);
 
 	useEffect(() => {
 		const fetchContact = async () => {
@@ -442,6 +521,58 @@ const ContactDetail: React.FC = () => {
 			fetchContact();
 		}
 	}, [id, user, isAdmin]);
+
+	// 履歴取得
+	useEffect(() => {
+		const fetchThreads = async () => {
+			if (!contact) return;
+			setThreadLoading(true);
+			setThreadError(null);
+			try {
+				const { data, error } = await supabase
+					.from("contact_reply_threads")
+					.select("*")
+					.eq("contact_id", contact.id)
+					.order("created_at", { ascending: true });
+				if (error) throw error;
+				setThreads(data || []);
+			} catch (e) {
+				setThreadError("履歴の取得に失敗しました");
+			} finally {
+				setThreadLoading(false);
+			}
+		};
+		if (contact) fetchThreads();
+	}, [contact]);
+
+	// 返信送信
+	const handleSendThread = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!contact || !user || !threadMessage.trim()) return;
+		setThreadSending(true);
+		try {
+			const { error } = await supabase.from("contact_reply_threads").insert({
+				contact_id: contact.id,
+				sender_type: "admin",
+				sender_id: user.id,
+				message: threadMessage.trim(),
+			});
+			if (error) throw error;
+			setThreadMessage("");
+			// 再取得
+			const { data } = await supabase
+				.from("contact_reply_threads")
+				.select("*")
+				.eq("contact_id", contact.id)
+				.order("created_at", { ascending: true });
+			setThreads(data || []);
+			showSuccess("返信を送信しました");
+		} catch (e) {
+			showError("返信に失敗しました");
+		} finally {
+			setThreadSending(false);
+		}
+	};
 
 	const getStatusLabel = (status: Contact["status"]) => {
 		const labels = {
@@ -609,7 +740,14 @@ const ContactDetail: React.FC = () => {
 			<Section>
 				<SectionTitle>お問い合わせ内容</SectionTitle>
 				{contact.title && (
-					<h3 style={{ color: "white", marginBottom: "12px" }}>
+					<h3
+						style={{
+							color: "white",
+							marginBottom: "12px",
+							wordBreak: "break-word",
+							overflowWrap: "anywhere",
+						}}
+					>
 						{contact.title}
 					</h3>
 				)}
@@ -628,6 +766,49 @@ const ContactDetail: React.FC = () => {
 					<EmptyNotes>管理者メモはありません</EmptyNotes>
 				)}
 			</Section>
+
+			<ThreadSection>
+				<SectionTitle>やりとり履歴</SectionTitle>
+				{threadLoading ? (
+					<LoadingMessage>履歴を読み込み中...</LoadingMessage>
+				) : threadError ? (
+					<ErrorMessage>{threadError}</ErrorMessage>
+				) : (
+					<ThreadList>
+						{threads.length === 0 && (
+							<EmptyNotes>まだやりとりはありません</EmptyNotes>
+						)}
+						{threads.map((t) => (
+							<ThreadItem key={t.id} $isAdmin={t.sender_type === "admin"}>
+								{t.message}
+								<ThreadMeta>
+									{t.sender_type === "admin" ? "管理者" : "ユーザー"}・
+									{new Date(t.created_at).toLocaleString("ja-JP")}
+								</ThreadMeta>
+							</ThreadItem>
+						))}
+					</ThreadList>
+				)}
+				{isAdmin(user) && (
+					<ThreadForm onSubmit={handleSendThread}>
+						<ThreadTextarea
+							value={threadMessage}
+							onChange={(e) => setThreadMessage(e.target.value)}
+							placeholder="返信内容を入力"
+							required
+							rows={2}
+							disabled={threadSending}
+						/>
+						<ModalButton
+							type="submit"
+							$variant="primary"
+							disabled={threadSending || !threadMessage.trim()}
+						>
+							{threadSending ? "送信中..." : "送信"}
+						</ModalButton>
+					</ThreadForm>
+				)}
+			</ThreadSection>
 
 			<ActionButtons>
 				<Button onClick={handleEdit}>編集する</Button>
@@ -766,7 +947,6 @@ const ContactDetail: React.FC = () => {
 					</ModalContent>
 				</Modal>
 			)}
-
 			<Toast
 				message={toast.message}
 				type={toast.type}

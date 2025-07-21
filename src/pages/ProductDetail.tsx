@@ -421,7 +421,10 @@ const ProductDetail: React.FC = () => {
 
 	// 平均評価と件数をリアルタイムで計算
 	const validReviews = reviews.filter(
-		(r) => r.rating !== null && r.rating !== undefined
+		(r) =>
+			r.rating !== null &&
+			r.rating !== undefined &&
+			r.profiles?.role !== "admin"
 	);
 	const avgRating = validReviews.length
 		? validReviews.reduce((sum, r) => sum + (r.rating ?? 0), 0) /
@@ -544,8 +547,8 @@ const ProductDetail: React.FC = () => {
 			return;
 		}
 
-		// 最小値を1に制限
-		const finalRating = Math.max(1, ratingInput);
+		// 管理者レビューは常にデフォルト3、平均計算対象外
+		const finalRating = isAdmin(user) ? 3 : Math.max(1, ratingInput);
 
 		try {
 			let result: { error?: string | Error | null };
@@ -839,7 +842,8 @@ const ProductDetail: React.FC = () => {
 												</span>
 											</div>
 
-											{renderStars(rev.rating)}
+											{rev.profiles?.role !== "admin" &&
+												renderStars(rev.rating)}
 											<div
 												style={{
 													marginTop: "4px",
@@ -851,7 +855,7 @@ const ProductDetail: React.FC = () => {
 											</div>
 											{rev.comment && (
 												<div>
-													{isAdmin(user) && rev.user_id === user?.id && (
+													{rev.profiles?.role === "admin" && (
 														<div
 															style={{
 																color: "#6d28d9",

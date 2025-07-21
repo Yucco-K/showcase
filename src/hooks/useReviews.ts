@@ -2,6 +2,13 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import type { Review } from "../types/review";
 
+interface ProfileBrief {
+	id: string;
+	full_name: string | null;
+	avatar_url: string | null;
+	role?: string | null;
+}
+
 export const useReviews = (productId: string, userId?: string) => {
 	const [reviews, setReviews] = useState<Review[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -27,9 +34,27 @@ export const useReviews = (productId: string, userId?: string) => {
 		} else {
 			const reviewsData = data as unknown as Review[];
 
+			// ユーザー情報を取得
+			const userIds = [...new Set(reviewsData.map((r) => r.user_id))];
+			const { data: profilesData } = await supabase
+				.from("profiles")
+				.select("id, full_name, avatar_url, role")
+				.in("id", userIds);
+
+			// Map profiles by id
+			const profilesMap = new Map<string, ProfileBrief>();
+			(profilesData as ProfileBrief[] | null)?.forEach((p) =>
+				profilesMap.set(p.id, p)
+			);
+
+			const reviewsWithProfiles: Review[] = reviewsData.map((rev) => ({
+				...rev,
+				profiles: profilesMap.get(rev.user_id) ?? null,
+			}));
+
 			// 階層構造に変換（ネストした返信対応）
-			const topLevelReviews = reviewsData.filter((review) => !review.parent_id);
-			const allReplies = reviewsData.filter((review) => review.parent_id);
+			const topLevelReviews = reviewsWithProfiles.filter((r) => !r.parent_id);
+			const allReplies = reviewsWithProfiles.filter((r) => r.parent_id);
 
 			console.log("Processed reviews:", {
 				totalReviews: reviewsData.length,

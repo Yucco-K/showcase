@@ -1,5 +1,5 @@
 import React from "react";
-import styled from "styled-components";
+import { Button } from "@mantine/core";
 import { usePreventDoubleClick } from "../../hooks/usePreventDoubleClick";
 
 interface PreventDoubleClickButtonProps {
@@ -11,12 +11,6 @@ interface PreventDoubleClickButtonProps {
 	type?: "button" | "submit" | "reset";
 	delay?: number;
 }
-
-const StyledButton = styled.button<{ $isSubmitting: boolean }>`
-	opacity: ${({ $isSubmitting }) => ($isSubmitting ? 0.6 : 1)};
-	cursor: ${({ $isSubmitting }) => ($isSubmitting ? "not-allowed" : "pointer")};
-	transition: opacity 0.2s ease;
-`;
 
 export const PreventDoubleClickButton: React.FC<
 	PreventDoubleClickButtonProps
@@ -36,15 +30,16 @@ export const PreventDoubleClickButton: React.FC<
 	};
 
 	return (
-		<StyledButton
+		<Button
 			onClick={handleClick}
 			disabled={disabled || isSubmitting}
 			className={className}
 			style={style}
 			type={type}
-			$isSubmitting={isSubmitting}
+			radius="sm"
+			variant="filled"
 		>
 			{isSubmitting ? "処理中..." : children}
-		</StyledButton>
+		</Button>
 	);
 };

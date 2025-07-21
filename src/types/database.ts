@@ -4,6 +4,7 @@ export interface Profile {
 	full_name?: string;
 	avatar_url?: string;
 	biography?: string;
+	role: "user" | "admin" | "moderator";
 	subscription_plan: string;
 	stripe_customer_id?: string;
 	created_at: string;

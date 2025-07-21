@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 import type { Review } from "../types/review";
 
@@ -9,10 +9,21 @@ interface ProfileBrief {
 	role?: string | null;
 }
 
+// レビューフィルター・ソートオプション
+export interface ReviewFilter {
+	rating?: number; // 指定した星数以上のレビューのみ表示
+	sortBy?: "date" | "rating"; // 日付順 or 星数順
+	sortOrder?: "asc" | "desc"; // 昇順 or 降順
+}
+
 export const useReviews = (productId: string, userId?: string) => {
 	const [reviews, setReviews] = useState<Review[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [filter, setFilter] = useState<ReviewFilter>({
+		sortBy: "date",
+		sortOrder: "desc",
+	});
 
 	const fetchReviews = useCallback(async () => {
 		setLoading(true);
@@ -91,6 +102,69 @@ export const useReviews = (productId: string, userId?: string) => {
 		}
 		setLoading(false);
 	}, [productId]);
+
+	// フィルタリング・ソート済みのレビューリスト
+	const filteredAndSortedReviews = useMemo(() => {
+		let result = [...reviews];
+
+		// 評価フィルター（管理者レビューは除外）
+		if (filter.rating !== undefined) {
+			result = result.filter((review) => {
+				// 管理者のレビューは星数フィルタリングの対象外
+				if (review.profiles?.role === "admin") return true;
+				return review.rating !== null && review.rating >= filter.rating!;
+			});
+		}
+
+		// ソート
+		if (filter.sortBy) {
+			result.sort((a, b) => {
+				let comparison = 0;
+
+				if (filter.sortBy === "date") {
+					const dateA = new Date(a.created_at).getTime();
+					const dateB = new Date(b.created_at).getTime();
+					comparison = dateA - dateB;
+				} else if (filter.sortBy === "rating") {
+					// 管理者レビューは常に最後に配置
+					if (a.profiles?.role === "admin" && b.profiles?.role !== "admin") {
+						return 1;
+					}
+					if (b.profiles?.role === "admin" && a.profiles?.role !== "admin") {
+						return -1;
+					}
+					if (a.profiles?.role === "admin" && b.profiles?.role === "admin") {
+						// 管理者同士の場合は日付順
+						comparison =
+							new Date(a.created_at).getTime() -
+							new Date(b.created_at).getTime();
+					} else {
+						// 通常ユーザー同士の場合は星数順
+						const ratingA = a.rating ?? 0;
+						const ratingB = b.rating ?? 0;
+						comparison = ratingA - ratingB;
+					}
+				}
+
+				return filter.sortOrder === "desc" ? -comparison : comparison;
+			});
+		}
+
+		return result;
+	}, [reviews, filter]);
+
+	// フィルター更新関数
+	const updateFilter = useCallback((newFilter: Partial<ReviewFilter>) => {
+		setFilter((prev) => ({ ...prev, ...newFilter }));
+	}, []);
+
+	// フィルター初期化
+	const clearFilter = useCallback(() => {
+		setFilter({
+			sortBy: "date",
+			sortOrder: "desc",
+		});
+	}, []);
 
 	useEffect(() => {
 		fetchReviews();
@@ -311,9 +385,13 @@ export const useReviews = (productId: string, userId?: string) => {
 	const myReview = reviews.find((r) => r.user_id === userId);
 
 	return {
-		reviews,
+		reviews: filteredAndSortedReviews,
+		allReviews: reviews, // フィルタリング前の全レビュー
 		loading,
 		error,
+		filter,
+		updateFilter,
+		clearFilter,
 		refresh: fetchReviews,
 		upsertReview,
 		addReview,

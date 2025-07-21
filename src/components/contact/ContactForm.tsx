@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabase";
 import { useToast } from "../../hooks/useToast";
 import { Toast } from "../ui/Toast";
 import { useAuth } from "../../contexts/AuthProvider";
+import type { ContactCategory } from "../../types/database";
 
 const Container = styled.div`
 	max-width: 600px;
@@ -107,11 +108,205 @@ const CheckboxLabel = styled.label`
 	}
 `;
 
+const CategoryGrid = styled.div`
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+
+	@media (max-width: 768px) {
+		grid-template-columns: 1fr;
+		gap: 12px;
+	}
+
+	@media (max-width: 480px) {
+		gap: 8px;
+	}
+`;
+
+const CategoryCard = styled.button<{ $selected: boolean; $isUrgent?: boolean }>`
+	border: 2px solid
+		${({ $selected, $isUrgent }) =>
+			$selected
+				? $isUrgent
+					? "#ef4444"
+					: "#3b82f6"
+				: "rgba(255, 255, 255, 0.2)"};
+	border-radius: 12px;
+	padding: 16px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	background: ${({ $selected, $isUrgent }) =>
+		$selected
+			? $isUrgent
+				? "rgba(239, 68, 68, 0.1)"
+				: "rgba(59, 130, 246, 0.1)"
+			: "rgba(255, 255, 255, 0.05)"};
+	position: relative;
+	overflow: hidden;
+	width: 100%;
+	text-align: left;
+
+	&:hover {
+		transform: translateY(-2px);
+		border-color: ${({ $isUrgent }) => ($isUrgent ? "#ef4444" : "#3b82f6")};
+		box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+		background: ${({ $isUrgent }) =>
+			$isUrgent ? "rgba(239, 68, 68, 0.15)" : "rgba(59, 130, 246, 0.15)"};
+	}
+
+	&:focus {
+		outline: none;
+		border-color: ${({ $isUrgent }) => ($isUrgent ? "#ef4444" : "#3b82f6")};
+		box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+	}
+
+	&::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 4px;
+		background: ${({ $selected, $isUrgent }) =>
+			$selected ? ($isUrgent ? "#ef4444" : "#3b82f6") : "transparent"};
+		transition: all 0.3s ease;
+	}
+
+	@media (max-width: 768px) {
+		padding: 14px;
+		border-radius: 10px;
+	}
+
+	@media (max-width: 480px) {
+		padding: 12px;
+		border-radius: 8px;
+	}
+`;
+
+const CategoryIcon = styled.div`
+	font-size: 24px;
+	margin-bottom: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.1);
+
+	@media (max-width: 768px) {
+		font-size: 22px;
+		width: 44px;
+		height: 44px;
+		border-radius: 10px;
+	}
+
+	@media (max-width: 480px) {
+		font-size: 20px;
+		width: 40px;
+		height: 40px;
+		border-radius: 8px;
+		margin-bottom: 6px;
+	}
+`;
+
+const CategoryTitle = styled.h3`
+	color: white;
+	font-size: 16px;
+	font-weight: 600;
+	margin: 0 0 4px 0;
+	line-height: 1.3;
+
+	@media (max-width: 768px) {
+		font-size: 15px;
+	}
+
+	@media (max-width: 480px) {
+		font-size: 14px;
+		margin-bottom: 2px;
+	}
+`;
+
+const CategoryDescription = styled.p`
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 13px;
+	margin: 0;
+	line-height: 1.4;
+
+	@media (max-width: 480px) {
+		font-size: 12px;
+		line-height: 1.3;
+	}
+`;
+
+const CategoryLabel = styled.label`
+	color: white;
+	font-size: 16px;
+	font-weight: 600;
+	margin-bottom: 16px;
+	display: block;
+
+	@media (max-width: 768px) {
+		font-size: 15px;
+		margin-bottom: 14px;
+	}
+
+	@media (max-width: 480px) {
+		font-size: 14px;
+		margin-bottom: 12px;
+	}
+`;
+
+// カテゴリ選択肢の詳細定義
+const CATEGORY_DETAILS: Record<
+	ContactCategory,
+	{ icon: string; title: string; description: string; isUrgent?: boolean }
+> = {
+	urgent: {
+		icon: "🚨",
+		title: "緊急のお問い合わせ",
+		description: "システム障害・緊急性の高い問題",
+		isUrgent: true,
+	},
+	account_delete: {
+		icon: "🚪",
+		title: "退会申請",
+		description: "アカウント削除のご依頼",
+	},
+	feature_request: {
+		icon: "💡",
+		title: "機能追加の提案",
+		description: "新機能のアイデア・改善提案",
+	},
+	account_related: {
+		icon: "👤",
+		title: "アカウント関連",
+		description: "ログイン・設定変更に関するお問い合わせ",
+	},
+	billing: {
+		icon: "💳",
+		title: "支払いや請求",
+		description: "料金・決済・請求書に関するご質問",
+	},
+	support: {
+		icon: "🛟",
+		title: "サポート依頼",
+		description: "使い方・トラブルシューティング",
+	},
+	other: {
+		icon: "📝",
+		title: "その他",
+		description: "上記に当てはまらないお問い合わせ",
+	},
+};
+
 export const ContactForm: React.FC = () => {
 	const { user } = useAuth();
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState(user?.email || "");
 	const [message, setMessage] = useState("");
+	const [category, setCategory] = useState<ContactCategory>("other");
 	const [sent, setSent] = useState(false);
 	const [agree, setAgree] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -171,9 +366,7 @@ export const ContactForm: React.FC = () => {
 				name: name.trim(),
 				email: email.trim(),
 				message: message.trim(),
-				status: "pending",
-				is_checked: false,
-				is_replied: false,
+				category: category,
 			});
 
 			if (error) {
@@ -502,6 +695,27 @@ export const ContactForm: React.FC = () => {
 			</ScrollBox>
 
 			<form onSubmit={handleSubmit}>
+				<Field>
+					<CategoryLabel>お問い合わせの種類 *</CategoryLabel>
+					<CategoryGrid>
+						{Object.entries(CATEGORY_DETAILS).map(([value, details]) => (
+							<CategoryCard
+								key={value}
+								type="button"
+								$selected={category === value}
+								$isUrgent={details.isUrgent}
+								onClick={() => setCategory(value as ContactCategory)}
+								aria-pressed={category === value}
+								aria-label={`${details.title}: ${details.description}`}
+							>
+								<CategoryIcon>{details.icon}</CategoryIcon>
+								<CategoryTitle>{details.title}</CategoryTitle>
+								<CategoryDescription>{details.description}</CategoryDescription>
+							</CategoryCard>
+						))}
+					</CategoryGrid>
+				</Field>
+
 				<Field>
 					<label htmlFor="name">お名前 *</label>
 					<input

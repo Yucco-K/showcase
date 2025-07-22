@@ -83,15 +83,10 @@ export const useProducts = () => {
 
 		let isMounted = true;
 		(async () => {
-			const { data, error } = await supabase
+			const { data } = await supabase
 				.from("product_likes")
 				.select("product_id")
 				.eq("user_id", user.id);
-
-			if (error) {
-				console.error("Failed to fetch user likes", error);
-				return;
-			}
 
 			if (isMounted && data) {
 				setFavorites(data.map((row) => row.product_id as string));

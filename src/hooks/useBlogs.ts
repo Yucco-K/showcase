@@ -1,161 +1,73 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useMemo, useCallback, useState } from "react";
 import type { BlogEntry, BlogFilter, BlogPlatform } from "../types/blog";
-import { supabase } from "../lib/supabase"; // Supabaseクライアントをインポート
+import { useSupabaseQuery } from "./common/useSupabaseQuery";
+import { filterBlogs } from "../utils/filter";
 
-// キャッシュ用のグローバル変数
-let blogsCache: BlogEntry[] | null = null;
-let cacheTimestamp: number = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5分
+// DB Row 型
+type DbBlog = {
+	id: string;
+	title: string;
+	platform: string;
+	url: string;
+	published_at: string;
+	updated_at: string;
+	author: string;
+	read_time: number | string;
+	tags: string[] | null;
+};
+
+// DB → BlogEntry型へ変換
+const mapDbBlog = (row: DbBlog): BlogEntry => ({
+	id: row.id,
+	title: row.title,
+	platform: row.platform as BlogPlatform,
+	url: row.url,
+	publishDate: row.published_at,
+	updateDate: row.updated_at,
+	author: row.author,
+	readTime: Number(row.read_time) || 0,
+	tags: row.tags ?? [],
+	description: "", // descriptionはテーブルにないので空文字
+	isExternal: true,
+	thumbnail: undefined,
+});
 
 export const useBlogs = () => {
-	const [allBlogs, setAllBlogs] = useState<BlogEntry[]>([]);
-	const [filteredBlogs, setFilteredBlogs] = useState<BlogEntry[]>([]);
+	const {
+		data: allBlogs,
+		loading: isLoading,
+		error,
+		refetch,
+	} = useSupabaseQuery<DbBlog, BlogEntry>({
+		table: "blogs",
+		select: "*",
+		order: { column: "published_at", ascending: false },
+		transform: mapDbBlog,
+		cache: true,
+	});
+
 	const [filters, setFilters] = useState<BlogFilter>({});
-	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [retryCount, setRetryCount] = useState(0);
-	const abortControllerRef = useRef<AbortController | null>(null);
 
-	// 初期化: Supabaseからデータを読み込む
-	useEffect(() => {
-		const fetchBlogs = async () => {
-			// 前のリクエストをキャンセル
-			if (abortControllerRef.current) {
-				abortControllerRef.current.abort();
-			}
-			abortControllerRef.current = new AbortController();
+	// フィルタリング
+	const filteredBlogs = useMemo(
+		() => filterBlogs(allBlogs, filters),
+		[allBlogs, filters]
+	);
 
-			setIsLoading(true);
-			setError(null);
-
-			try {
-				// キャッシュをチェック
-				const now = Date.now();
-				if (blogsCache && now - cacheTimestamp < CACHE_DURATION) {
-					console.log("Using cached blogs data");
-					setAllBlogs(blogsCache);
-					setIsLoading(false);
-					return;
-				}
-
-				console.log(
-					"Fetching blogs from Supabase... (attempt:",
-					retryCount + 1,
-					")"
-				);
-
-				const { data, error } = await supabase
-					.from("blogs")
-					.select("*")
-					.order("published_at", { ascending: false });
-
-				if (error) {
-					console.error("Supabase error:", error);
-					throw error;
-				}
-
-				console.log("Raw data from Supabase:", data);
-
-				// SupabaseからのデータをBlogEntry型に変換
-				const formattedBlogs: BlogEntry[] = data.map(
-					(blog: Record<string, unknown>) => ({
-						id: blog.id as string,
-						title: blog.title as string,
-						platform: blog.platform as BlogPlatform,
-						url: blog.url as string,
-						publishDate: blog.published_at as string,
-						updateDate: blog.updated_at as string,
-						author: blog.author as string,
-						readTime: Number(blog.read_time) || 0,
-						tags: (blog.tags as string[]) || [],
-						description: "", // descriptionはテーブルにないので空文字を設定
-						isExternal: true, // 外部リンクであると仮定
-						thumbnail: undefined, // thumbnailはテーブルにないのでundefined
-					})
-				);
-
-				console.log("Formatted blogs:", formattedBlogs);
-
-				// キャッシュを更新
-				blogsCache = formattedBlogs;
-				cacheTimestamp = now;
-
-				setAllBlogs(formattedBlogs);
-				setRetryCount(0); // 成功時にリトライカウントをリセット
-			} catch (error) {
-				if (error instanceof Error && error.name === "AbortError") {
-					console.log("Request was aborted");
-					return;
-				}
-
-				console.error("Failed to load blogs from Supabase:", error);
-				setError(
-					error instanceof Error ? error.message : "Failed to load blogs"
-				);
-				setAllBlogs([]); // エラー時は空にする
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		fetchBlogs();
-
-		// クリーンアップ関数
-		return () => {
-			if (abortControllerRef.current) {
-				abortControllerRef.current.abort();
-			}
-		};
-	}, [retryCount]);
-
-	// フィルタリング処理
-	useEffect(() => {
-		let filtered = [...allBlogs];
-
-		// プラットフォームでフィルタ
-		if (filters.platform) {
-			filtered = filtered.filter((blog) => blog.platform === filters.platform);
-		}
-
-		// タグでフィルタ
-		if (filters.tags && filters.tags.length > 0) {
-			filtered = filtered.filter((blog) =>
-				filters.tags!.some((tag) => blog.tags.includes(tag))
-			);
-		}
-
-		// 検索クエリでフィルタ
-		if (filters.searchQuery && filters.searchQuery.trim()) {
-			const query = filters.searchQuery.toLowerCase();
-			filtered = filtered.filter(
-				(blog) =>
-					blog.title.toLowerCase().includes(query) ||
-					blog.description.toLowerCase().includes(query) ||
-					blog.tags.some((tag) => tag.toLowerCase().includes(query))
-			);
-		}
-
-		// 日付順ソートは初期取得時に実施済みのため不要
-
-		setFilteredBlogs(filtered);
-	}, [allBlogs, filters]);
-
-	// フィルタ更新
+	// フィルタ操作
 	const updateFilter = useCallback((newFilters: Partial<BlogFilter>) => {
 		setFilters((prev) => ({ ...prev, ...newFilters }));
 	}, []);
-
-	// フィルタリセット
 	const resetFilters = useCallback(() => {
 		setFilters({});
 	}, []);
 
-	// 利用可能な全タグを取得
+	// タグ一覧
 	const getAllTags = useCallback(() => {
 		return Array.from(new Set(allBlogs.flatMap((blog) => blog.tags))).sort();
 	}, [allBlogs]);
 
-	// プラットフォーム別記事数を取得
+	// プラットフォーム別記事数
 	const getPlatformCounts = useCallback(() => {
 		const counts = {} as Record<string, number>;
 		allBlogs.forEach((blog) => {
@@ -164,7 +76,7 @@ export const useBlogs = () => {
 		return counts;
 	}, [allBlogs]);
 
-	// 統計情報を取得
+	// 統計情報
 	const getStats = useCallback(() => {
 		return {
 			total: allBlogs.length,
@@ -180,29 +92,17 @@ export const useBlogs = () => {
 		};
 	}, [allBlogs, getPlatformCounts]);
 
-	// リトライ機能
-	const retry = useCallback(() => {
-		setRetryCount((prev) => prev + 1);
-	}, []);
-
 	return {
-		// データ
 		blogs: filteredBlogs,
 		allBlogs,
 		filters,
 		isLoading,
 		error,
-
-		// フィルタ操作
 		updateFilter,
 		resetFilters,
-
-		// ユーティリティ
 		getAllTags,
 		getPlatformCounts,
 		getStats,
-
-		// エラーハンドリング
-		retry,
+		refetch,
 	};
 };

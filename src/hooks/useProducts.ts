@@ -3,6 +3,7 @@ import type { ProductFilter, Product } from "../types/product";
 import { ProductCategory } from "../types/product";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthProvider";
+import { toCamelCase } from "../utils/caseConverter";
 
 // DB Row 型（Snake case カラム）
 type DbProduct = {
@@ -28,12 +29,12 @@ type DbProduct = {
 
 // DB → フロント用 Product 型へ変換
 const mapDbProduct = (row: DbProduct): Product => {
+	const camel = toCamelCase(row) as DbProduct;
+	// likes/reviewCountなど追加計算が必要な場合はここで上書き
 	const avgRating =
-		row.stars_count && row.stars_count > 0
+		(row.stars_count && row.stars_count > 0
 			? (row.stars_total ?? 0) / row.stars_count
-			: 0;
-
-	// likes / reviewCount を relation count から取得
+			: 0) || 0;
 	const likesCount = row.product_likes?.[0]?.count ?? row.likes ?? 0;
 	const reviewCount = row.product_reviews?.[0]?.count ?? row.stars_count ?? 0;
 	if (import.meta.env.DEV) {
@@ -41,29 +42,39 @@ const mapDbProduct = (row: DbProduct): Product => {
 			stars_total: row.stars_total,
 			stars_count: row.stars_count,
 			avgRating,
+			image_url: row.image_url,
+			imageUrl: row.image_url || "",
 		});
 	}
 	return {
-		id: row.id,
-		name: row.name,
-		description: row.description,
+		...camel,
 		longDescription: row.long_desc ?? "",
-		price: Number(row.price),
-		category: row.category as ProductCategory,
-		imageUrl: row.image_url ?? "",
-		screenshots: [],
+		imageUrl: row.image_url || "",
 		features: row.features ?? [],
 		requirements: row.requirements ?? [],
+		screenshots: [],
 		version: "1.0.0",
 		lastUpdated: row.last_updated ?? "",
 		rating: avgRating,
 		reviewCount: reviewCount,
 		likes: likesCount,
-		tags: row.tags ?? [],
 		isPopular: !!row.is_popular,
 		isFeatured: !!row.is_featured,
+		category: row.category as ProductCategory,
+		tags: row.tags ?? [],
 	};
 };
+
+// DbProduct型かどうかを判定する型ガード
+function isDbProduct(obj: unknown): obj is DbProduct {
+	return (
+		obj !== null &&
+		typeof obj === "object" &&
+		"id" in obj &&
+		"name" in obj &&
+		"description" in obj
+	);
+}
 
 export const useProducts = () => {
 	const [filter, setFilter] = useState<ProductFilter>({});
@@ -115,10 +126,13 @@ export const useProducts = () => {
 				if (isMounted) setIsLoading(false);
 				return;
 			}
-			if (isMounted && data) {
-				setProducts(data.map(mapDbProduct));
-				setIsLoading(false);
+			if (Array.isArray(data)) {
+				const valid = data.filter(isDbProduct);
+				setProducts(valid.map(mapDbProduct));
+			} else {
+				setProducts([]);
 			}
+			setIsLoading(false);
 		})();
 		return () => {
 			isMounted = false;

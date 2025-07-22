@@ -59,24 +59,11 @@ const mapDbProduct = (row: DbProduct): Product => {
 	};
 };
 
-// DbProduct型かどうかを判定する型ガード
-function isDbProduct(obj: unknown): obj is DbProduct {
-	return (
-		obj !== null &&
-		typeof obj === "object" &&
-		"id" in obj &&
-		"name" in obj &&
-		"description" in obj
-	);
-}
-
 export const useProducts = () => {
-	const {
-		data: products,
-		loading: isLoading,
-		error,
-		refetch,
-	} = useSupabaseQuery<DbProduct, Product>({
+	const { data: products, loading: isLoading } = useSupabaseQuery<
+		DbProduct,
+		Product
+	>({
 		table: "products",
 		select: "*, product_likes(count), product_reviews(count)",
 		transform: mapDbProduct,
@@ -180,8 +167,8 @@ export const useProducts = () => {
 				console.error("Failed to refetch product after unlike", refErr);
 			}
 			if (refreshed) {
-				const updated = mapDbProduct(refreshed as DbProduct);
 				// 不要なsetProductsや関連ロジックを削除済み
+				mapDbProduct(refreshed as unknown as DbProduct);
 			}
 		} else {
 			// Like => INSERT
@@ -207,8 +194,8 @@ export const useProducts = () => {
 				console.error("Failed to refetch product after like", refErrAdd);
 			}
 			if (refreshedAdd) {
-				const updated = mapDbProduct(refreshedAdd as DbProduct);
 				// 不要なsetProductsや関連ロジックを削除済み
+				mapDbProduct(refreshedAdd as unknown as DbProduct);
 			}
 		}
 	};
@@ -292,7 +279,7 @@ export const useProduct = (productId: string) => {
 				return;
 			}
 			if (isMounted && data) {
-				setProduct(mapDbProduct(data as DbProduct));
+				setProduct(mapDbProduct(data as unknown as DbProduct));
 				setLoading(false);
 			}
 		})();

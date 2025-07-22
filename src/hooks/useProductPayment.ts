@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePurchaseHistory } from "./usePurchaseHistory";
 
 interface ProductPaymentResult {
 	success: boolean;
@@ -28,6 +29,8 @@ export const useProductPayment = () => {
 		error: null,
 		success: false,
 	});
+	const { addPurchase, getPurchaseHistory, isPurchased, clearPurchaseHistory } =
+		usePurchaseHistory();
 
 	const processProductPayment = async (
 		paymentData: ProductPaymentData
@@ -62,15 +65,8 @@ export const useProductPayment = () => {
 					success: true,
 				});
 
-				// 購入履歴をローカルストレージに保存
-				const purchases = JSON.parse(
-					localStorage.getItem("product-purchases") || "[]"
-				);
-				purchases.push({
-					...result,
-					purchaseDate: new Date().toISOString(),
-				});
-				localStorage.setItem("product-purchases", JSON.stringify(purchases));
+				// 購入履歴を追加
+				addPurchase({ ...result, productId: result.productId ?? "" });
 
 				return result;
 			} else {
@@ -102,24 +98,12 @@ export const useProductPayment = () => {
 		});
 	};
 
-	const getPurchaseHistory = () => {
-		return JSON.parse(localStorage.getItem("product-purchases") || "[]");
-	};
-
-	interface Purchase {
-		productId: string;
-		[key: string]: unknown;
-	}
-	const isPurchased = (productId: string): boolean => {
-		const purchases: Purchase[] = getPurchaseHistory();
-		return purchases.some((purchase) => purchase.productId === productId);
-	};
-
 	return {
 		...paymentState,
 		processProductPayment,
 		resetPaymentState,
 		getPurchaseHistory,
 		isPurchased,
+		clearPurchaseHistory,
 	};
 };

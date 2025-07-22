@@ -1,4 +1,4 @@
-# 2025 年 7 月 24 日の変更内容
+# 2025 年 7 月 22 日の変更内容
 
 ## コンタクトアドミンページの UI 改善
 
@@ -78,7 +78,32 @@ create table if not exists contact_reply_threads (
 
 ---
 
-# 2025 年 1 月 27 日の変更内容
+# 2025 年 7 月 22 日のリファクタリング作業内容
+
+## 大規模リファクタリング・構造整理
+
+- **hooks の共通化・責務分離**
+  - useSupabaseQuery を全データ取得系 hook で共通利用（useProducts, useBlogs, useProjects, useProfile 等）
+  - お気に入り管理（useFavorites）、購入履歴管理（usePurchaseHistory）を共通 hook 化
+- **型定義の一元管理**
+  - types/配下に型を整理（Product, BlogEntry, Purchase, Profile 等）
+  - 重複型・冗長な型定義を排除
+- **フィルタ・日付整形などの共通ユーティリティ化**
+  - filterProducts, filterBlogs, formatDate 等を utils/配下に実装
+  - 各 hook/コンポーネントで共通関数を利用するようリファクタ
+- **命名規則・型・ファイル構成の統一**
+  - PascalCase/camelCase の統一、import 整理
+- **ESLint エラー・型エラーの全解消**
+  - any 型・未使用変数・依存配列・型不一致などを全て修正
+- **CI での lint 警告ゼロを達成**
+- **主要な UI の日付表示・フィルタロジックの統一**
+  - 商品・ブログ・決済などの画面で formatDate を利用
+- **冗長なローカル関数・未使用 state/import の削除**
+- **コミット・プッシュ済み（PR 作成は未実行）**
+
+---
+
+# 2025 年 7 月 21 日の変更内容
 
 ## 主要な機能強化
 
@@ -445,3 +470,12 @@ const addReply = async (parentId: string, comment: string) => {
 1. リアルタイム通知
 2. メンション機能
 3. 返信のエクスポート機能
+
+## 2025 年 7 月 21 日・22 日の主な機能追加・改善
+
+- コンタクト管理のスレッド返信機能追加（DB・RLS・UI）
+- ピン留め・カテゴリ・タイトル機能の追加
+- コンタクトアドミン UI/UX の大幅改善（レイアウト・アクセシビリティ・レスポンシブ）
+- メール認証・ログイン試行制限・Zod バリデーションによるセキュリティ強化
+- レビューのフィルタ・ソート・3 階層ネスト返信機能の追加
+- 型定義・Styled Components・フック関数の最適化

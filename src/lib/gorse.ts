@@ -2,8 +2,9 @@ import { Gorse } from "gorsejs";
 
 // Gorse クライアント設定
 export const gorse = new Gorse({
-	endpoint: process.env.NEXT_PUBLIC_GORSE_ENDPOINT || "http://localhost:8088",
-	secret: process.env.GORSE_API_KEY || "",
+	endpoint:
+		import.meta.env.VITE_NEXT_PUBLIC_GORSE_ENDPOINT || "http://localhost:8087",
+	secret: import.meta.env.VITE_GORSE_API_KEY || "",
 });
 
 // フィードバックタイプの定義

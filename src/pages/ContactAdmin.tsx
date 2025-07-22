@@ -176,66 +176,58 @@ const MobileCardContainer = styled.div`
 	}
 `;
 
-const PinButton = styled.button<{ $isPinned: boolean }>`
-	position: absolute;
-	top: 12px;
-	right: 52px; /* 3点Menu分の余白を確保 */
-	@media (min-width: 481px) {
-		margin-right: 8px;
-	}
-	background: ${({ $isPinned }) =>
-		$isPinned ? "#dc7633" : "rgba(255, 255, 255, 0.1)"};
-	border: 2px solid
-		${({ $isPinned }) => ($isPinned ? "#dc7633" : "rgba(255, 255, 255, 0.2)")};
-	color: ${({ $isPinned }) =>
-		$isPinned ? "white" : "rgba(255, 255, 255, 0.7)"};
-	border-radius: 50%;
-	width: 32px;
-	height: 32px;
-	cursor: pointer;
+const ActionButtonGroup = styled.div`
+	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 14px;
-	transition: all 0.3s ease;
-	z-index: 9;
-	box-shadow: ${({ $isPinned }) =>
-		$isPinned ? "0 2px 8px rgba(220, 118, 51, 0.3)" : "none"};
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+	gap: 8px;
+	height: 100%;
+	overflow: visible;
+`;
 
+const PinButton = styled.button<{ $isPinned: boolean }>`
+	background: none;
+	border: none;
+	color: ${({ $isPinned }) => ($isPinned ? "#ef4444" : "#ef4444")};
+	font-size: 20px;
+	cursor: pointer;
+	margin-right: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 32px;
+	width: auto;
+	border-radius: 50%;
+	transition: background 0.2s, color 0.2s;
 	&:hover {
-		background: ${({ $isPinned }) =>
-			$isPinned ? "#b8621f" : "rgba(255, 255, 255, 0.2)"};
-		transform: scale(1.1);
-		box-shadow: ${({ $isPinned }) =>
-			$isPinned
-				? "0 4px 12px rgba(220, 118, 51, 0.4)"
-				: "0 4px 12px rgba(0, 0, 0, 0.3)"};
+		background: rgba(255, 255, 255, 0.08);
+		color: #ef4444;
 	}
-
-	&:active {
-		transform: scale(0.95);
-	}
-
-	/* ピン留め済みの場合、アイコンを少し傾ける */
-	${({ $isPinned }) =>
-		$isPinned &&
-		`
-		transform: rotate(-15deg);
-		&:hover {
-			transform: rotate(-15deg) scale(1.1);
-		}
-		&:active {
-			transform: rotate(-15deg) scale(0.95);
-		}
-	`}
-
-	@media (max-width: 480px) {
+	@media (max-width: 768px) {
+		position: absolute;
 		top: 8px;
-		right: 44px;
+		left: 8px;
 		margin-right: 0;
+	}
+	@media (min-width: 769px) {
+		position: relative;
+		left: -8px;
+		margin-right: 24px;
+	}
+`;
+
+const MenuButtonWrapper = styled.div`
+	position: absolute;
+	top: 50%;
+	right: 2px;
+	transform: translateY(-50%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 32px;
+	@media (max-width: 768px) {
+		top: calc(50% - 118px);
 	}
 `;
 
@@ -279,6 +271,21 @@ const ContactCard = styled.div`
 		/* 緊急カテゴリではピン留めボタンを非表示（既に最優先表示のため不要） */
 		${PinButton} {
 			display: none;
+		}
+		/* 緊急カードのピン留め装飾を完全非表示 */
+		&.urgent-contact {
+			&::before {
+				content: none !important;
+				display: none !important;
+			}
+			/* もしピン留めアイコン用のspanや要素があれば非表示 */
+			button,
+			span {
+				&[aria-label*="ピン留め"],
+				&[title*="ピン留め"] {
+					display: none !important;
+				}
+			}
 		}
 	}
 
@@ -793,23 +800,6 @@ const SearchHint = styled.div`
 	}
 `;
 
-const MenuButtonWrapper = styled.div`
-	position: absolute;
-	top: 12px;
-	right: 12px;
-	z-index: 9;
-	/* ピン留めボタンと重ならないよう余白を確保 */
-	@media (max-width: 480px) {
-		top: 8px;
-		right: 8px;
-		margin-top: 8px;
-		margin-left: 0;
-	}
-	@media (min-width: 481px) {
-		margin-left: 16px;
-	}
-`;
-
 export const ContactAdmin: React.FC = () => {
 	const navigate = useNavigate();
 	const { user, isAdmin, loading } = useAuth();
@@ -850,29 +840,31 @@ export const ContactAdmin: React.FC = () => {
 				return;
 			}
 
-			const contactsData: Contact[] = (data as {
-				id: number;
-				name: string;
-				email: string;
-				title?: string;
-				message: string;
-				category?: string;
-				created_at: string;
-				is_checked: boolean;
-				is_replied: boolean;
-				status?: string;
-				admin_notes?: string;
-				replied_at?: string;
-				checked_at?: string;
-				checked_by?: string;
-				replied_by?: string;
-				is_pinned: boolean;
-				pinned_at?: string;
-				pinned_by?: string;
-				profiles?: {
-					full_name?: string;
-				};
-			}[]).map((item) => {
+			const contactsData: Contact[] = (
+				data as {
+					id: number;
+					name: string;
+					email: string;
+					title?: string;
+					message: string;
+					category?: string;
+					created_at: string;
+					is_checked: boolean;
+					is_replied: boolean;
+					status?: string;
+					admin_notes?: string;
+					replied_at?: string;
+					checked_at?: string;
+					checked_by?: string;
+					replied_by?: string;
+					is_pinned: boolean;
+					pinned_at?: string;
+					pinned_by?: string;
+					profiles?: {
+						full_name?: string;
+					};
+				}[]
+			).map((item) => {
 				// profilesテーブルの情報を優先して名前を取得
 				const displayName = item.profiles?.full_name || item.name;
 
@@ -1334,15 +1326,7 @@ export const ContactAdmin: React.FC = () => {
 										})}
 									</Td>
 									<Td>
-										<div
-											style={{
-												display: "flex",
-												alignItems: "center",
-												gap: "0",
-												position: "relative",
-												minWidth: 80,
-											}}
-										>
+										<ActionButtonGroup>
 											{contact.category !== "urgent" && (
 												<PinButton
 													$isPinned={contact.is_pinned || false}
@@ -1362,14 +1346,19 @@ export const ContactAdmin: React.FC = () => {
 															? "ピン留めを解除"
 															: "ピン留めする"
 													}
-													style={{
-														position: "absolute",
-														right: 40,
-														top: 4,
-														zIndex: 2,
-													}}
 												>
-													📌
+													<span
+														style={{
+															color: contact.is_pinned ? "#ef4444" : "#ef4444",
+															opacity: contact.is_pinned ? 1 : 0.25,
+															fontSize: 20,
+															transition: "opacity 0.2s, color 0.2s",
+															display: "inline-block",
+															verticalAlign: "middle",
+														}}
+													>
+														📌
+													</span>
 												</PinButton>
 											)}
 											<MenuButtonWrapper>
@@ -1424,7 +1413,7 @@ export const ContactAdmin: React.FC = () => {
 													</Menu.Dropdown>
 												</Menu>
 											</MenuButtonWrapper>
-										</div>
+										</ActionButtonGroup>
 									</Td>
 								</tr>
 							))}
@@ -1463,18 +1452,32 @@ export const ContactAdmin: React.FC = () => {
 									: ""
 							}`}
 						>
-							<PinButton
-								$isPinned={contact.is_pinned || false}
-								onClick={() =>
-									handleTogglePin(contact.id, contact.is_pinned || false)
-								}
-								aria-label={
-									contact.is_pinned ? "ピン留めを解除" : "ピン留めする"
-								}
-								title={contact.is_pinned ? "ピン留めを解除" : "ピン留めする"}
-							>
-								📌
-							</PinButton>
+							{/* 緊急以外のみピン留め表示 */}
+							{contact.category !== "urgent" && (
+								<PinButton
+									$isPinned={contact.is_pinned || false}
+									onClick={() =>
+										handleTogglePin(contact.id, contact.is_pinned || false)
+									}
+									aria-label={
+										contact.is_pinned ? "ピン留めを解除" : "ピン留めする"
+									}
+									title={contact.is_pinned ? "ピン留めを解除" : "ピン留めする"}
+								>
+									<span
+										style={{
+											color: contact.is_pinned ? "#ef4444" : "#ef4444",
+											opacity: contact.is_pinned ? 1 : 0.25,
+											fontSize: 20,
+											transition: "opacity 0.2s, color 0.2s",
+											display: "inline-block",
+											verticalAlign: "middle",
+										}}
+									>
+										📌
+									</span>
+								</PinButton>
+							)}
 							<MenuButtonWrapper>
 								<Menu
 									shadow="md"

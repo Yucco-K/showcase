@@ -16,6 +16,7 @@ import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
 import { ProductDetailSkeleton } from "../components/ui/Skeleton";
 import { formatDate } from "../utils/date";
+import { SimilarProductsList } from "../components/recommendations/SimilarProductsList";
 
 const Container = styled.div`
 	min-height: 100vh;
@@ -885,6 +886,13 @@ const ProductDetail: React.FC = () => {
 							)}
 						</TabContent>
 					</DetailsTabs>
+
+					{/* 似たアプリセクション */}
+					<SimilarProductsList
+						productId={product.id}
+						title="似たアプリ"
+						maxItems={4}
+					/>
 
 					{/* Reviews */}
 					<ReviewsSection>

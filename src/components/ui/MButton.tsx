@@ -1,5 +1,6 @@
-import { Button, ButtonProps } from "@mantine/core";
+import { Button } from "@mantine/core";
 import { useState } from "react";
+import type { ButtonProps } from "@mantine/core/lib/components/Button/Button";
 
 export interface MButtonProps extends ButtonProps {
 	/** 二重クリックを防ぐため自動で disabled にする時間(ms)。0 で無効 */

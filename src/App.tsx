@@ -23,7 +23,7 @@ import { MyPage } from "./pages/MyPage";
 import ResetPassword from "./pages/ResetPassword";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AdminProtectedRoute } from "./components/auth/AdminProtectedRoute";
-import MarketingDashboard from "./pages/MarketingDashboard";
+import MarketingDashboardPage from "./pages/MarketingDashboard";
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -94,7 +94,7 @@ function AppRoutes() {
 					path="/marketing-dashboard"
 					element={
 						<AdminProtectedRoute>
-							<MarketingDashboard />
+							<MarketingDashboardPage />
 						</AdminProtectedRoute>
 					}
 				/>

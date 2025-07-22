@@ -254,6 +254,11 @@ const ErrorMessage = styled.p`
 	margin: 0;
 `;
 
+const ButtonGroup = styled.div`
+	display: flex;
+	gap: 8px;
+`;
+
 const BlogAdmin: React.FC = () => {
 	const navigate = useNavigate();
 	const { user, isAdmin, loading } = useAuth();
@@ -474,18 +479,20 @@ const BlogAdmin: React.FC = () => {
 								</Td>
 								<Td>{blog.author || "-"}</Td>
 								<Td>
-									<ActionButton
-										$variant="edit"
-										onClick={() => handleEdit(blog)}
-									>
-										✏️
-									</ActionButton>
-									<ActionButton
-										$variant="delete"
-										onClick={() => handleDelete(blog.id)}
-									>
-										🗑️
-									</ActionButton>
+									<ButtonGroup>
+										<ActionButton
+											$variant="edit"
+											onClick={() => handleEdit(blog)}
+										>
+											✏️
+										</ActionButton>
+										<ActionButton
+											$variant="delete"
+											onClick={() => handleDelete(blog.id)}
+										>
+											🗑️
+										</ActionButton>
+									</ButtonGroup>
 								</Td>
 							</tr>
 						))}

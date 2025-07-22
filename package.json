@@ -44,6 +44,7 @@
 		"@tryfabric/martian": "^1.2.4",
 		"@vercel/node": "^5.3.6",
 		"framer-motion": "^12.23.3",
+		"gorsejs": "^0.4.8",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
 		"react-hook-form": "^7.60.0",

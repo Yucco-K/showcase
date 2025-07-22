@@ -15,6 +15,7 @@ import { ReplyItem } from "../components/reviews/ReplyItem";
 import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
 import { ProductDetailSkeleton } from "../components/ui/Skeleton";
+import { formatDate } from "../utils/date";
 
 const Container = styled.div`
 	min-height: 100vh;
@@ -827,7 +828,7 @@ const ProductDetail: React.FC = () => {
 						</MetaItem>
 						<MetaItem>
 							<MetaLabel>最終更新</MetaLabel>
-							<MetaValue>{product.lastUpdated}</MetaValue>
+							<MetaValue>{formatDate(product.lastUpdated)}</MetaValue>
 						</MetaItem>
 					</MetaInfo>
 

@@ -832,7 +832,16 @@ export const ContactAdmin: React.FC = () => {
 		try {
 			const { data, error } = await supabase
 				.from("contacts")
-				.select("*")
+				.select(
+					`
+					*,
+					profiles!contacts_user_id_fkey (
+						id,
+						full_name,
+						email
+					)
+				`
+				)
 				.order("created_at", { ascending: false });
 
 			if (error) {
@@ -841,26 +850,31 @@ export const ContactAdmin: React.FC = () => {
 				return;
 			}
 
-			const contactsData: Contact[] = (data as any[]).map((item) => ({
-				id: String(item.id),
-				name: String(item.name),
-				email: String(item.email),
-				title: item.title ? String(item.title) : "お問い合わせ",
-				message: String(item.message),
-				category: item.category || "other",
-				created_at: String(item.created_at),
-				is_checked: Boolean(item.is_checked),
-				is_replied: Boolean(item.is_replied),
-				status: item.status || "pending",
-				admin_notes: item.admin_notes ? String(item.admin_notes) : null,
-				replied_at: item.replied_at ? String(item.replied_at) : null,
-				checked_at: item.checked_at ? String(item.checked_at) : null,
-				checked_by: item.checked_by ? String(item.checked_by) : null,
-				replied_by: item.replied_by ? String(item.replied_by) : null,
-				is_pinned: Boolean(item.is_pinned),
-				pinned_at: item.pinned_at ? String(item.pinned_at) : null,
-				pinned_by: item.pinned_by ? String(item.pinned_by) : null,
-			}));
+			const contactsData: Contact[] = (data as any[]).map((item) => {
+				// profilesテーブルの情報を優先して名前を取得
+				const displayName = item.profiles?.full_name || item.name;
+
+				return {
+					id: String(item.id),
+					name: String(displayName),
+					email: String(item.email),
+					title: item.title ? String(item.title) : "お問い合わせ",
+					message: String(item.message),
+					category: item.category || "other",
+					created_at: String(item.created_at),
+					is_checked: Boolean(item.is_checked),
+					is_replied: Boolean(item.is_replied),
+					status: item.status || "pending",
+					admin_notes: item.admin_notes ? String(item.admin_notes) : null,
+					replied_at: item.replied_at ? String(item.replied_at) : null,
+					checked_at: item.checked_at ? String(item.checked_at) : null,
+					checked_by: item.checked_by ? String(item.checked_by) : null,
+					replied_by: item.replied_by ? String(item.replied_by) : null,
+					is_pinned: Boolean(item.is_pinned),
+					pinned_at: item.pinned_at ? String(item.pinned_at) : null,
+					pinned_by: item.pinned_by ? String(item.pinned_by) : null,
+				};
+			});
 			setContacts(contactsData);
 		} catch (error) {
 			console.error("Failed to fetch contacts:", error);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
@@ -21,6 +21,7 @@ interface Contact {
 	checked_at: string | null;
 	checked_by: string | null;
 	replied_by: string | null;
+	completed_at: string | null;
 }
 
 interface ContactReplyThread {
@@ -30,6 +31,12 @@ interface ContactReplyThread {
 	sender_id: string | null;
 	message: string;
 	created_at: string;
+}
+
+interface AdminProfile {
+	id: string;
+	full_name: string;
+	email: string;
 }
 
 const Container = styled.div`
@@ -103,7 +110,7 @@ const SectionTitle = styled.h2`
 
 const InfoGrid = styled.div`
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	grid-template-columns: 1fr;
 	gap: 16px;
 	margin-bottom: 16px;
 `;
@@ -262,6 +269,13 @@ const CheckIcon = styled.span<{ $checked: boolean }>`
 const CheckText = styled.span<{ $checked: boolean }>`
 	color: ${({ $checked }) => ($checked ? "#10b981" : "#fbbf24")};
 	font-weight: 600;
+`;
+
+const ElapsedTime = styled.span<{ $isOver3Days: boolean }>`
+	color: ${({ $isOver3Days }) =>
+		$isOver3Days ? "#ef4444" : "rgba(255, 255, 255, 0.8)"};
+	font-weight: 600;
+	font-size: 0.9rem;
 `;
 
 // 編集モーダル用のスタイル
@@ -427,10 +441,48 @@ const ThreadSection = styled(Section)`
 	border-left: 4px solid #3ea8ff;
 `;
 
+const ThreadAccordion = styled.div`
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 8px;
+	overflow: hidden;
+	margin-bottom: 16px;
+`;
+
+const ThreadAccordionHeader = styled.button<{ $isOpen: boolean }>`
+	width: 100%;
+	background: rgba(255, 255, 255, 0.05);
+	border: none;
+	padding: 16px 20px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	color: white;
+	font-weight: 600;
+
+	&:hover {
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	&:focus {
+		outline: none;
+		box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+	}
+`;
+
+const ThreadAccordionContent = styled.div<{ $isOpen: boolean }>`
+	max-height: ${({ $isOpen }) => ($isOpen ? "1000px" : "0")};
+	overflow: hidden;
+	transition: max-height 0.3s ease;
+	background: rgba(255, 255, 255, 0.02);
+`;
+
 const ThreadList = styled.div`
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+	padding: 20px;
 `;
 
 const ThreadItem = styled.div<{ $isAdmin: boolean }>`
@@ -448,12 +500,15 @@ const ThreadMeta = styled.div`
 
 const ThreadForm = styled.form`
 	display: flex;
+	flex-direction: column;
 	gap: 12px;
 	margin-top: 24px;
+`;
 
-	@media (max-width: 768px) {
-		flex-direction: column;
-	}
+const AccordionIcon = styled.span<{ $isOpen: boolean }>`
+	transition: transform 0.2s ease;
+	transform: rotate(${({ $isOpen }) => ($isOpen ? "180deg" : "0deg")});
+	font-size: 1.2rem;
 `;
 
 const ThreadTextarea = styled.textarea`
@@ -495,6 +550,10 @@ const ContactDetail: React.FC = () => {
 	const [threads, setThreads] = useState<ContactReplyThread[]>([]);
 	const [threadLoading, setThreadLoading] = useState(false);
 	const [threadError, setThreadError] = useState<string | null>(null);
+	const [isThreadAccordionOpen, setIsThreadAccordionOpen] = useState(false);
+	const [adminProfiles, setAdminProfiles] = useState<
+		Record<string, AdminProfile>
+	>({});
 
 	useEffect(() => {
 		const fetchContact = async () => {
@@ -503,12 +562,31 @@ const ContactDetail: React.FC = () => {
 			try {
 				const { data, error } = await supabase
 					.from("contacts")
-					.select("*")
+					.select(
+						`
+						*,
+						profiles!contacts_user_id_fkey (
+							id,
+							full_name,
+							email
+						)
+					`
+					)
 					.eq("id", id)
 					.single();
 
 				if (error) throw error;
-				setContact(data);
+
+				// profilesテーブルの情報を優先して名前を取得
+				const contactData = data as any;
+				const displayName = contactData.profiles?.full_name || contactData.name;
+
+				const contactWithProfile: Contact = {
+					...contactData,
+					name: displayName,
+				};
+
+				setContact(contactWithProfile as unknown as Contact);
 			} catch (error) {
 				console.error("Failed to fetch contact:", error);
 				setError("お問い合わせの取得に失敗しました");
@@ -521,6 +599,29 @@ const ContactDetail: React.FC = () => {
 			fetchContact();
 		}
 	}, [id, user, isAdmin]);
+
+	// 管理者プロファイル取得
+	const fetchAdminProfiles = useCallback(async (adminIds: string[]) => {
+		if (adminIds.length === 0) return;
+
+		try {
+			const { data, error } = await supabase
+				.from("profiles")
+				.select("id, full_name, email")
+				.in("id", adminIds);
+
+			if (error) throw error;
+
+			const profilesMap: Record<string, AdminProfile> = {};
+			(data || []).forEach((profile: unknown) => {
+				const p = profile as AdminProfile;
+				profilesMap[p.id] = p;
+			});
+			setAdminProfiles(profilesMap);
+		} catch (error) {
+			console.error("Failed to fetch admin profiles:", error);
+		}
+	}, []);
 
 	// 履歴取得
 	useEffect(() => {
@@ -535,15 +636,28 @@ const ContactDetail: React.FC = () => {
 					.eq("contact_id", contact.id)
 					.order("created_at", { ascending: true });
 				if (error) throw error;
-				setThreads(data || []);
-			} catch (e) {
+				const threadsData = (data || []) as unknown as ContactReplyThread[];
+				setThreads(threadsData);
+
+				// 管理者のIDを抽出してプロファイルを取得
+				const adminIds = threadsData
+					.filter(
+						(thread) => thread.sender_type === "admin" && thread.sender_id
+					)
+					.map((thread) => thread.sender_id!)
+					.filter((id, index, arr) => arr.indexOf(id) === index); // 重複除去
+
+				if (adminIds.length > 0) {
+					fetchAdminProfiles(adminIds);
+				}
+			} catch {
 				setThreadError("履歴の取得に失敗しました");
 			} finally {
 				setThreadLoading(false);
 			}
 		};
 		if (contact) fetchThreads();
-	}, [contact]);
+	}, [contact, fetchAdminProfiles]);
 
 	// 返信送信
 	const handleSendThread = async (e: React.FormEvent) => {
@@ -565,9 +679,9 @@ const ContactDetail: React.FC = () => {
 				.select("*")
 				.eq("contact_id", contact.id)
 				.order("created_at", { ascending: true });
-			setThreads(data || []);
+			setThreads((data || []) as unknown as ContactReplyThread[]);
 			showSuccess("返信を送信しました");
-		} catch (e) {
+		} catch {
 			showError("返信に失敗しました");
 		} finally {
 			setThreadSending(false);
@@ -589,6 +703,42 @@ const ContactDetail: React.FC = () => {
 		return new Date(dateString).toLocaleString("ja-JP");
 	};
 
+	// 経過時間を計算する関数
+	const calculateElapsedTime = (
+		createdAt: string,
+		completedAt?: string | null
+	) => {
+		const created = new Date(createdAt);
+		const endTime = completedAt ? new Date(completedAt) : new Date();
+		const diffMs = endTime.getTime() - created.getTime();
+
+		const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+		const diffHours = Math.floor(
+			(diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+		);
+		const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+		if (diffDays > 0) {
+			return `${diffDays}日${diffHours}時間`;
+		} else if (diffHours > 0) {
+			return `${diffHours}時間${diffMinutes}分`;
+		} else {
+			return `${diffMinutes}分`;
+		}
+	};
+
+	// 3日以上経過しているかチェック
+	const isOver3Days = (createdAt: string, completedAt?: string | null) => {
+		const created = new Date(createdAt);
+		const endTime = completedAt ? new Date(completedAt) : new Date();
+		const diffMs = endTime.getTime() - created.getTime();
+		const diffDays = diffMs / (1000 * 60 * 60 * 24);
+		return diffDays >= 3;
+	};
+
+	// 完了ステータスかどうかチェック
+	const isCompleted = contact?.status === "completed";
+
 	const handleEdit = () => {
 		setEditingContact(contact);
 		setIsModalOpen(true);
@@ -600,6 +750,10 @@ const ContactDetail: React.FC = () => {
 
 		setIsUpdating(true);
 		try {
+			// 完了ステータスになった場合はcompleted_atを設定、それ以外の場合はnullに設定
+			const completedAt =
+				editingContact.status === "completed" ? new Date().toISOString() : null;
+
 			const { error } = await supabase
 				.from("contacts")
 				.update({
@@ -615,6 +769,7 @@ const ContactDetail: React.FC = () => {
 						: null,
 					checked_by: editingContact.is_checked ? user?.id : null,
 					replied_by: editingContact.is_replied ? user?.id : null,
+					completed_at: completedAt,
 				})
 				.eq("id", editingContact.id);
 
@@ -635,8 +790,9 @@ const ContactDetail: React.FC = () => {
 					replied_at: editingContact.is_replied
 						? new Date().toISOString()
 						: null,
-					checked_by: editingContact.is_checked ? user?.id : null,
-					replied_by: editingContact.is_replied ? user?.id : null,
+					checked_by: editingContact.is_checked ? user?.id || null : null,
+					replied_by: editingContact.is_replied ? user?.id || null : null,
+					completed_at: completedAt,
 				};
 				setContact(updatedContact);
 			}
@@ -683,9 +839,29 @@ const ContactDetail: React.FC = () => {
 						<InfoValue>{contact.email}</InfoValue>
 					</InfoItem>
 					<InfoItem>
-						<InfoLabel>送信日時</InfoLabel>
+						<InfoLabel>問い合わせから経過した時間（推奨：3日以内）</InfoLabel>
+						<InfoValue>
+							<ElapsedTime
+								$isOver3Days={isOver3Days(
+									contact.created_at,
+									contact.completed_at
+								)}
+							>
+								{isCompleted && contact.completed_at ? "確定：" : ""}
+								{calculateElapsedTime(contact.created_at, contact.completed_at)}
+							</ElapsedTime>
+						</InfoValue>
+					</InfoItem>
+					<InfoItem>
+						<InfoLabel>問い合わせ送信日時</InfoLabel>
 						<InfoValue>{formatDate(contact.created_at)}</InfoValue>
 					</InfoItem>
+					{isCompleted && contact.completed_at && (
+						<InfoItem>
+							<InfoLabel>対応完了日時</InfoLabel>
+							<InfoValue>{formatDate(contact.completed_at)}</InfoValue>
+						</InfoItem>
+					)}
 					<InfoItem>
 						<InfoLabel>ステータス</InfoLabel>
 						<StatusBadge $status={contact.status}>
@@ -768,46 +944,76 @@ const ContactDetail: React.FC = () => {
 			</Section>
 
 			<ThreadSection>
-				<SectionTitle>やりとり履歴</SectionTitle>
-				{threadLoading ? (
-					<LoadingMessage>履歴を読み込み中...</LoadingMessage>
-				) : threadError ? (
-					<ErrorMessage>{threadError}</ErrorMessage>
-				) : (
-					<ThreadList>
-						{threads.length === 0 && (
-							<EmptyNotes>まだやりとりはありません</EmptyNotes>
+				<ThreadAccordion>
+					<ThreadAccordionHeader
+						$isOpen={isThreadAccordionOpen}
+						onClick={() => setIsThreadAccordionOpen(!isThreadAccordionOpen)}
+					>
+						<span>
+							{isThreadAccordionOpen
+								? "やりとり履歴"
+								: `お問合せNo：${contact.id}`}
+						</span>
+						{!isThreadAccordionOpen && (
+							<span
+								style={{
+									marginLeft: "auto",
+									marginRight: "12px",
+									whiteSpace: "nowrap",
+									flexShrink: 0,
+								}}
+							>
+								全{threads.length}件
+							</span>
 						)}
-						{threads.map((t) => (
-							<ThreadItem key={t.id} $isAdmin={t.sender_type === "admin"}>
-								{t.message}
-								<ThreadMeta>
-									{t.sender_type === "admin" ? "管理者" : "ユーザー"}・
-									{new Date(t.created_at).toLocaleString("ja-JP")}
-								</ThreadMeta>
-							</ThreadItem>
-						))}
-					</ThreadList>
-				)}
-				{isAdmin(user) && (
-					<ThreadForm onSubmit={handleSendThread}>
-						<ThreadTextarea
-							value={threadMessage}
-							onChange={(e) => setThreadMessage(e.target.value)}
-							placeholder="返信内容を入力"
-							required
-							rows={2}
-							disabled={threadSending}
-						/>
-						<ModalButton
-							type="submit"
-							$variant="primary"
-							disabled={threadSending || !threadMessage.trim()}
-						>
-							{threadSending ? "送信中..." : "送信"}
-						</ModalButton>
-					</ThreadForm>
-				)}
+						<AccordionIcon $isOpen={isThreadAccordionOpen}>▼</AccordionIcon>
+					</ThreadAccordionHeader>
+					<ThreadAccordionContent $isOpen={isThreadAccordionOpen}>
+						{threadLoading ? (
+							<LoadingMessage>履歴を読み込み中...</LoadingMessage>
+						) : threadError ? (
+							<ErrorMessage>{threadError}</ErrorMessage>
+						) : (
+							<ThreadList>
+								{threads.length === 0 && (
+									<EmptyNotes>まだやりとりはありません</EmptyNotes>
+								)}
+								{threads.map((t) => (
+									<ThreadItem key={t.id} $isAdmin={t.sender_type === "admin"}>
+										{t.message}
+										<ThreadMeta>
+											{t.sender_type === "admin"
+												? `管理者 ${
+														adminProfiles[t.sender_id!]?.full_name || ""
+												  }`.trim()
+												: `ユーザー ${contact?.name || ""}`}
+											・{new Date(t.created_at).toLocaleString("ja-JP")}
+										</ThreadMeta>
+									</ThreadItem>
+								))}
+							</ThreadList>
+						)}
+						{isAdmin(user) && (
+							<ThreadForm onSubmit={handleSendThread}>
+								<ThreadTextarea
+									value={threadMessage}
+									onChange={(e) => setThreadMessage(e.target.value)}
+									placeholder="返信内容を入力"
+									required
+									rows={2}
+									disabled={threadSending}
+								/>
+								<ModalButton
+									type="submit"
+									$variant="primary"
+									disabled={threadSending || !threadMessage.trim()}
+								>
+									{threadSending ? "送信中..." : "送信"}
+								</ModalButton>
+							</ThreadForm>
+						)}
+					</ThreadAccordionContent>
+				</ThreadAccordion>
 			</ThreadSection>
 
 			<ActionButtons>

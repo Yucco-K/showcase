@@ -9,7 +9,7 @@ import { createGlobalStyle } from "styled-components";
 import { useBgColor } from "./hooks/useBgColor";
 import NavBar from "./components/ui/NavBar";
 import Top from "./pages/Top";
-import Internship from "./pages/Internship";
+import Information from "./pages/Information";
 import Portfolio from "./pages/Portfolio";
 import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
@@ -44,7 +44,7 @@ function AppRoutes() {
 			<NavBar />
 			<Routes>
 				<Route path="/" element={<Top />} />
-				<Route path="/internship" element={<Internship />} />
+				<Route path="/information" element={<Information />} />
 				<Route path="/portfolio" element={<Portfolio />} />
 				<Route path="/products" element={<ProductList />} />
 				<Route path="/products/:id" element={<ProductDetail />} />

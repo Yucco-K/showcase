@@ -440,7 +440,7 @@ const NavBar: React.FC = () => {
 		{ path: "/portfolio", label: "Portfolio" },
 		{ path: "/products", label: "Products" },
 		{ path: "/blog", label: "Blog" },
-		{ path: "/internship", label: "Sample" },
+		{ path: "/information", label: "Information" },
 	];
 
 	// ハンバーガーアイコン

@@ -1,3 +1,83 @@
+# 2025 年 7 月 24 日の変更内容
+
+## コンタクトアドミンページの UI 改善
+
+### レイアウトとスタイルの最適化
+
+- **ファイル**: `src/pages/ContactAdmin.tsx`
+- **変更内容**:
+  - テーブルとカードの文字サイズを全体的に小さく調整
+  - テーブルの最小幅を 800px に統一（他のアドミンページと同様）
+  - 名前とタイトルカラムの幅を調整（3 点ボタンとピン留めボタンの表示改善）
+  - ピン留めボタンの z-index を 9 に設定（ナビバーの下に表示）
+
+```typescript
+// 文字サイズの調整例
+const Th = styled.th`
+	font-size: 0.9rem;
+	padding: 12px;
+`;
+
+const Td = styled.td`
+	font-size: 0.9rem;
+	padding: 12px;
+`;
+
+const CardTitle = styled.h3`
+	font-size: 1rem;
+	@media (max-width: 768px) {
+		font-size: 0.95rem;
+	}
+	@media (max-width: 480px) {
+		font-size: 0.9rem;
+	}
+`;
+```
+
+## お問い合わせ詳細ページの機能改善
+
+### マイページ返信機能の削除とスレッド機能への統合
+
+- **ファイル**: `src/pages/ContactDetail.tsx`
+- **変更内容**:
+  - 「マイページに返信」ボタンと関連モーダルの削除
+  - `ReplyModal`コンポーネントの削除
+  - `handleReplyToMyPage`関数の削除
+  - スレッド形式の返信機能への一本化
+
+### contact_reply_threads テーブルの実装
+
+- **ファイル**: `supabase/migrations/20250724000000_create_contact_reply_threads.sql`
+- **変更内容**:
+  - スレッド形式の返信を保存するテーブルを作成
+  - 送信者タイプ（admin/user）の区別
+  - タイムスタンプの追加
+
+```sql
+create table if not exists contact_reply_threads (
+  id uuid primary key default gen_random_uuid(),
+  contact_id uuid references contacts(id) on delete cascade,
+  sender_type text not null, -- 'admin' or 'user'
+  sender_id uuid references profiles(id),
+  message text not null,
+  created_at timestamptz not null default now()
+);
+```
+
+### RLS ポリシーの実装
+
+- **ファイル**:
+  - `supabase/migrations/20250721124223_add_contact_reply_threads_policies.sql`
+  - `supabase/migrations/20250724130000_reset_contact_reply_threads_policies.sql`
+  - `supabase/migrations/20250724140000_add_admin_insert_policy.sql`
+- **変更内容**:
+  - ユーザー用の SELECT/INSERT/UPDATE/DELETE ポリシー追加
+  - 管理者用の全件アクセスポリシー追加
+  - 管理者用の INSERT ポリシー追加
+  - ポリシーの重複を避けるためのリセットと再構成
+
+---
+
 # 2025 年 1 月 27 日の変更内容
 
 ## 主要な機能強化

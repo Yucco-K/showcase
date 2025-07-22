@@ -368,13 +368,20 @@ export const ContactForm: React.FC = () => {
 
 		setIsSubmitting(true);
 		try {
-			const { error } = await supabase.from("contacts").insert({
+			const contactData: any = {
 				name: name.trim(),
 				email: email.trim(),
 				title: title.trim() || "お問い合わせ",
 				message: message.trim(),
 				category: category,
-			});
+			};
+
+			// ユーザーがログインしている場合はuser_idを設定
+			if (user) {
+				contactData.user_id = user.id;
+			}
+
+			const { error } = await supabase.from("contacts").insert(contactData);
 
 			if (error) {
 				console.error("Contact form error:", error);

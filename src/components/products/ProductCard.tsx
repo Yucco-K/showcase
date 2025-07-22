@@ -39,7 +39,6 @@ const Card = styled.div`
 const ImageContainer = styled.div`
 	width: 100%;
 	height: 200px;
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 	border-radius: 12px;
 	margin-bottom: 16px;
 	position: relative;
@@ -55,6 +54,23 @@ const ImageContainer = styled.div`
 		height: 140px;
 		font-size: 14px;
 	}
+`;
+
+const ProductImage = styled.img`
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	border-radius: 12px;
+`;
+
+const ImageFallback = styled.div`
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 12px;
 `;
 
 const CategoryBadge = styled.span`
@@ -238,16 +254,6 @@ export const ProductCardComponent: React.FC<ProductCardProps> = ({
 		});
 	};
 
-	if (import.meta.env.DEV) {
-		console.log(
-			"[ProductCard]",
-			product.name,
-			"rating:",
-			product.rating,
-			typeof product.rating
-		);
-	}
-
 	const getCategoryLabel = (category: string) => {
 		const labels: Record<string, string> = {
 			productivity: "生産性",
@@ -267,6 +273,32 @@ export const ProductCardComponent: React.FC<ProductCardProps> = ({
 				{product.isPopular && <PopularBadge>人気</PopularBadge>}
 
 				<ImageContainer>
+					{product.imageUrl && product.imageUrl.trim() !== "" ? (
+						<ProductImage
+							src={product.imageUrl}
+							alt={product.name}
+							onError={(e) => {
+								// 画像読み込みエラー時にフォールバック表示
+								const target = e.target as HTMLImageElement;
+								target.style.display = "none";
+								const fallback = target.parentElement?.querySelector(
+									".image-fallback"
+								) as HTMLElement;
+								if (fallback) fallback.style.display = "flex";
+							}}
+						/>
+					) : null}
+					<ImageFallback
+						className="image-fallback"
+						style={{
+							display:
+								product.imageUrl && product.imageUrl.trim() !== ""
+									? "none"
+									: "flex",
+						}}
+					>
+						{product.name}
+					</ImageFallback>
 					<CategoryBadge>{getCategoryLabel(product.category)}</CategoryBadge>
 					<FavoriteButton
 						data-testid="like-button"
@@ -281,7 +313,6 @@ export const ProductCardComponent: React.FC<ProductCardProps> = ({
 					>
 						{isFavorite ? "❤️" : "🤍"}
 					</FavoriteButton>
-					{product.name}
 				</ImageContainer>
 
 				<Title>{product.name}</Title>

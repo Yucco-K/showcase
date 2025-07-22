@@ -315,6 +315,11 @@ const ErrorMessage = styled.p`
 	margin: 0;
 `;
 
+const ButtonGroup = styled.div`
+	display: flex;
+	gap: 8px;
+`;
+
 const ProductAdmin: React.FC = () => {
 	const navigate = useNavigate();
 	const { user, isAdmin, loading } = useAuth();
@@ -585,18 +590,20 @@ const ProductAdmin: React.FC = () => {
 									)}
 								</Td>
 								<Td>
-									<ActionButton
-										$variant="edit"
-										onClick={() => handleEdit(product)}
-									>
-										✏️
-									</ActionButton>
-									<ActionButton
-										$variant="delete"
-										onClick={() => handleDelete(product.id)}
-									>
-										🗑️
-									</ActionButton>
+									<ButtonGroup>
+										<ActionButton
+											$variant="edit"
+											onClick={() => handleEdit(product)}
+										>
+											✏️
+										</ActionButton>
+										<ActionButton
+											$variant="delete"
+											onClick={() => handleDelete(product.id)}
+										>
+											🗑️
+										</ActionButton>
+									</ButtonGroup>
 								</Td>
 							</tr>
 						))}

@@ -292,7 +292,7 @@ const BlogList: React.FC = () => {
 		const value = e.target.value;
 		if (value === "all") {
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			const { platform: _, ...rest } = filters;
+			const { platform, ...rest } = filters;
 			updateFilter(rest);
 		} else {
 			updateFilter({ platform: value as BlogPlatform });

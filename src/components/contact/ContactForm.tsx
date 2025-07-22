@@ -368,7 +368,14 @@ export const ContactForm: React.FC = () => {
 
 		setIsSubmitting(true);
 		try {
-			const contactData: any = {
+			const contactData: {
+				name: string;
+				email: string;
+				title: string;
+				message: string;
+				category: string;
+				user_id?: string;
+			} = {
 				name: name.trim(),
 				email: email.trim(),
 				title: title.trim() || "お問い合わせ",

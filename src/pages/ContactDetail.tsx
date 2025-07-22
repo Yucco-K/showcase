@@ -578,7 +578,29 @@ const ContactDetail: React.FC = () => {
 				if (error) throw error;
 
 				// profilesテーブルの情報を優先して名前を取得
-				const contactData = data as any;
+				const contactData = data as {
+					id: number;
+					name: string;
+					email: string;
+					title?: string;
+					message: string;
+					category?: string;
+					created_at: string;
+					is_checked: boolean;
+					is_replied: boolean;
+					status?: string;
+					admin_notes?: string;
+					replied_at?: string;
+					checked_at?: string;
+					checked_by?: string;
+					replied_by?: string;
+					is_pinned: boolean;
+					pinned_at?: string;
+					pinned_by?: string;
+					profiles?: {
+						full_name?: string;
+					};
+				};
 				const displayName = contactData.profiles?.full_name || contactData.name;
 
 				const contactWithProfile: Contact = {

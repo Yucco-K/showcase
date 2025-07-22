@@ -2,14 +2,10 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthProvider";
 import { useProducts } from "../../hooks/useProducts";
-// usePurchaseHistoryフックを適切に使用するよう修正
 import { usePurchaseHistory } from "../../hooks/usePurchaseHistory";
-// 未使用のインポートを削除
-// import { gorse } from "../../lib/gorse";
 import { supabase } from "../../lib/supabase";
 import Spinner from "../ui/Spinner";
 import { MButton } from "../ui/MButton";
-import { Chart } from "react-chartjs-2";
 import {
 	Chart as ChartJS,
 	CategoryScale,
@@ -20,7 +16,10 @@ import {
 	Title,
 	Tooltip,
 	Legend,
+	ChartData,
+	ChartOptions,
 } from "chart.js";
+import { Bar, Line } from "react-chartjs-2";
 
 // Chart.jsの初期化
 ChartJS.register(
@@ -195,10 +194,45 @@ type PurchaseTimeSeries = {
 	count: number;
 };
 
+// Chart.jsのオプション設定
+const chartOptions: ChartOptions<"line"> = {
+	responsive: true,
+	maintainAspectRatio: false,
+	scales: {
+		y: {
+			beginAtZero: true,
+			grid: {
+				color: "rgba(255, 255, 255, 0.1)",
+			},
+			ticks: {
+				color: "rgba(255, 255, 255, 0.7)",
+			},
+		},
+		x: {
+			grid: {
+				color: "rgba(255, 255, 255, 0.1)",
+			},
+			ticks: {
+				color: "rgba(255, 255, 255, 0.7)",
+			},
+		},
+	},
+	plugins: {
+		legend: {
+			labels: {
+				color: "rgba(255, 255, 255, 0.8)",
+			},
+		},
+	},
+};
+
+const barChartOptions: ChartOptions<"bar"> = {
+	...chartOptions,
+};
+
 const MarketingDashboard: React.FC = () => {
 	const { user, isAdmin } = useAuth();
 	const { allProducts } = useProducts();
-	// usePurchaseHistoryフックから適切な関数を取得
 	const { getPurchaseHistory } = usePurchaseHistory();
 
 	const [activeTab, setActiveTab] = useState<
@@ -222,7 +256,7 @@ const MarketingDashboard: React.FC = () => {
 		[]
 	);
 
-	// 依存関係を追加してuseEffectの警告を修正
+	// すべての関数を依存配列に追加
 	useEffect(() => {
 		if (!user || !isAdmin(user)) return;
 
@@ -244,6 +278,7 @@ const MarketingDashboard: React.FC = () => {
 		};
 
 		fetchDashboardData();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user, isAdmin, allProducts]);
 
 	// 基本的な統計情報の取得
@@ -337,7 +372,7 @@ const MarketingDashboard: React.FC = () => {
 	const fetchProductBundles = async () => {
 		try {
 			// 実際のデータが取得できない場合はモックデータを使用
-			const mockBundles = [];
+			const mockBundles: ProductBundle[] = [];
 
 			// ランダムな商品バンドルを生成
 			for (let i = 0; i < 8; i++) {
@@ -404,6 +439,107 @@ const MarketingDashboard: React.FC = () => {
 		);
 	}
 
+	// 時系列データのチャートデータ
+	const timeSeriesChartData: ChartData<"line"> = {
+		labels: purchaseTimeSeries.map((item) => item.date),
+		datasets: [
+			{
+				label: "購入数",
+				data: purchaseTimeSeries.map((item) => item.count),
+				borderColor: "#3ea8ff",
+				backgroundColor: "rgba(62, 168, 255, 0.1)",
+				tension: 0.2,
+				fill: true,
+			},
+		],
+	};
+
+	// フィードバックタイプ別のチャートデータ
+	const feedbackChartData: ChartData<"bar"> = {
+		labels: feedbackStats.map((item) => item.type),
+		datasets: [
+			{
+				label: "フィードバック数",
+				data: feedbackStats.map((item) => item.count),
+				backgroundColor: [
+					"rgba(255, 99, 132, 0.7)",
+					"rgba(54, 162, 235, 0.7)",
+					"rgba(255, 206, 86, 0.7)",
+					"rgba(75, 192, 192, 0.7)",
+				],
+				borderColor: [
+					"rgba(255, 99, 132, 1)",
+					"rgba(54, 162, 235, 1)",
+					"rgba(255, 206, 86, 1)",
+					"rgba(75, 192, 192, 1)",
+				],
+				borderWidth: 1,
+			},
+		],
+	};
+
+	// レコメンデーション効果のチャートデータ
+	const recommendationChartData: ChartData<"bar"> = {
+		labels: topRecommendedProducts
+			.slice(0, 5)
+			.map(
+				(item) =>
+					allProducts.find((p) => p.id === item.productId)?.name ||
+					item.productId
+			),
+		datasets: [
+			{
+				label: "表示回数",
+				data: topRecommendedProducts
+					.slice(0, 5)
+					.map((item) => item.recommendationCount),
+				backgroundColor: "rgba(54, 162, 235, 0.5)",
+				borderColor: "rgba(54, 162, 235, 1)",
+				borderWidth: 1,
+			},
+			{
+				label: "クリック数",
+				data: topRecommendedProducts.slice(0, 5).map((item) => item.clickCount),
+				backgroundColor: "rgba(255, 206, 86, 0.5)",
+				borderColor: "rgba(255, 206, 86, 1)",
+				borderWidth: 1,
+			},
+			{
+				label: "購入数",
+				data: topRecommendedProducts
+					.slice(0, 5)
+					.map((item) => item.purchaseCount),
+				backgroundColor: "rgba(75, 192, 192, 0.5)",
+				borderColor: "rgba(75, 192, 192, 1)",
+				borderWidth: 1,
+			},
+		],
+	};
+
+	// 商品バンドルのチャートデータ
+	const bundleChartData: ChartData<"bar"> = {
+		labels: topProductBundles
+			.slice(0, 5)
+			.map((bundle) => `${bundle.product1.name} + ${bundle.product2.name}`),
+		datasets: [
+			{
+				label: "購入回数",
+				data: topProductBundles
+					.slice(0, 5)
+					.map((bundle) => bundle.purchaseCount),
+				backgroundColor: "rgba(153, 102, 255, 0.5)",
+				borderColor: "rgba(153, 102, 255, 1)",
+				borderWidth: 1,
+			},
+		],
+	};
+
+	// 商品バンドル表示のオプション
+	const bundleChartOptions: ChartOptions<"bar"> = {
+		...chartOptions,
+		indexAxis: "y" as const,
+	};
+
 	return (
 		<DashboardContainer>
 			<Header>
@@ -457,114 +593,17 @@ const MarketingDashboard: React.FC = () => {
 					{/* 購入数の時系列チャート */}
 					<ChartContainer>
 						<ChartTitle>日別購入数</ChartTitle>
-						<Chart
-							type="line"
-							data={{
-								labels: purchaseTimeSeries.map((item) => item.date),
-								datasets: [
-									{
-										label: "購入数",
-										data: purchaseTimeSeries.map((item) => item.count),
-										borderColor: "#3ea8ff",
-										backgroundColor: "rgba(62, 168, 255, 0.1)",
-										tension: 0.2,
-										fill: true,
-									},
-								],
-							}}
-							options={{
-								responsive: true,
-								maintainAspectRatio: false,
-								scales: {
-									y: {
-										beginAtZero: true,
-										grid: {
-											color: "rgba(255, 255, 255, 0.1)",
-										},
-										ticks: {
-											color: "rgba(255, 255, 255, 0.7)",
-										},
-									},
-									x: {
-										grid: {
-											color: "rgba(255, 255, 255, 0.1)",
-										},
-										ticks: {
-											color: "rgba(255, 255, 255, 0.7)",
-										},
-									},
-								},
-								plugins: {
-									legend: {
-										labels: {
-											color: "rgba(255, 255, 255, 0.8)",
-										},
-									},
-								},
-							}}
-							style={{ height: "300px" }}
-						/>
+						<div style={{ height: "300px" }}>
+							<Line data={timeSeriesChartData} options={chartOptions} />
+						</div>
 					</ChartContainer>
 
 					{/* フィードバック統計 */}
 					<ChartContainer>
 						<ChartTitle>フィードバックタイプ別の統計</ChartTitle>
-						<Chart
-							type="bar"
-							data={{
-								labels: feedbackStats.map((item) => item.type),
-								datasets: [
-									{
-										label: "フィードバック数",
-										data: feedbackStats.map((item) => item.count),
-										backgroundColor: [
-											"rgba(255, 99, 132, 0.7)",
-											"rgba(54, 162, 235, 0.7)",
-											"rgba(255, 206, 86, 0.7)",
-											"rgba(75, 192, 192, 0.7)",
-										],
-										borderColor: [
-											"rgba(255, 99, 132, 1)",
-											"rgba(54, 162, 235, 1)",
-											"rgba(255, 206, 86, 1)",
-											"rgba(75, 192, 192, 1)",
-										],
-										borderWidth: 1,
-									},
-								],
-							}}
-							options={{
-								responsive: true,
-								maintainAspectRatio: false,
-								scales: {
-									y: {
-										beginAtZero: true,
-										grid: {
-											color: "rgba(255, 255, 255, 0.1)",
-										},
-										ticks: {
-											color: "rgba(255, 255, 255, 0.7)",
-										},
-									},
-									x: {
-										grid: {
-											color: "rgba(255, 255, 255, 0.1)",
-										},
-										ticks: {
-											color: "rgba(255, 255, 255, 0.7)",
-										},
-									},
-								},
-								plugins: {
-									legend: {
-										labels: {
-											color: "rgba(255, 255, 255, 0.8)",
-										},
-									},
-								},
-							}}
-							style={{ height: "300px" }}
-						/>
+						<div style={{ height: "300px" }}>
+							<Bar data={feedbackChartData} options={barChartOptions} />
+						</div>
 					</ChartContainer>
 				</>
 			)}
@@ -573,78 +612,9 @@ const MarketingDashboard: React.FC = () => {
 				<>
 					<ChartContainer>
 						<ChartTitle>レコメンデーションの効果</ChartTitle>
-						<Chart
-							type="bar"
-							data={{
-								labels: topRecommendedProducts
-									.slice(0, 5)
-									.map(
-										(item) =>
-											allProducts.find((p) => p.id === item.productId)?.name ||
-											item.productId
-									),
-								datasets: [
-									{
-										label: "表示回数",
-										data: topRecommendedProducts
-											.slice(0, 5)
-											.map((item) => item.recommendationCount),
-										backgroundColor: "rgba(54, 162, 235, 0.5)",
-										borderColor: "rgba(54, 162, 235, 1)",
-										borderWidth: 1,
-									},
-									{
-										label: "クリック数",
-										data: topRecommendedProducts
-											.slice(0, 5)
-											.map((item) => item.clickCount),
-										backgroundColor: "rgba(255, 206, 86, 0.5)",
-										borderColor: "rgba(255, 206, 86, 1)",
-										borderWidth: 1,
-									},
-									{
-										label: "購入数",
-										data: topRecommendedProducts
-											.slice(0, 5)
-											.map((item) => item.purchaseCount),
-										backgroundColor: "rgba(75, 192, 192, 0.5)",
-										borderColor: "rgba(75, 192, 192, 1)",
-										borderWidth: 1,
-									},
-								],
-							}}
-							options={{
-								responsive: true,
-								maintainAspectRatio: false,
-								scales: {
-									y: {
-										beginAtZero: true,
-										grid: {
-											color: "rgba(255, 255, 255, 0.1)",
-										},
-										ticks: {
-											color: "rgba(255, 255, 255, 0.7)",
-										},
-									},
-									x: {
-										grid: {
-											color: "rgba(255, 255, 255, 0.1)",
-										},
-										ticks: {
-											color: "rgba(255, 255, 255, 0.7)",
-										},
-									},
-								},
-								plugins: {
-									legend: {
-										labels: {
-											color: "rgba(255, 255, 255, 0.8)",
-										},
-									},
-								},
-							}}
-							style={{ height: "300px" }}
-						/>
+						<div style={{ height: "300px" }}>
+							<Bar data={recommendationChartData} options={barChartOptions} />
+						</div>
 					</ChartContainer>
 
 					<TableContainer>
@@ -706,7 +676,7 @@ const MarketingDashboard: React.FC = () => {
 										<Td>{bundle.product2.name}</Td>
 										<Td>{bundle.purchaseCount}</Td>
 										<Td>
-											<MButton size="small">バンドル作成</MButton>
+											<MButton>バンドル作成</MButton>
 										</Td>
 									</tr>
 								))}
@@ -716,60 +686,9 @@ const MarketingDashboard: React.FC = () => {
 
 					<ChartContainer>
 						<ChartTitle>トップ商品バンドル</ChartTitle>
-						<Chart
-							type="bar"
-							data={{
-								labels: topProductBundles
-									.slice(0, 5)
-									.map(
-										(bundle) =>
-											`${bundle.product1.name} + ${bundle.product2.name}`
-									),
-								datasets: [
-									{
-										label: "購入回数",
-										data: topProductBundles
-											.slice(0, 5)
-											.map((bundle) => bundle.purchaseCount),
-										backgroundColor: "rgba(153, 102, 255, 0.5)",
-										borderColor: "rgba(153, 102, 255, 1)",
-										borderWidth: 1,
-									},
-								],
-							}}
-							options={{
-								responsive: true,
-								maintainAspectRatio: false,
-								indexAxis: "y",
-								scales: {
-									y: {
-										beginAtZero: true,
-										grid: {
-											color: "rgba(255, 255, 255, 0.1)",
-										},
-										ticks: {
-											color: "rgba(255, 255, 255, 0.7)",
-										},
-									},
-									x: {
-										grid: {
-											color: "rgba(255, 255, 255, 0.1)",
-										},
-										ticks: {
-											color: "rgba(255, 255, 255, 0.7)",
-										},
-									},
-								},
-								plugins: {
-									legend: {
-										labels: {
-											color: "rgba(255, 255, 255, 0.8)",
-										},
-									},
-								},
-							}}
-							style={{ height: "400px" }}
-						/>
+						<div style={{ height: "400px" }}>
+							<Bar data={bundleChartData} options={bundleChartOptions} />
+						</div>
 					</ChartContainer>
 				</>
 			)}

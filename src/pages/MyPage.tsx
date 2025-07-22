@@ -626,16 +626,6 @@ const ErrorMessage = styled.div`
 	font-weight: 500;
 `;
 
-const ThreadSection = styled(Section)`
-	border-left: 4px solid #3ea8ff;
-	margin-bottom: 32px;
-	@media (max-width: 600px) {
-		padding: 12px;
-		border-left-width: 2px;
-		margin-bottom: 20px;
-	}
-`;
-
 const ThreadAccordion = styled.div`
 	border: 1px solid rgba(0, 0, 0, 0.1);
 	border-radius: 8px;
@@ -1512,7 +1502,7 @@ export const MyPage: React.FC = () => {
 				.order("created_at", { ascending: true });
 			setThreadsMap((prev) => ({ ...prev, [contactId]: tData || [] }));
 			showSuccess("返信を送信しました");
-		} catch (e) {
+		} catch {
 			showError("返信に失敗しました");
 		} finally {
 			setThreadSending((prev) => ({ ...prev, [contactId]: false }));

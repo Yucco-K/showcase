@@ -530,6 +530,12 @@ const NavBar: React.FC = () => {
 									>
 										Contact Admin
 									</UserButton>
+									<UserButton
+										onClick={() => navigate("/marketing-dashboard")}
+										aria-label="Marketing Dashboard"
+									>
+										Marketing
+									</UserButton>
 								</>
 							)}
 							<AvatarContainer
@@ -581,6 +587,16 @@ const NavBar: React.FC = () => {
 										>
 											My Page
 										</DropdownButton>
+										{isAdmin(user) && (
+											<DropdownButton
+												onClick={() => {
+													navigate("/marketing-dashboard");
+													setIsAvatarDropdownOpen(false);
+												}}
+											>
+												マーケティングダッシュボード
+											</DropdownButton>
+										)}
 										<DropdownButton onClick={() => setShowLogoutModal(true)}>
 											Logout
 										</DropdownButton>

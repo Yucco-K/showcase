@@ -5,6 +5,8 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthProvider";
 import { toCamelCase } from "../utils/caseConverter";
 import { useSupabaseQuery } from "./common/useSupabaseQuery";
+import { useFavorites } from "./useFavorites";
+import { filterProducts } from "../utils/filter";
 
 // DB Row 型（Snake case カラム）
 type DbProduct = {
@@ -60,6 +62,8 @@ const mapDbProduct = (row: DbProduct): Product => {
 };
 
 export const useProducts = () => {
+	const { user } = useAuth();
+	const { favorites, toggleFavorite, isFavorite } = useFavorites(user?.id);
 	const { data: products, loading: isLoading } = useSupabaseQuery<
 		DbProduct,
 		Product
@@ -70,137 +74,12 @@ export const useProducts = () => {
 		cache: true,
 	});
 
-	// お気に入り管理など、追加ロジックはここで維持
-	const { user } = useAuth();
-	const [favorites, setFavorites] = useState<string[]>([]);
-
-	useEffect(() => {
-		if (!user) {
-			setFavorites([]);
-			return;
-		}
-		let isMounted = true;
-		(async () => {
-			const { data, error } = await supabase
-				.from("product_likes")
-				.select("product_id")
-				.eq("user_id", user.id);
-			if (error) {
-				console.error("Failed to fetch user likes", error);
-				return;
-			}
-			if (isMounted && data) {
-				setFavorites(data.map((row) => row.product_id as string));
-			}
-		})();
-		return () => {
-			isMounted = false;
-		};
-	}, [user]);
-
 	// フィルタリングされた商品リスト
 	const [filter, setFilter] = useState<ProductFilter>({});
-	const filteredProducts = useMemo(() => {
-		let result = products;
-		if (filter.category) {
-			result = result.filter((product) => product.category === filter.category);
-		}
-		if (filter.minPrice !== undefined) {
-			result = result.filter((product) => product.price >= filter.minPrice!);
-		}
-		if (filter.maxPrice !== undefined) {
-			result = result.filter((product) => product.price <= filter.maxPrice!);
-		}
-		if (filter.minRating !== undefined) {
-			result = result.filter(
-				(product) => (product.rating ?? 0) >= filter.minRating!
-			);
-		}
-		if (filter.searchQuery) {
-			const searchTerm = filter.searchQuery.toLowerCase();
-			result = result.filter(
-				(product) =>
-					product.name.toLowerCase().includes(searchTerm) ||
-					product.description.toLowerCase().includes(searchTerm) ||
-					product.tags.some((tag) => tag.toLowerCase().includes(searchTerm))
-			);
-		}
-		return result;
-	}, [products, filter]);
-
-	// お気に入り関連の関数
-	const toggleFavorite = async (productId: string) => {
-		if (!user) {
-			console.warn("Like requires login");
-			return;
-		}
-
-		// 既に like 済みかどうか
-		const isLiked = favorites.includes(productId);
-
-		if (isLiked) {
-			// Unlike => DELETE
-			const { error } = await supabase
-				.from("product_likes")
-				.delete()
-				.eq("product_id", productId)
-				.eq("user_id", user.id);
-
-			if (error) {
-				console.error("Failed to unlike", error);
-				return;
-			}
-
-			// ローカル state 更新 (楽観的)
-			setFavorites((prev) => prev.filter((id) => id !== productId));
-
-			// 楽観的に likes を -1
-			// 不要なsetProductsや関連ロジックを削除済み
-
-			// DB の正確なカウントを取得して products state を更新
-			const { data: refreshed, error: refErr } = await supabase
-				.from("products")
-				.select("*, product_likes(count), product_reviews(count)")
-				.eq("id", productId)
-				.single();
-			if (refErr) {
-				console.error("Failed to refetch product after unlike", refErr);
-			}
-			if (refreshed) {
-				// 不要なsetProductsや関連ロジックを削除済み
-				mapDbProduct(refreshed as unknown as DbProduct);
-			}
-		} else {
-			// Like => INSERT
-			const { error } = await supabase.from("product_likes").insert({
-				product_id: productId,
-				user_id: user.id,
-			});
-
-			if (error) {
-				console.error("Failed to like", error);
-				return;
-			}
-
-			// 楽観的に +1
-			setFavorites((prev) => [...prev, productId]);
-			// 不要なsetProductsや関連ロジックを削除済み
-			const { data: refreshedAdd, error: refErrAdd } = await supabase
-				.from("products")
-				.select("*, product_likes(count), product_reviews(count)")
-				.eq("id", productId)
-				.single();
-			if (refErrAdd) {
-				console.error("Failed to refetch product after like", refErrAdd);
-			}
-			if (refreshedAdd) {
-				// 不要なsetProductsや関連ロジックを削除済み
-				mapDbProduct(refreshedAdd as unknown as DbProduct);
-			}
-		}
-	};
-
-	const isFavorite = (productId: string) => favorites.includes(productId);
+	const filteredProducts = useMemo(
+		() => filterProducts(products, filter),
+		[products, filter]
+	);
 
 	const getFavoriteProducts = () => {
 		return products.filter((product) => favorites.includes(product.id));

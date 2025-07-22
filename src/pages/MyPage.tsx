@@ -45,6 +45,12 @@ interface ContactReplyThread {
 	created_at: string;
 }
 
+interface AdminProfile {
+	id: string;
+	full_name: string;
+	email: string;
+}
+
 // アニメーション定義
 const fadeInUp = keyframes`
   from {
@@ -629,6 +635,71 @@ const ThreadSection = styled(Section)`
 		margin-bottom: 20px;
 	}
 `;
+
+const ThreadAccordion = styled.div`
+	border: 1px solid rgba(0, 0, 0, 0.1);
+	border-radius: 8px;
+	overflow: hidden;
+	margin-bottom: 16px;
+`;
+
+const ThreadAccordionHeader = styled.div<{ $isOpen: boolean }>`
+	width: 100%;
+	background: rgba(255, 255, 255, 0.95);
+	border: none;
+	padding: 16px 20px;
+	position: relative;
+	transition: all 0.2s ease;
+	color: #2d3748;
+	font-weight: 600;
+
+	&:hover {
+		background: rgba(255, 255, 255, 1);
+	}
+`;
+
+const ThreadAccordionButton = styled.button<{ $isOpen: boolean }>`
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+	color: #2d3748;
+
+	&:hover {
+		background: rgba(102, 126, 234, 0.1);
+	}
+
+	&:focus {
+		outline: none;
+		box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+	}
+`;
+
+const ThreadAccordionTitle = styled.div`
+	word-break: break-word;
+	overflow-wrap: anywhere;
+	margin-top: 8px;
+	padding-right: 40px;
+`;
+
+const ThreadAccordionContent = styled.div<{ $isOpen: boolean }>`
+	max-height: ${({ $isOpen }) => ($isOpen ? "2000px" : "0")};
+	overflow: hidden;
+	transition: max-height 0.3s ease;
+	background: rgba(255, 255, 255, 0.98);
+	padding: 20px;
+`;
+
+const AccordionIcon = styled.span<{ $isOpen: boolean }>`
+	transition: transform 0.2s ease;
+	transform: rotate(${({ $isOpen }) => ($isOpen ? "180deg" : "0deg")});
+	font-size: 1.2rem;
+`;
 const ThreadList = styled.div`
 	display: flex;
 	flex-direction: column;
@@ -748,6 +819,12 @@ export const MyPage: React.FC = () => {
 	);
 	const [threadLoading, setThreadLoading] = useState(false);
 	const [threadError, setThreadError] = useState<string | null>(null);
+	const [adminProfiles, setAdminProfiles] = useState<
+		Record<string, AdminProfile>
+	>({});
+	const [accordionStates, setAccordionStates] = useState<
+		Record<string, boolean>
+	>({});
 
 	useEffect(() => {
 		if (!user) return;
@@ -1339,6 +1416,29 @@ export const MyPage: React.FC = () => {
 		}
 	};
 
+	// 管理者プロファイル取得
+	const fetchAdminProfiles = useCallback(async (adminIds: string[]) => {
+		if (adminIds.length === 0) return;
+
+		try {
+			const { data, error } = await supabase
+				.from("profiles")
+				.select("id, full_name, email")
+				.in("id", adminIds);
+
+			if (error) throw error;
+
+			const profilesMap: Record<string, AdminProfile> = {};
+			(data || []).forEach((profile: unknown) => {
+				const p = profile as AdminProfile;
+				profilesMap[p.id] = p;
+			});
+			setAdminProfiles(profilesMap);
+		} catch (error) {
+			console.error("Failed to fetch admin profiles:", error);
+		}
+	}, []);
+
 	// お問い合わせ一覧取得
 	useEffect(() => {
 		if (!user) return;
@@ -1351,9 +1451,11 @@ export const MyPage: React.FC = () => {
 					.select("id, title, message, created_at, status")
 					.eq("email", user.email);
 				if (contactsError) throw contactsError;
-				setContacts(contactsData || []);
+				setContacts((contactsData || []) as unknown as Contact[]);
 				// 各contactのやりとり履歴を取得
 				const threadsObj: Record<string, ContactReplyThread[]> = {};
+				const allAdminIds: string[] = [];
+
 				for (const c of contactsData || []) {
 					const { data: tData, error: tError } = await supabase
 						.from("contact_reply_threads")
@@ -1361,16 +1463,32 @@ export const MyPage: React.FC = () => {
 						.eq("contact_id", c.id)
 						.order("created_at", { ascending: true });
 					if (tError) throw tError;
-					threadsObj[c.id] = tData || [];
+					const threadsData = (tData || []) as unknown as ContactReplyThread[];
+					threadsObj[c.id as string] = threadsData;
+
+					// 管理者のIDを収集
+					threadsData.forEach((thread) => {
+						if (thread.sender_type === "admin" && thread.sender_id) {
+							allAdminIds.push(thread.sender_id);
+						}
+					});
 				}
 				setThreadsMap(threadsObj);
-			} catch (e) {
+
+				// 重複を除去して管理者プロファイルを取得
+				const uniqueAdminIds = allAdminIds.filter(
+					(id, index, arr) => arr.indexOf(id) === index
+				);
+				if (uniqueAdminIds.length > 0) {
+					fetchAdminProfiles(uniqueAdminIds);
+				}
+			} catch {
 				setThreadError("お問い合わせ履歴の取得に失敗しました");
 			} finally {
 				setThreadLoading(false);
 			}
 		})();
-	}, [user]);
+	}, [user, fetchAdminProfiles]);
 
 	// 返信送信
 	const handleSendThread = async (contactId: string, e: React.FormEvent) => {
@@ -1692,90 +1810,119 @@ export const MyPage: React.FC = () => {
 					<EmptyMessage>お問い合わせ履歴はありません</EmptyMessage>
 				) : (
 					contacts.map((c) => (
-						<ThreadSection key={c.id} style={{ marginBottom: 32 }}>
-							{/* 件数表示を最上部に移動 */}
-							<div
-								style={{
-									color: "#667eea",
-									fontWeight: 600,
-									marginBottom: 6,
-									fontSize: "0.98rem",
-								}}
-							>
-								全{threadsMap[c.id]?.length || 0}件
-							</div>
-							<div
-								style={{
-									marginBottom: 8,
-									color: "#2d3748",
-									fontWeight: 600,
-									wordBreak: "break-word",
-									overflowWrap: "anywhere",
-								}}
-							>
-								{c.title || "お問い合わせ"}（
-								{new Date(c.created_at).toLocaleString("ja-JP")}）
-							</div>
-							<ThreadItemRow style={{ marginBottom: 8 }}>
-								{getAvatar("user")}
-								<div
-									style={{
-										color: "#4a5568",
-										wordBreak: "break-word",
-										overflowWrap: "anywhere",
-									}}
-								>
-									{c.message}
-								</div>
-							</ThreadItemRow>
-							<ThreadList>
-								{/* やりとりが0件でも何も表示しない */}
-								{[...(threadsMap[c.id] || [])]
-									.sort(
-										(a, b) =>
-											new Date(a.created_at).getTime() -
-											new Date(b.created_at).getTime()
-									)
-									.map((t) => (
-										<ThreadItem key={t.id} $isUser={t.sender_type === "user"}>
-											<ThreadItemRow>
-												{getAvatar(t.sender_type as "user" | "admin")}
-												<div style={{ flex: 1 }}>
-													{t.message}
-													<ThreadMeta>
-														{t.sender_type === "admin" ? "管理者" : "あなた"}・
-														{new Date(t.created_at).toLocaleString("ja-JP")}
-													</ThreadMeta>
-												</div>
-											</ThreadItemRow>
-										</ThreadItem>
-									))}
-							</ThreadList>
-							<ThreadForm onSubmit={(e) => handleSendThread(c.id, e)}>
-								<ThreadTextarea
-									value={threadMessages[c.id] || ""}
-									onChange={(e) =>
-										setThreadMessages((prev) => ({
+						<ThreadAccordion key={c.id}>
+							<ThreadAccordionHeader $isOpen={accordionStates[c.id] || false}>
+								<ThreadAccordionButton
+									$isOpen={accordionStates[c.id] || false}
+									onClick={() =>
+										setAccordionStates((prev) => ({
 											...prev,
-											[c.id]: e.target.value,
+											[c.id]: !prev[c.id],
 										}))
 									}
-									placeholder="返信内容を入力"
-									required
-									rows={2}
-									disabled={threadSending[c.id]}
-								/>
-								<Button
-									type="submit"
-									$variant="primary"
-									disabled={
-										threadSending[c.id] || !threadMessages[c.id]?.trim()
-									}
 								>
-									{threadSending[c.id] ? "送信中..." : "送信"}
-								</Button>
-							</ThreadForm>
-						</ThreadSection>
+									<AccordionIcon $isOpen={accordionStates[c.id] || false}>
+										▼
+									</AccordionIcon>
+								</ThreadAccordionButton>
+								<ThreadAccordionTitle>
+									{accordionStates[c.id] ? (
+										<>
+											<div>{c.title || "お問い合わせ"}</div>
+											<div
+												style={{
+													fontSize: "0.9rem",
+													color: "#718096",
+													marginTop: "4px",
+												}}
+											>
+												{new Date(c.created_at).toLocaleString("ja-JP")}
+											</div>
+										</>
+									) : (
+										`お問合せNo：${c.id}`
+									)}
+								</ThreadAccordionTitle>
+							</ThreadAccordionHeader>
+							<ThreadAccordionContent $isOpen={accordionStates[c.id] || false}>
+								{/* 件数表示を最上部に移動 */}
+								<div
+									style={{
+										color: "#667eea",
+										fontWeight: 600,
+										marginBottom: 6,
+										marginTop: 0,
+										fontSize: "0.98rem",
+									}}
+								>
+									全{threadsMap[c.id]?.length || 0}件
+								</div>
+								<ThreadItemRow style={{ marginBottom: 8 }}>
+									{getAvatar("user")}
+									<div
+										style={{
+											color: "#4a5568",
+											wordBreak: "break-word",
+											overflowWrap: "anywhere",
+										}}
+									>
+										{c.message}
+									</div>
+								</ThreadItemRow>
+								<ThreadList>
+									{/* やりとりが0件でも何も表示しない */}
+									{[...(threadsMap[c.id] || [])]
+										.sort(
+											(a, b) =>
+												new Date(a.created_at).getTime() -
+												new Date(b.created_at).getTime()
+										)
+										.map((t) => (
+											<ThreadItem key={t.id} $isUser={t.sender_type === "user"}>
+												<ThreadItemRow>
+													{getAvatar(t.sender_type as "user" | "admin")}
+													<div style={{ flex: 1 }}>
+														{t.message}
+														<ThreadMeta>
+															{t.sender_type === "admin"
+																? `管理者 ${
+																		adminProfiles[t.sender_id!]?.full_name || ""
+																  }`.trim()
+																: "あなた"}
+															・{new Date(t.created_at).toLocaleString("ja-JP")}
+														</ThreadMeta>
+													</div>
+												</ThreadItemRow>
+											</ThreadItem>
+										))}
+								</ThreadList>
+								<ThreadForm onSubmit={(e) => handleSendThread(c.id, e)}>
+									<ThreadTextarea
+										value={threadMessages[c.id] || ""}
+										onChange={(e) =>
+											setThreadMessages((prev) => ({
+												...prev,
+												[c.id]: e.target.value,
+											}))
+										}
+										placeholder="返信内容を入力"
+										required
+										rows={2}
+										disabled={threadSending[c.id]}
+										style={{ margin: "16px 0" }}
+									/>
+									<Button
+										type="submit"
+										$variant="primary"
+										disabled={
+											threadSending[c.id] || !threadMessages[c.id]?.trim()
+										}
+									>
+										{threadSending[c.id] ? "送信中..." : "送信"}
+									</Button>
+								</ThreadForm>
+							</ThreadAccordionContent>
+						</ThreadAccordion>
 					))
 				)}
 			</Section>

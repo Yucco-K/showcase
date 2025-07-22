@@ -58,7 +58,6 @@ const ImageSection = styled.div`
 const MainImage = styled.div`
 	width: 100%;
 	height: 300px;
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 	border-radius: 16px;
 	position: relative;
 	overflow: hidden;
@@ -69,6 +68,23 @@ const MainImage = styled.div`
 	font-size: 24px;
 	font-weight: bold;
 	margin-bottom: 16px;
+`;
+
+const ProductImage = styled.img`
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	border-radius: 16px;
+`;
+
+const ImageFallback = styled.div`
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 16px;
 `;
 
 const CategoryBadge = styled.span`
@@ -703,8 +719,33 @@ const ProductDetail: React.FC = () => {
 				<ImageSection>
 					{product.isPopular && <PopularBadge>人気</PopularBadge>}
 					<MainImage>
+						{product.imageUrl && product.imageUrl.trim() !== "" ? (
+							<ProductImage
+								src={product.imageUrl}
+								alt={product.name}
+								onError={(e) => {
+									// 画像読み込みエラー時にフォールバック表示
+									const target = e.target as HTMLImageElement;
+									target.style.display = "none";
+									const fallback = target.parentElement?.querySelector(
+										".image-fallback"
+									) as HTMLElement;
+									if (fallback) fallback.style.display = "flex";
+								}}
+							/>
+						) : null}
+						<ImageFallback
+							className="image-fallback"
+							style={{
+								display:
+									product.imageUrl && product.imageUrl.trim() !== ""
+										? "none"
+										: "flex",
+							}}
+						>
+							{product.name}
+						</ImageFallback>
 						<CategoryBadge>{getCategoryLabel(product.category)}</CategoryBadge>
-						{product.name}
 					</MainImage>
 					<Screenshots>
 						{product.screenshots.slice(0, 3).map((screenshot, index) => (

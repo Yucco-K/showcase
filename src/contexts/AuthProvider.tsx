@@ -156,16 +156,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			?.split(",")
 			.map((e) => e.trim().toLowerCase()) ?? [];
 
-	// テスト用に特定のメールアドレスも管理者として認識するよう修正
+	// 管理者かどうかの判定を元に戻す（test123@gmail.comは一般ユーザー）
 	const isAdmin = (targetUser: User | null) => {
 		if (!targetUser) return false;
 		const userEmail = targetUser.email?.toLowerCase() ?? "";
-
-		// テストユーザーを管理者として認識
-		if (userEmail === "test123@gmail.com") {
-			return true;
-		}
-
 		return adminEmails.includes(userEmail);
 	};
 

@@ -1,0 +1,78 @@
+# Gorse推薦エンジン設定ファイル
+
+[database]
+# データストレージ設定（Docker Composeの環境変数で上書きされる）
+data_store = "postgres://gorse:gorsepassword@postgres:5432/gorse?sslmode=disable"
+cache_store = "redis://redis:6379/0"
+
+[master]
+# マスターノード設定
+port = 8086
+host = "0.0.0.0"
+n_jobs = 1  # 並列実行ジョブ数（開発環境用）
+meta_timeout = "10s"
+
+[server]
+# APIサーバー設定
+api_key = ""  # 開発環境では空文字（本番では必ず設定）
+default_n = 10  # デフォルト推薦件数
+clock_error = "5s"
+
+[recommend]
+# 推薦アルゴリズム設定
+collaborative = [
+    "matrix_factorization",
+    "neighbor_based"
+]
+content_based = [
+    "content_based"
+]
+popular = [
+    "popular"
+]
+replacement = false  # 重複除去
+online = true  # オンライン学習
+
+[recommend.data_source]
+# データソース設定
+positive_feedback_types = ["purchase", "like"]  # ポジティブフィードバック
+read_feedback_types = ["view"]  # 閲覧フィードバック
+positive_feedback_ttl = 0  # 有効期限なし
+item_ttl = 0  # アイテム有効期限なし
+
+[recommend.popular]
+# 人気ベース推薦設定
+popular_window = "720h"  # 30日間のデータを使用
+
+[recommend.collaborative]
+# 協調フィルタリング設定
+model_fit_period = "60m"  # モデル更新間隔（開発環境用）
+model_search_period = "360m"  # ハイパーパラメータ探索間隔
+model_search_epoch = 10  # 開発環境では少なく設定
+model_search_trials = 10
+
+[recommend.replacement]
+# 推薦置換設定
+enable_replacement = false
+
+[tracing]
+# 分散トレーシング設定（開発環境では無効）
+enable_tracing = false
+
+[log]
+# ログ設定
+path = ""  # 標準出力を使用
+max_size = 1024  # 1GB
+max_age = 168  # 7日間
+max_backups = 5
+
+# 開発環境向けの軽量設定
+[recommend.offline]
+check_recommend_period = "30m"  # 推薦チェック間隔
+refresh_recommend_period = "120m"  # 推薦更新間隔
+enable_latest_recommend = true
+enable_popular_recommend = true
+enable_user_based_recommend = true
+enable_item_based_recommend = true
+enable_collaborative_recommend = true
+enable_click_through_prediction = false  # 開発環境では無効 

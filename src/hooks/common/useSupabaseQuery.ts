@@ -18,7 +18,6 @@ export function useSupabaseQuery<T = Record<string, unknown>, R = T>(
 	const [data, setData] = useState<R[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [retryCount, setRetryCount] = useState(0);
 	const cacheRef = useRef<{
 		key: string;
 		value: R[];
@@ -80,7 +79,7 @@ export function useSupabaseQuery<T = Record<string, unknown>, R = T>(
 		} finally {
 			setLoading(false);
 		}
-	}, [table, select, order, eq, transform, cache, retryCount]);
+	}, [table, select, order, eq, transform, cache]);
 
 	useEffect(() => {
 		fetchData();
@@ -92,8 +91,8 @@ export function useSupabaseQuery<T = Record<string, unknown>, R = T>(
 	}, [fetchData]);
 
 	const refetch = useCallback(() => {
-		setRetryCount((c) => c + 1);
-	}, []);
+		fetchData();
+	}, [fetchData]);
 
 	return { data, loading, error, refetch };
 }

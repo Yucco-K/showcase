@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthProvider";
 import { useProducts } from "../../hooks/useProducts";
+// usePurchaseHistoryフックを適切に使用するよう修正
 import { usePurchaseHistory } from "../../hooks/usePurchaseHistory";
-import { gorse } from "../../lib/gorse";
+// 未使用のインポートを削除
+// import { gorse } from "../../lib/gorse";
 import { supabase } from "../../lib/supabase";
 import Spinner from "../ui/Spinner";
 import { MButton } from "../ui/MButton";
@@ -46,7 +48,7 @@ const Header = styled.div`
 	margin-bottom: 2rem;
 `;
 
-const Title = styled.h1`
+const DashboardTitle = styled.h1`
 	font-size: 1.8rem;
 	color: white;
 	margin: 0;
@@ -196,7 +198,8 @@ type PurchaseTimeSeries = {
 const MarketingDashboard: React.FC = () => {
 	const { user, isAdmin } = useAuth();
 	const { allProducts } = useProducts();
-	const { purchaseHistory } = usePurchaseHistory();
+	// usePurchaseHistoryフックから適切な関数を取得
+	const { getPurchaseHistory } = usePurchaseHistory();
 
 	const [activeTab, setActiveTab] = useState<
 		"overview" | "recommendations" | "bundles"
@@ -219,7 +222,7 @@ const MarketingDashboard: React.FC = () => {
 		[]
 	);
 
-	// データ読み込み
+	// 依存関係を追加してuseEffectの警告を修正
 	useEffect(() => {
 		if (!user || !isAdmin(user)) return;
 
@@ -241,7 +244,7 @@ const MarketingDashboard: React.FC = () => {
 		};
 
 		fetchDashboardData();
-	}, [user]);
+	}, [user, isAdmin, allProducts]);
 
 	// 基本的な統計情報の取得
 	const fetchBasicStats = async () => {
@@ -254,6 +257,7 @@ const MarketingDashboard: React.FC = () => {
 		const productCount = allProducts.length;
 
 		// 購入総数と総収益を計算
+		const purchaseHistory = getPurchaseHistory();
 		const totalPurchases = purchaseHistory.length;
 		const totalRevenue = purchaseHistory.reduce(
 			(sum, item) => sum + (item.amount || 0),
@@ -391,7 +395,7 @@ const MarketingDashboard: React.FC = () => {
 		return (
 			<DashboardContainer>
 				<Header>
-					<Title>マーケティングダッシュボード</Title>
+					<DashboardTitle>マーケティングダッシュボード</DashboardTitle>
 				</Header>
 				<LoadingContainer>
 					<Spinner text="データを読み込み中..." size={40} />
@@ -403,7 +407,7 @@ const MarketingDashboard: React.FC = () => {
 	return (
 		<DashboardContainer>
 			<Header>
-				<Title>マーケティングダッシュボード</Title>
+				<DashboardTitle>マーケティングダッシュボード</DashboardTitle>
 				<RefreshButton onClick={refreshData}>データを更新</RefreshButton>
 			</Header>
 
@@ -695,7 +699,9 @@ const MarketingDashboard: React.FC = () => {
 							</thead>
 							<tbody>
 								{topProductBundles.map((bundle, index) => (
-									<tr key={`bundle-${index}`}>
+									<tr
+										key={`bundle-${index}-${bundle.product1.id}-${bundle.product2.id}`}
+									>
 										<Td>{bundle.product1.name}</Td>
 										<Td>{bundle.product2.name}</Td>
 										<Td>{bundle.purchaseCount}</Td>

@@ -1,84 +1,33 @@
-import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
+import { useSupabaseQuery } from "./common/useSupabaseQuery";
 import type { Project, Profile } from "../types/database";
 import type { User } from "@supabase/supabase-js";
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
 
 export function useProjects() {
-	const [projects, setProjects] = useState<Project[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		async function fetchProjects() {
-			try {
-				setLoading(true);
-				const { data, error } = await supabase
-					.from("projects")
-					.select("*")
-					.order("created_at", { ascending: false });
-
-				if (error) {
-					throw error;
-				}
-
-				setProjects(data || []);
-			} catch (err) {
-				setError(
-					err instanceof Error
-						? err.message
-						: "プロジェクトの取得に失敗しました"
-				);
-			} finally {
-				setLoading(false);
-			}
-		}
-
-		fetchProjects();
-	}, []);
-
-	return { projects, loading, error };
+	const {
+		data: projects,
+		loading,
+		error,
+		refetch,
+	} = useSupabaseQuery<Project, Project>({
+		table: "projects",
+		select: "*",
+		order: { column: "created_at", ascending: false },
+		cache: true,
+	});
+	return { projects, loading, error, refetch };
 }
 
 export function useProfile(userId?: string) {
-	const [profile, setProfile] = useState<Profile | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (!userId) {
-			setLoading(false);
-			return;
-		}
-
-		async function fetchProfile() {
-			try {
-				setLoading(true);
-				const { data, error } = await supabase
-					.from("profiles")
-					.select("*")
-					.eq("id", userId)
-					.single();
-
-				if (error) {
-					throw error;
-				}
-
-				setProfile(data);
-			} catch (err) {
-				setError(
-					err instanceof Error
-						? err.message
-						: "プロファイルの取得に失敗しました"
-				);
-			} finally {
-				setLoading(false);
-			}
-		}
-
-		fetchProfile();
-	}, [userId]);
-
-	return { profile, loading, error };
+	const { data, loading, error, refetch } = useSupabaseQuery<Profile, Profile>({
+		table: "profiles",
+		select: "*",
+		eq: userId ? { id: userId } : undefined,
+		cache: true,
+	});
+	// 単一取得なのでdata[0]を返す
+	return { profile: data[0] ?? null, loading, error, refetch };
 }
 
 export function useSupabaseAuth() {

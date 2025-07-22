@@ -30,39 +30,32 @@ type DbProduct = {
 
 // DB → フロント用 Product 型へ変換
 const mapDbProduct = (row: DbProduct): Product => {
-	const camel = toCamelCase(row) as DbProduct;
-	// likes/reviewCountなど追加計算が必要な場合はここで上書き
+	const camel = toCamelCase(row) as Partial<Product>;
 	const avgRating =
 		(row.stars_count && row.stars_count > 0
 			? (row.stars_total ?? 0) / row.stars_count
 			: 0) || 0;
 	const likesCount = row.product_likes?.[0]?.count ?? row.likes ?? 0;
 	const reviewCount = row.product_reviews?.[0]?.count ?? row.stars_count ?? 0;
-	if (import.meta.env.DEV) {
-		console.log("[mapDbProduct]", row.name, {
-			stars_total: row.stars_total,
-			stars_count: row.stars_count,
-			avgRating,
-			image_url: row.image_url,
-			imageUrl: row.image_url || "",
-		});
-	}
 	return {
-		...camel,
-		longDescription: row.long_desc ?? "",
-		imageUrl: row.image_url || "",
-		features: row.features ?? [],
-		requirements: row.requirements ?? [],
-		screenshots: [],
-		version: "1.0.0",
-		lastUpdated: row.last_updated ?? "",
-		rating: avgRating,
-		reviewCount: reviewCount,
-		likes: likesCount,
-		isPopular: !!row.is_popular,
-		isFeatured: !!row.is_featured,
-		category: row.category as ProductCategory,
-		tags: row.tags ?? [],
+		id: camel.id ?? row.id,
+		name: camel.name ?? row.name,
+		description: camel.description ?? row.description,
+		longDescription: camel.longDescription ?? row.long_desc ?? "",
+		price: camel.price ?? Number(row.price),
+		category: camel.category ?? (row.category as ProductCategory),
+		imageUrl: camel.imageUrl ?? (row.image_url || ""),
+		screenshots: camel.screenshots ?? [],
+		features: (camel.features ?? row.features ?? []) as string[],
+		requirements: (camel.requirements ?? row.requirements ?? []) as string[],
+		version: camel.version ?? "1.0.0",
+		lastUpdated: camel.lastUpdated ?? row.last_updated ?? "",
+		rating: camel.rating ?? avgRating,
+		reviewCount: camel.reviewCount ?? reviewCount,
+		likes: camel.likes ?? likesCount,
+		tags: (camel.tags ?? row.tags ?? []) as string[],
+		isPopular: camel.isPopular ?? !!row.is_popular,
+		isFeatured: camel.isFeatured ?? !!row.is_featured,
 	};
 };
 

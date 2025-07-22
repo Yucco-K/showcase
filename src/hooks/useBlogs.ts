@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { BlogEntry, BlogFilter } from "../types/blog";
+import type { BlogEntry, BlogFilter, BlogPlatform } from "../types/blog";
 import { supabase } from "../lib/supabase"; // Supabaseクライアントをインポート
 
 // キャッシュ用のグローバル変数
@@ -61,7 +61,7 @@ export const useBlogs = () => {
 					(blog: Record<string, unknown>) => ({
 						id: blog.id as string,
 						title: blog.title as string,
-						platform: blog.platform as string,
+						platform: blog.platform as BlogPlatform,
 						url: blog.url as string,
 						publishDate: blog.published_at as string,
 						updateDate: blog.updated_at as string,

@@ -2,6 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import type { BlogCardProps } from "../../types/blog";
 import { BlogPlatform } from "../../types/blog";
+import { formatDate } from "../../utils/date";
 
 const Card = styled.div`
 	width: 350px;
@@ -176,15 +177,6 @@ export const BlogCard: React.FC<BlogCardProps> = ({ blog, onClick }) => {
 			window.open(blog.url, "_blank", "noopener,noreferrer");
 		}
 		onClick?.(blog);
-	};
-
-	const formatDate = (dateString: string) => {
-		const date = new Date(dateString);
-		return date.toLocaleDateString("ja-JP", {
-			year: "numeric",
-			month: "long",
-			day: "numeric",
-		});
 	};
 
 	return (

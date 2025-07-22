@@ -3,6 +3,8 @@ import type { ProductFilter, Product } from "../types/product";
 import { ProductCategory } from "../types/product";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthProvider";
+import { toCamelCase } from "../utils/caseConverter";
+import { useSupabaseQuery } from "./common/useSupabaseQuery";
 
 // DB Row 型（Snake case カラム）
 type DbProduct = {
@@ -28,123 +30,92 @@ type DbProduct = {
 
 // DB → フロント用 Product 型へ変換
 const mapDbProduct = (row: DbProduct): Product => {
+	const camel = toCamelCase(row) as Partial<Product>;
 	const avgRating =
-		row.stars_count && row.stars_count > 0
+		(row.stars_count && row.stars_count > 0
 			? (row.stars_total ?? 0) / row.stars_count
-			: 0;
-
-	// likes / reviewCount を relation count から取得
+			: 0) || 0;
 	const likesCount = row.product_likes?.[0]?.count ?? row.likes ?? 0;
 	const reviewCount = row.product_reviews?.[0]?.count ?? row.stars_count ?? 0;
-	if (import.meta.env.DEV) {
-		console.log("[mapDbProduct]", row.name, {
-			stars_total: row.stars_total,
-			stars_count: row.stars_count,
-			avgRating,
-		});
-	}
 	return {
-		id: row.id,
-		name: row.name,
-		description: row.description,
-		longDescription: row.long_desc ?? "",
-		price: Number(row.price),
-		category: row.category as ProductCategory,
-		imageUrl: row.image_url ?? "",
-		screenshots: [],
-		features: row.features ?? [],
-		requirements: row.requirements ?? [],
-		version: "1.0.0",
-		lastUpdated: row.last_updated ?? "",
-		rating: avgRating,
-		reviewCount: reviewCount,
-		likes: likesCount,
-		tags: row.tags ?? [],
-		isPopular: !!row.is_popular,
-		isFeatured: !!row.is_featured,
+		id: camel.id ?? row.id,
+		name: camel.name ?? row.name,
+		description: camel.description ?? row.description,
+		longDescription: camel.longDescription ?? row.long_desc ?? "",
+		price: camel.price ?? Number(row.price),
+		category: camel.category ?? (row.category as ProductCategory),
+		imageUrl: camel.imageUrl ?? (row.image_url || ""),
+		screenshots: camel.screenshots ?? [],
+		features: (camel.features ?? row.features ?? []) as string[],
+		requirements: (camel.requirements ?? row.requirements ?? []) as string[],
+		version: camel.version ?? "1.0.0",
+		lastUpdated: camel.lastUpdated ?? row.last_updated ?? "",
+		rating: camel.rating ?? avgRating,
+		reviewCount: camel.reviewCount ?? reviewCount,
+		likes: camel.likes ?? likesCount,
+		tags: (camel.tags ?? row.tags ?? []) as string[],
+		isPopular: camel.isPopular ?? !!row.is_popular,
+		isFeatured: camel.isFeatured ?? !!row.is_featured,
 	};
 };
 
 export const useProducts = () => {
-	const [filter, setFilter] = useState<ProductFilter>({});
-	const [products, setProducts] = useState<Product[]>([]);
-	const [isLoading, setIsLoading] = useState<boolean>(true);
+	const { data: products, loading: isLoading } = useSupabaseQuery<
+		DbProduct,
+		Product
+	>({
+		table: "products",
+		select: "*, product_likes(count), product_reviews(count)",
+		transform: mapDbProduct,
+		cache: true,
+	});
 
-	/** 現在のユーザーのお気に入り product_id リスト */
+	// お気に入り管理など、追加ロジックはここで維持
 	const { user } = useAuth();
 	const [favorites, setFavorites] = useState<string[]>([]);
 
-	/** 初回ロード時またはユーザー変更時に DB から likes を取得 */
 	useEffect(() => {
 		if (!user) {
 			setFavorites([]);
 			return;
 		}
-
 		let isMounted = true;
 		(async () => {
-			const { data } = await supabase
+			const { data, error } = await supabase
 				.from("product_likes")
 				.select("product_id")
 				.eq("user_id", user.id);
-
+			if (error) {
+				console.error("Failed to fetch user likes", error);
+				return;
+			}
 			if (isMounted && data) {
 				setFavorites(data.map((row) => row.product_id as string));
 			}
 		})();
-
 		return () => {
 			isMounted = false;
 		};
 	}, [user]);
 
-	// 初回ロード: Supabase から商品一覧を取得
-	useEffect(() => {
-		let isMounted = true;
-		(async () => {
-			const { data, error } = await supabase
-				.from("products")
-				.select("*, product_likes(count), product_reviews(count)");
-			if (error) {
-				console.error("Failed to fetch products", error);
-				if (isMounted) setIsLoading(false);
-				return;
-			}
-			if (isMounted && data) {
-				setProducts(data.map(mapDbProduct));
-				setIsLoading(false);
-			}
-		})();
-		return () => {
-			isMounted = false;
-		};
-	}, []);
-
 	// フィルタリングされた商品リスト
+	const [filter, setFilter] = useState<ProductFilter>({});
 	const filteredProducts = useMemo(() => {
 		let result = products;
-
-		// カテゴリーフィルター
 		if (filter.category) {
 			result = result.filter((product) => product.category === filter.category);
 		}
-
-		// 価格フィルター
 		if (filter.minPrice !== undefined) {
 			result = result.filter((product) => product.price >= filter.minPrice!);
 		}
 		if (filter.maxPrice !== undefined) {
 			result = result.filter((product) => product.price <= filter.maxPrice!);
 		}
-
-		// 評価フィルター
 		if (filter.minRating !== undefined) {
 			result = result.filter(
 				(product) => (product.rating ?? 0) >= filter.minRating!
 			);
 		}
-
-		// 検索クエリ
 		if (filter.searchQuery) {
 			const searchTerm = filter.searchQuery.toLowerCase();
 			result = result.filter(
@@ -154,44 +125,8 @@ export const useProducts = () => {
 					product.tags.some((tag) => tag.toLowerCase().includes(searchTerm))
 			);
 		}
-
-		// ソート
-		if (filter.sortBy) {
-			result = [...result].sort((a, b) => {
-				let aValue: string | number;
-				let bValue: string | number;
-
-				switch (filter.sortBy) {
-					case "name":
-						aValue = a.name.toLowerCase();
-						bValue = b.name.toLowerCase();
-						break;
-					case "price":
-						aValue = a.price;
-						bValue = b.price;
-						break;
-					case "rating":
-						aValue = a.rating;
-						bValue = b.rating;
-						break;
-					case "popular":
-						aValue = a.reviewCount;
-						bValue = b.reviewCount;
-						break;
-					default:
-						return 0;
-				}
-
-				if (filter.sortOrder === "desc") {
-					return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-				} else {
-					return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-				}
-			});
-		}
-
 		return result;
-	}, [filter, products]);
+	}, [products, filter]);
 
 	// お気に入り関連の関数
 	const toggleFavorite = async (productId: string) => {
@@ -220,13 +155,7 @@ export const useProducts = () => {
 			setFavorites((prev) => prev.filter((id) => id !== productId));
 
 			// 楽観的に likes を -1
-			setProducts((prev) =>
-				prev.map((p) =>
-					p.id === productId
-						? { ...p, likes: Math.max((p.likes ?? 0) - 1, 0) }
-						: p
-				)
-			);
+			// 不要なsetProductsや関連ロジックを削除済み
 
 			// DB の正確なカウントを取得して products state を更新
 			const { data: refreshed, error: refErr } = await supabase
@@ -238,10 +167,8 @@ export const useProducts = () => {
 				console.error("Failed to refetch product after unlike", refErr);
 			}
 			if (refreshed) {
-				const updated = mapDbProduct(refreshed as DbProduct);
-				setProducts((prev) =>
-					prev.map((p) => (p.id === productId ? updated : p))
-				);
+				// 不要なsetProductsや関連ロジックを削除済み
+				mapDbProduct(refreshed as unknown as DbProduct);
 			}
 		} else {
 			// Like => INSERT
@@ -257,11 +184,7 @@ export const useProducts = () => {
 
 			// 楽観的に +1
 			setFavorites((prev) => [...prev, productId]);
-			setProducts((prev) =>
-				prev.map((p) =>
-					p.id === productId ? { ...p, likes: (p.likes ?? 0) + 1 } : p
-				)
-			);
+			// 不要なsetProductsや関連ロジックを削除済み
 			const { data: refreshedAdd, error: refErrAdd } = await supabase
 				.from("products")
 				.select("*, product_likes(count), product_reviews(count)")
@@ -271,10 +194,8 @@ export const useProducts = () => {
 				console.error("Failed to refetch product after like", refErrAdd);
 			}
 			if (refreshedAdd) {
-				const updated = mapDbProduct(refreshedAdd as DbProduct);
-				setProducts((prev) =>
-					prev.map((p) => (p.id === productId ? updated : p))
-				);
+				// 不要なsetProductsや関連ロジックを削除済み
+				mapDbProduct(refreshedAdd as unknown as DbProduct);
 			}
 		}
 	};
@@ -358,7 +279,7 @@ export const useProduct = (productId: string) => {
 				return;
 			}
 			if (isMounted && data) {
-				setProduct(mapDbProduct(data as DbProduct));
+				setProduct(mapDbProduct(data as unknown as DbProduct));
 				setLoading(false);
 			}
 		})();

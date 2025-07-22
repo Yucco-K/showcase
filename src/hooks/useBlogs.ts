@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { BlogEntry, BlogFilter } from "../types/blog";
+import type { BlogEntry, BlogFilter, BlogPlatform } from "../types/blog";
 import { supabase } from "../lib/supabase"; // Supabaseクライアントをインポート
 
 // キャッシュ用のグローバル変数
@@ -57,21 +57,22 @@ export const useBlogs = () => {
 				console.log("Raw data from Supabase:", data);
 
 				// SupabaseからのデータをBlogEntry型に変換
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				const formattedBlogs: BlogEntry[] = data.map((blog: any) => ({
-					id: blog.id,
-					title: blog.title,
-					platform: blog.platform,
-					url: blog.url,
-					publishDate: blog.published_at,
-					updateDate: blog.updated_at,
-					author: blog.author,
-					readTime: blog.read_time,
-					tags: blog.tags || [],
-					description: "", // descriptionはテーブルにないので空文字を設定
-					isExternal: true, // 外部リンクであると仮定
-					thumbnail: undefined, // thumbnailはテーブルにないのでundefined
-				}));
+				const formattedBlogs: BlogEntry[] = data.map(
+					(blog: Record<string, unknown>) => ({
+						id: blog.id as string,
+						title: blog.title as string,
+						platform: blog.platform as BlogPlatform,
+						url: blog.url as string,
+						publishDate: blog.published_at as string,
+						updateDate: blog.updated_at as string,
+						author: blog.author as string,
+						readTime: Number(blog.read_time) || 0,
+						tags: (blog.tags as string[]) || [],
+						description: "", // descriptionはテーブルにないので空文字を設定
+						isExternal: true, // 外部リンクであると仮定
+						thumbnail: undefined, // thumbnailはテーブルにないのでundefined
+					})
+				);
 
 				console.log("Formatted blogs:", formattedBlogs);
 

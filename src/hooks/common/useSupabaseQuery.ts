@@ -5,24 +5,15 @@ interface UseSupabaseQueryOptions<T, R> {
 	table: string;
 	select?: string;
 	order?: { column: string; ascending?: boolean };
-	eq?: Record<string, any>;
+	eq?: Record<string, unknown>;
 	transform?: (row: T) => R;
 	cache?: boolean;
-	retry?: number;
 }
 
-export function useSupabaseQuery<T = any, R = T>(
+export function useSupabaseQuery<T = Record<string, unknown>, R = T>(
 	options: UseSupabaseQueryOptions<T, R>
 ) {
-	const {
-		table,
-		select = "*",
-		order,
-		eq,
-		transform,
-		cache = false,
-		retry = 0,
-	} = options;
+	const { table, select = "*", order, eq, transform, cache = false } = options;
 
 	const [data, setData] = useState<R[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -70,10 +61,10 @@ export function useSupabaseQuery<T = any, R = T>(
 			}
 			const { data: raw, error } = await query;
 			if (error) throw error;
-			let result: R[] = Array.isArray(raw)
+			const result: R[] = Array.isArray(raw)
 				? transform
 					? raw.map(transform)
-					: raw
+					: (raw as R[])
 				: [];
 			if (cache) {
 				cacheRef.current = {

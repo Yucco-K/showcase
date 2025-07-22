@@ -1,5 +1,5 @@
 // Utility type to transform snake_case keys to camelCase
-export type CamelCase<T> = T extends Record<string, any>
+export type CamelCase<T> = T extends Record<string, unknown>
 	? {
 			[K in keyof T as K extends string
 				? K extends `${infer P}_${infer S}`
@@ -10,7 +10,7 @@ export type CamelCase<T> = T extends Record<string, any>
 	: T;
 
 // Utility type to transform camelCase keys to snake_case
-export type SnakeCase<T> = T extends Record<string, any>
+export type SnakeCase<T> = T extends Record<string, unknown>
 	? {
 			[K in keyof T as K extends string
 				? K extends `${infer P}${infer S}`
@@ -27,7 +27,9 @@ export function toCamelCase<T extends Record<string, unknown>>(
 	obj: T
 ): CamelCase<T> {
 	if (Array.isArray(obj)) {
-		return obj.map(toCamelCase) as any;
+		return obj.map((v) =>
+			toCamelCase(v as Record<string, unknown>)
+		) as unknown as CamelCase<T>;
 	}
 	if (obj !== null && typeof obj === "object") {
 		return Object.fromEntries(
@@ -45,7 +47,9 @@ export function toSnakeCase<T extends Record<string, unknown>>(
 	obj: T
 ): SnakeCase<T> {
 	if (Array.isArray(obj)) {
-		return obj.map(toSnakeCase) as any;
+		return obj.map((v) =>
+			toSnakeCase(v as Record<string, unknown>)
+		) as unknown as SnakeCase<T>;
 	}
 	if (obj !== null && typeof obj === "object") {
 		return Object.fromEntries(

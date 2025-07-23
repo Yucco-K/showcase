@@ -34,7 +34,7 @@ services:
     container_name: gorse-master
     ports:
       - "8086:8086" # 管理用API
-      - "8089:8088" # Web UI（ポートを8089に変更）
+      - "8088:8088" # Web UI
     environment:
       GORSE_CACHE_STORE: redis://redis:6379/0
       GORSE_DATA_STORE: postgres://gorse:gorsepassword@postgres:5432/gorse?sslmode=disable
@@ -54,6 +54,9 @@ services:
     container_name: gorse-server
     ports:
       - "8087:8087" # 推薦API
+    command: >
+      --master-host gorse-master --master-port 8086 
+      --http-host 0.0.0.0 --http-port 8087
     environment:
       GORSE_CACHE_STORE: redis://redis:6379/0
       GORSE_DATA_STORE: postgres://gorse:gorsepassword@postgres:5432/gorse?sslmode=disable
@@ -72,6 +75,9 @@ services:
   gorse-worker:
     image: zhenghaoz/gorse-worker:latest
     container_name: gorse-worker
+    command: >
+      --master-host gorse-master --master-port 8086 
+      --http-host 0.0.0.0 --http-port 8089
     environment:
       GORSE_CACHE_STORE: redis://redis:6379/0
       GORSE_DATA_STORE: postgres://gorse:gorsepassword@postgres:5432/gorse?sslmode=disable

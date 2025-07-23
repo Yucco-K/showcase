@@ -1,11 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
-import { insertItem } from "../src/lib/gorse.ts";
 import * as dotenv from "dotenv";
 import path from "path";
 
 // 環境変数を読み込む（.envと.env.local両方）
 dotenv.config();
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+
+// Gorse設定
+const GORSE_ENDPOINT =
+	process.env.VITE_GORSE_ENDPOINT || "http://18.183.44.71:8087";
+const GORSE_API_KEY =
+	process.env.VITE_GORSE_API_KEY ||
+	"[REDACTED_GORSE_API_KEY]=";
 
 // Supabase クライアントの初期化
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -15,6 +21,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
 console.log("Supabase URL:", supabaseUrl);
 console.log("Supabase Key Exists:", !!supabaseAnonKey);
+console.log("Gorse Endpoint:", GORSE_ENDPOINT);
 
 if (!supabaseUrl || !supabaseAnonKey) {
 	throw new Error(
@@ -24,6 +31,48 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Gorse APIクライアント
+const insertItemToGorse = async (
+	itemId: string,
+	labels?: string[],
+	categories?: string[]
+) => {
+	const url = `${GORSE_ENDPOINT}/api/items`;
+	const items = [
+		{
+			ItemId: itemId,
+			IsHidden: false,
+			Labels: labels || [],
+			Categories: categories || [],
+			Timestamp: new Date().toISOString(),
+			Comment: "",
+		},
+	];
+
+	try {
+		const response = await fetch(url, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-API-Key": GORSE_API_KEY,
+			},
+			body: JSON.stringify(items),
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		const result = await response.json();
+		console.log(
+			`Item inserted: ${itemId} (RowAffected: ${result.RowAffected})`
+		);
+	} catch (error) {
+		console.error("Failed to insert item to Gorse:", error);
+		throw error;
+	}
+};
+
 // アイテム登録用のヘルパー関数（既存のinsertItemを使用）
 const syncItem = async (
 	itemId: string,
@@ -31,7 +80,7 @@ const syncItem = async (
 	categories?: string[]
 ) => {
 	try {
-		await insertItem(itemId, labels, categories);
+		await insertItemToGorse(itemId, labels, categories);
 		console.log(`Item inserted: ${itemId}`);
 	} catch (error) {
 		console.error("Failed to insert item to Gorse:", error);

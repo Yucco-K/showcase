@@ -57,16 +57,29 @@ class GorseClient {
 		this.apiKey = apiKey;
 	}
 
-	private async request(
-		path: string,
-		_options?: RequestInit
-	): Promise<unknown> {
-		// 一時的に空配列を返す（Gorseサーバーとの接続問題を回避）
-		void _options;
-		console.log(
-			`Gorse API request: ${path} - returning empty array temporarily`
-		);
-		return [];
+	private async request(path: string, options?: RequestInit): Promise<unknown> {
+		const url = `${this.endpoint}${path}`;
+
+		try {
+			const response = await fetch(url, {
+				...options,
+				headers: {
+					"Content-Type": "application/json",
+					"X-API-Key": this.apiKey,
+					...options?.headers,
+				},
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			return data;
+		} catch (error) {
+			console.error(`Gorse API request failed: ${url}`, error);
+			throw error;
+		}
 	}
 
 	// ヘルスチェック
@@ -91,9 +104,9 @@ class GorseClient {
 	}
 
 	async insertItem(item: GorseItem): Promise<void> {
-		await this.request(`/api/item/${item.ItemId}`, {
+		await this.request(`/api/items`, {
 			method: "POST",
-			body: JSON.stringify(item),
+			body: JSON.stringify([item]),
 		});
 	}
 
@@ -115,9 +128,9 @@ class GorseClient {
 	}
 
 	async insertUser(user: GorseUser): Promise<void> {
-		await this.request(`/api/user/${user.UserId}`, {
+		await this.request(`/api/users`, {
 			method: "POST",
-			body: JSON.stringify(user),
+			body: JSON.stringify([user]),
 		});
 	}
 
@@ -131,7 +144,7 @@ class GorseClient {
 	async insertFeedback(feedback: GorseFeedback): Promise<void> {
 		await this.request("/api/feedback", {
 			method: "POST",
-			body: JSON.stringify(feedback),
+			body: JSON.stringify([feedback]),
 		});
 	}
 

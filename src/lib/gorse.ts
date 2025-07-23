@@ -297,7 +297,7 @@ const getLocalSimilarItems = (
 	allProducts: Product[],
 	limit: number = 5
 ): string[] => {
-	console.log(`Getting local similar items for ${itemId}`);
+	console.log(`Getting local related products for ${itemId}`);
 	const current: Product | undefined = allProducts.find(
 		(p: Product) => p.id === itemId
 	);
@@ -321,7 +321,7 @@ const getLocalSimilarItems = (
 
 	const merged = [...sameCategory, ...additional];
 	const result = merged.slice(0, limit).map((p: Product) => p.id);
-	console.log(`Local similar items result:`, result);
+	console.log(`Local related products result:`, result);
 	return result;
 };
 
@@ -337,11 +337,11 @@ export const getSimilarItems = async (
 		if (Array.isArray(similarItems) && similarItems.length > 0) {
 			return similarItems.map((r) => r.ItemId);
 		}
-		console.log("Gorse returned empty, using local fallback");
+		console.log("Gorse returned empty, using local related products fallback");
 		return getLocalSimilarItems(itemId, allProducts, limit);
 	} catch (error) {
 		console.error(
-			"Failed to get similar items from Gorse, using fallback:",
+			"Failed to get similar items from Gorse, using related products fallback:",
 			error
 		);
 		return getLocalSimilarItems(itemId, allProducts, limit);

@@ -95,7 +95,7 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 	const { filteredProducts } = useProducts();
 	const { toggleFavorite, isFavorite } = useFavorites(user?.id);
 	const { similarItems, isLoading, error, refetch, clearError } =
-		useSimilarProducts(productId, maxItems);
+		useSimilarProducts(productId, filteredProducts, maxItems);
 
 	// 類似商品IDに対応する商品データを取得
 	const similarProducts = similarItems

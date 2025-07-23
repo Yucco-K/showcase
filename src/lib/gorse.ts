@@ -1,10 +1,9 @@
 // Gorse推薦システムクライアント（直接API呼び出し）
 
-import { products } from "../data/products.ts";
 import type { Product } from "../types/product.ts";
 
 const GORSE_ENDPOINT =
-	import.meta.env.VITE_GORSE_ENDPOINT || "http://52.198.15.232:8087";
+	import.meta.env.VITE_GORSE_ENDPOINT || "http://18.183.44.71:8087";
 const GORSE_API_KEY =
 	import.meta.env.VITE_GORSE_API_KEY ||
 	"kmKLLA5eCveQTVOVDftScxlWJaKmJJVbfSlPMZYSqno=";
@@ -293,9 +292,15 @@ export const insertUser = async (userId: string, labels?: string[]) => {
 };
 
 // 類似アイテム取得用のローカルフォールバック関数
-const getLocalSimilarItems = (itemId: string, limit: number = 5): string[] => {
+const getLocalSimilarItems = (
+	itemId: string,
+	allProducts: Product[],
+	limit: number = 5
+): string[] => {
 	console.log(`Getting local similar items for ${itemId}`);
-	const current: Product | undefined = products.find((p) => p.id === itemId);
+	const current: Product | undefined = allProducts.find(
+		(p: Product) => p.id === itemId
+	);
 	if (!current) {
 		console.log(`Current product not found for ID: ${itemId}`);
 		return [];
@@ -304,17 +309,18 @@ const getLocalSimilarItems = (itemId: string, limit: number = 5): string[] => {
 	console.log(`Current product:`, current);
 
 	// 同じカテゴリの商品を優先
-	const sameCategory = products.filter(
-		(p) => p.id !== itemId && p.category === current.category
+	const sameCategory = allProducts.filter(
+		(p: Product) => p.id !== itemId && p.category === current.category
 	);
 
 	// 同一カテゴリの商品数が足りない場合は、人気商品で補完
-	const additional = products.filter(
-		(p) => p.id !== itemId && p.category !== current.category && p.isPopular
+	const additional = allProducts.filter(
+		(p: Product) =>
+			p.id !== itemId && p.category !== current.category && p.isPopular
 	);
 
 	const merged = [...sameCategory, ...additional];
-	const result = merged.slice(0, limit).map((p) => p.id);
+	const result = merged.slice(0, limit).map((p: Product) => p.id);
 	console.log(`Local similar items result:`, result);
 	return result;
 };
@@ -322,6 +328,7 @@ const getLocalSimilarItems = (itemId: string, limit: number = 5): string[] => {
 // 類似アイテム取得用のヘルパー関数
 export const getSimilarItems = async (
 	itemId: string,
+	allProducts: Product[] = [],
 	limit: number = 5
 ): Promise<string[]> => {
 	try {
@@ -331,12 +338,12 @@ export const getSimilarItems = async (
 			return similarItems.map((r) => r.ItemId);
 		}
 		console.log("Gorse returned empty, using local fallback");
-		return getLocalSimilarItems(itemId, limit);
+		return getLocalSimilarItems(itemId, allProducts, limit);
 	} catch (error) {
 		console.error(
 			"Failed to get similar items from Gorse, using fallback:",
 			error
 		);
-		return getLocalSimilarItems(itemId, limit);
+		return getLocalSimilarItems(itemId, allProducts, limit);
 	}
 };

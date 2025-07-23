@@ -87,7 +87,7 @@ const RetryButton = styled.button`
 
 export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 	productId,
-	title = "似たアプリ",
+	title = "関連商品",
 	maxItems = 4,
 	className,
 }) => {
@@ -110,7 +110,7 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 			<Container className={className}>
 				<Title>{title}</Title>
 				<LoadingContainer>
-					<Spinner text="似たアプリを検索中..." size={32} />
+					<Spinner text="関連商品を検索中..." size={32} />
 				</LoadingContainer>
 			</Container>
 		);
@@ -142,7 +142,7 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 			<Container className={className}>
 				<Title>{title}</Title>
 				<EmptyState>
-					<p>似たアプリが見つかりませんでした</p>
+					<p>関連商品が見つかりませんでした</p>
 				</EmptyState>
 			</Container>
 		);

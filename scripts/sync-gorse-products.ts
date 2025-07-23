@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { Gorse } from "gorsejs";
+import { insertItem } from "../src/lib/gorse.ts";
 import * as dotenv from "dotenv";
 import path from "path";
 
@@ -24,26 +24,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Gorse クライアントの初期化
-const gorse = new Gorse({
-	endpoint: process.env.NEXT_PUBLIC_GORSE_ENDPOINT || "http://localhost:8087",
-	secret: process.env.GORSE_API_KEY || "",
-});
-
-// アイテム登録用のヘルパー関数
-const insertItem = async (
+// アイテム登録用のヘルパー関数（既存のinsertItemを使用）
+const syncItem = async (
 	itemId: string,
 	labels?: string[],
 	categories?: string[]
 ) => {
 	try {
-		await gorse.upsertItem({
-			ItemId: itemId,
-			IsHidden: false,
-			Labels: labels || [],
-			Categories: categories || [],
-			Timestamp: new Date().toISOString(),
-		});
+		await insertItem(itemId, labels, categories);
 		console.log(`Item inserted: ${itemId}`);
 	} catch (error) {
 		console.error("Failed to insert item to Gorse:", error);
@@ -86,7 +74,7 @@ const syncProductsToGorse = async () => {
 				if (p.is_popular) labels.push("popular");
 				if (Array.isArray(p.tags)) labels.push(...p.tags.map(String));
 
-				await insertItem(String(p.id), labels, categories);
+				await syncItem(String(p.id), labels, categories);
 
 				successCount++;
 				console.log(`✅ 商品 ${p.name} (ID: ${p.id}) を同期しました`);

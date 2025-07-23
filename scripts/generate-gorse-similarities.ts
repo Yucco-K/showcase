@@ -24,7 +24,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Gorse クライアントの初期化
 const gorse = new Gorse({
-	endpoint: process.env.NEXT_PUBLIC_GORSE_ENDPOINT || "http://localhost:8087",
+	endpoint: process.env.VITE_GORSE_ENDPOINT || "http://52.198.15.232:8086",
 	secret: process.env.GORSE_API_KEY || "",
 });
 
@@ -36,7 +36,7 @@ async function generateTestUsers(count: number) {
 	for (let i = 1; i <= count; i++) {
 		const userId = `test-user-${i}`;
 		try {
-			await gorse.insertUser({
+			await (gorse as any).insertUser({
 				UserId: userId,
 				Labels: ["test-user"],
 			});

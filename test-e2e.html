@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>フロントエンド連携テスト</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>フロントエンド連携テスト</h1>
+    
+    <div class="test-section">
+        <h3>環境変数テスト</h3>
+        <div id="env-test"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Supabase接続テスト</h3>
+        <div id="supabase-test"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Gorse API接続テスト</h3>
+        <div id="gorse-test"></div>
+    </div>
+    
+    <script type="module">
+        // 環境変数テスト
+        const envTest = document.getElementById('env-test');
+        const requiredEnvVars = [
+            'VITE_SUPABASE_URL',
+            'VITE_SUPABASE_ANON_KEY',
+            'VITE_GORSE_ENDPOINT'
+        ];
+        
+        let envSuccess = true;
+        requiredEnvVars.forEach(varName => {
+            const value = import.meta.env[varName];
+            if (value) {
+                envTest.innerHTML += `<p>✅ ${varName}: 設定済み</p>`;
+            } else {
+                envTest.innerHTML += `<p>❌ ${varName}: 未設定</p>`;
+                envSuccess = false;
+            }
+        });
+        
+        envTest.parentElement.className = envSuccess ? 'test-section success' : 'test-section error';
+        
+        // Supabase接続テスト
+        const supabaseTest = document.getElementById('supabase-test');
+        try {
+            const { createClient } = await import('https://esm.sh/@supabase/supabase-js');
+            const supabase = createClient(
+                import.meta.env.VITE_SUPABASE_URL,
+                import.meta.env.VITE_SUPABASE_ANON_KEY
+            );
+            
+            const { data, error } = await supabase.from('products').select('count').limit(1);
+            if (error) {
+                supabaseTest.innerHTML = `<p>❌ Supabase接続エラー: ${error.message}</p>`;
+                supabaseTest.parentElement.className = 'test-section error';
+            } else {
+                supabaseTest.innerHTML = '<p>✅ Supabase接続成功</p>';
+                supabaseTest.parentElement.className = 'test-section success';
+            }
+        } catch (err) {
+            supabaseTest.innerHTML = `<p>❌ Supabase接続エラー: ${err.message}</p>`;
+            supabaseTest.parentElement.className = 'test-section error';
+        }
+        
+        // Gorse API接続テスト
+        const gorseTest = document.getElementById('gorse-test');
+        try {
+            const response = await fetch(`${import.meta.env.VITE_GORSE_ENDPOINT}/api/health`);
+            if (response.ok) {
+                gorseTest.innerHTML = '<p>✅ Gorse API接続成功</p>';
+                gorseTest.parentElement.className = 'test-section success';
+            } else {
+                gorseTest.innerHTML = `<p>❌ Gorse API接続エラー: ${response.status}</p>`;
+                gorseTest.parentElement.className = 'test-section error';
+            }
+        } catch (err) {
+            gorseTest.innerHTML = `<p>❌ Gorse API接続エラー: ${err.message}</p>`;
+            gorseTest.parentElement.className = 'test-section error';
+        }
+    </script>
+</body>
+</html>

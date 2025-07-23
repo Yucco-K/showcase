@@ -187,7 +187,7 @@ class GorseClient {
 		itemId: string,
 		n = 10
 	): Promise<GorseRecommendation[]> {
-		return this.request(`/api/similar/${itemId}?n=${n}`) as Promise<
+		return this.request(`/api/item/${itemId}/neighbors?n=${n}`) as Promise<
 			GorseRecommendation[]
 		>;
 	}
@@ -294,8 +294,14 @@ export const insertUser = async (userId: string, labels?: string[]) => {
 
 // 類似アイテム取得用のローカルフォールバック関数
 const getLocalSimilarItems = (itemId: string, limit: number = 5): string[] => {
+	console.log(`Getting local similar items for ${itemId}`);
 	const current: Product | undefined = products.find((p) => p.id === itemId);
-	if (!current) return [];
+	if (!current) {
+		console.log(`Current product not found for ID: ${itemId}`);
+		return [];
+	}
+
+	console.log(`Current product:`, current);
 
 	// 同じカテゴリの商品を優先
 	const sameCategory = products.filter(
@@ -308,7 +314,9 @@ const getLocalSimilarItems = (itemId: string, limit: number = 5): string[] => {
 	);
 
 	const merged = [...sameCategory, ...additional];
-	return merged.slice(0, limit).map((p) => p.id);
+	const result = merged.slice(0, limit).map((p) => p.id);
+	console.log(`Local similar items result:`, result);
+	return result;
 };
 
 // 類似アイテム取得用のヘルパー関数

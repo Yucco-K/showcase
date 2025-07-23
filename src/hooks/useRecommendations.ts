@@ -143,11 +143,14 @@ export const useSimilarProducts = (
 
 		try {
 			const items = await getSimilarItems(productId, limit);
+			console.log(`Similar items for ${productId}:`, items);
 			setSimilarItems(items);
 		} catch (err) {
 			console.error(`Failed to fetch similar items for ${productId}:`, err);
-			setError("類似商品の取得に失敗しました");
+			// エラー時はフォールバックを使用せず、空配列にして表示しない
 			setSimilarItems([]);
+			// エラーメッセージも表示しない（フォールバック機能が動作するはず）
+			setError(null);
 		} finally {
 			setIsLoading(false);
 		}

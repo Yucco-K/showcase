@@ -75,9 +75,13 @@ export const useRecommendations = ({
 
 	// 類似商品推薦取得
 	const fetchSimilarItems = useCallback(
-		async (itemId: string, limit: number = 5): Promise<string[]> => {
+		async (
+			itemId: string,
+			allProducts: Product[] = [],
+			limit: number = 5
+		): Promise<string[]> => {
 			try {
-				const items = await getSimilarItems(itemId, limit);
+				const items = await getSimilarItems(itemId, allProducts, limit);
 				return items;
 			} catch (err) {
 				console.error(`Failed to fetch similar items for ${itemId}:`, err);
@@ -126,6 +130,7 @@ export const useRecommendations = ({
 // 特定商品の類似商品取得専用フック
 export const useSimilarProducts = (
 	productId: string | null,
+	allProducts: Product[] = [],
 	limit: number = 5
 ) => {
 	const [similarItems, setSimilarItems] = useState<string[]>([]);
@@ -142,7 +147,7 @@ export const useSimilarProducts = (
 		setError(null);
 
 		try {
-			const items = await getSimilarItems(productId, limit);
+			const items = await getSimilarItems(productId, allProducts, limit);
 			console.log(`Similar items for ${productId}:`, items);
 			setSimilarItems(items);
 		} catch (err) {
@@ -154,7 +159,7 @@ export const useSimilarProducts = (
 		} finally {
 			setIsLoading(false);
 		}
-	}, [productId, limit]);
+	}, [productId, allProducts, limit]);
 
 	useEffect(() => {
 		fetchSimilar();

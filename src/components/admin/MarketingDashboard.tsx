@@ -53,10 +53,6 @@ const DashboardTitle = styled.h1`
 	margin: 0;
 `;
 
-const RefreshButton = styled(MButton)`
-	background: linear-gradient(135deg, #3ea8ff, #0066cc);
-`;
-
 const CardGrid = styled.div`
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

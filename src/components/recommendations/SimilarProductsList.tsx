@@ -39,14 +39,12 @@ const Grid = styled.div`
 
 	@media (max-width: 768px) {
 		display: flex;
-		overflow-x: auto;
-		gap: 0.75rem;
-		scroll-snap-type: x mandatory;
+		flex-direction: column;
+		gap: 1.5rem;
+		padding: 0.5rem 0;
 
 		& > * {
-			flex: 0 0 80%;
-			max-width: 80%;
-			scroll-snap-align: start;
+			margin: 0.5rem 0;
 		}
 	}
 `;

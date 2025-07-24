@@ -15,7 +15,6 @@ import { ReplyItem } from "../components/reviews/ReplyItem";
 import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
 import { ProductDetailSkeleton } from "../components/ui/Skeleton";
-import { formatDate } from "../utils/date";
 import { SimilarProductsList } from "../components/recommendations/SimilarProductsList";
 
 const Container = styled.div`
@@ -596,16 +595,6 @@ const ProductDetail: React.FC = () => {
 	const [showReadMoreButton, setShowReadMoreButton] = useState(false);
 	const descriptionRef = useRef<HTMLDivElement>(null);
 
-	const formatDate = (dateString: string) => {
-		return new Date(dateString).toLocaleDateString("ja-JP", {
-			year: "numeric",
-			month: "short",
-			day: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-	};
-
 	// 説明文の高さをチェックしてボタン表示を制御
 	useEffect(() => {
 		if (descriptionRef.current && !descriptionExpanded && product) {
@@ -896,7 +885,7 @@ const ProductDetail: React.FC = () => {
 						</MetaItem>
 						<MetaItem>
 							<MetaLabel>最終更新</MetaLabel>
-							<MetaValue>{formatDate(product.lastUpdated)}</MetaValue>
+							<MetaValue>{product.lastUpdated}</MetaValue>
 						</MetaItem>
 					</MetaInfo>
 
@@ -1116,7 +1105,7 @@ const ProductDetail: React.FC = () => {
 													color: "rgba(255, 255, 255, 0.5)",
 												}}
 											>
-												{formatDate(rev.created_at)}
+												{rev.created_at}
 											</div>
 											{rev.comment && (
 												<div>
@@ -1368,102 +1357,99 @@ const ProductDetail: React.FC = () => {
 							</PreventDoubleClickButton>
 						)}
 
-						{user && !purchaseLoading && (
-							<>
-								{!showReviewForm ? (
-									<PreventDoubleClickButton
-										onClick={() => {
-											setShowReviewForm(true);
-											// 既存のレビューがある場合は、その内容を設定
-											if (myReview) {
-												setRatingInput(myReview.rating ?? 3);
-												setCommentInput(myReview.comment || "");
-											} else {
-												// 新規レビューの場合はデフォルト値を設定
-												setRatingInput(3);
-												setCommentInput("");
-											}
+						{user &&
+							!purchaseLoading &&
+							(!showReviewForm ? (
+								<PreventDoubleClickButton
+									onClick={() => {
+										setShowReviewForm(true);
+										// 既存のレビューがある場合は、その内容を設定
+										if (myReview) {
+											setRatingInput(myReview.rating ?? 3);
+											setCommentInput(myReview.comment || "");
+										} else {
+											// 新規レビューの場合はデフォルト値を設定
+											setRatingInput(3);
+											setCommentInput("");
+										}
+									}}
+								>
+									{myReview ? "レビューを編集" : "レビューを書く"}
+								</PreventDoubleClickButton>
+							) : showReviewForm ? (
+								<ReviewForm
+									onSubmit={handleSubmitReview}
+									data-testid="review-form"
+								>
+									<StarRow>
+										{[1, 2, 3, 4, 5].map((rating) => (
+											<Star
+												key={`rating-${rating}`}
+												$filled={rating <= ratingInput}
+												onClick={() => {
+													// トグル機能: 同じ星をクリックした場合は1つ減らす
+													if (ratingInput === rating) {
+														setRatingInput(Math.max(1, rating - 1));
+													} else {
+														setRatingInput(rating);
+													}
+												}}
+											>
+												★
+											</Star>
+										))}
+									</StarRow>
+									<TextArea
+										name="comment"
+										placeholder="レビューを書いてください..."
+										value={commentInput}
+										onChange={(e) => setCommentInput(e.target.value)}
+									/>
+									<input type="hidden" name="rating" value={ratingInput} />
+									<div
+										style={{
+											display: "flex",
+											gap: "12px",
+											marginTop: "8px",
 										}}
 									>
-										{myReview ? "レビューを編集" : "レビューを書く"}
-									</PreventDoubleClickButton>
-								) : showReviewForm ? (
-									<ReviewForm
-										onSubmit={handleSubmitReview}
-										data-testid="review-form"
-									>
-										<StarRow>
-											{[1, 2, 3, 4, 5].map((rating) => (
-												<Star
-													key={`rating-${rating}`}
-													$filled={rating <= ratingInput}
-													onClick={() => {
-														// トグル機能: 同じ星をクリックした場合は1つ減らす
-														if (ratingInput === rating) {
-															setRatingInput(Math.max(1, rating - 1));
-														} else {
-															setRatingInput(rating);
-														}
-													}}
-												>
-													★
-												</Star>
-											))}
-										</StarRow>
-										<TextArea
-											name="comment"
-											placeholder="レビューを書いてください..."
-											value={commentInput}
-											onChange={(e) => setCommentInput(e.target.value)}
-										/>
-										<input type="hidden" name="rating" value={ratingInput} />
-										<div
+										<button
+											type="submit"
 											style={{
-												display: "flex",
-												gap: "12px",
-												marginTop: "8px",
+												background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+												color: "white",
+												border: "none",
+												padding: "12px 24px",
+												borderRadius: "8px",
+												fontWeight: "600",
+												cursor: "pointer",
+												transition: "all 0.2s ease",
 											}}
 										>
-											<button
-												type="submit"
-												style={{
-													background:
-														"linear-gradient(135deg, #3b82f6, #1d4ed8)",
-													color: "white",
-													border: "none",
-													padding: "12px 24px",
-													borderRadius: "8px",
-													fontWeight: "600",
-													cursor: "pointer",
-													transition: "all 0.2s ease",
-												}}
-											>
-												{myReview ? "更新する" : "投稿する"}
-											</button>
-											<button
-												type="button"
-												style={{
-													background: "rgba(255,255,255,0.15)",
-													color: "#333",
-													border: "1px solid #ccc",
-													padding: "12px 24px",
-													borderRadius: "8px",
-													fontWeight: "600",
-													cursor: "pointer",
-												}}
-												onClick={() => {
-													setShowReviewForm(false);
-													setRatingInput(myReview?.rating ?? 3);
-													setCommentInput(myReview?.comment || "");
-												}}
-											>
-												キャンセル
-											</button>
-										</div>
-									</ReviewForm>
-								) : null}
-							</>
-						)}
+											{myReview ? "更新する" : "投稿する"}
+										</button>
+										<button
+											type="button"
+											style={{
+												background: "rgba(255,255,255,0.15)",
+												color: "#333",
+												border: "1px solid #ccc",
+												padding: "12px 24px",
+												borderRadius: "8px",
+												fontWeight: "600",
+												cursor: "pointer",
+											}}
+											onClick={() => {
+												setShowReviewForm(false);
+												setRatingInput(myReview?.rating ?? 3);
+												setCommentInput(myReview?.comment || "");
+											}}
+										>
+											キャンセル
+										</button>
+									</div>
+								</ReviewForm>
+							) : null)}
 					</ReviewsSection>
 					<DeleteConfirmationModal
 						isOpen={deleteTargetReview !== null}

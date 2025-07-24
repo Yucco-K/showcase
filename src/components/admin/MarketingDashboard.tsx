@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthProvider";
 import { useProducts } from "../../hooks/useProducts";
@@ -16,10 +16,10 @@ import {
 	Title,
 	Tooltip,
 	Legend,
-	ChartData,
-	ChartOptions,
 } from "chart.js";
+import type { ChartData, ChartOptions, ScriptableContext } from "chart.js";
 import { Bar, Line } from "react-chartjs-2";
+import type { Purchase as DBPurchase } from "../../types/purchase";
 
 // Chart.jsの初期化
 ChartJS.register(
@@ -161,6 +161,38 @@ const EmptyState = styled.div`
 	color: rgba(255, 255, 255, 0.7);
 `;
 
+// 型定義の追加
+type StatsData = {
+	totalUsers: number;
+	totalProducts: number;
+	totalPurchases: number;
+	totalRevenue: number;
+};
+
+// 購入データの型定義
+interface PurchaseWithAmount extends DBPurchase {
+	amount: number;
+}
+
+// エラーの型定義
+type DashboardError = {
+	message: string;
+	details?: string;
+} & Error;
+
+// フィードバック統計の型定義
+type FeedbackStats = {
+	type: string;
+	count: number;
+};
+
+// 購入時系列データの型定義
+type PurchaseTimeSeries = {
+	date: string;
+	count: number;
+};
+
+// レコメンデーション統計の型定義
 type RecommendationStats = {
 	productId: string;
 	recommendationCount: number;
@@ -170,6 +202,7 @@ type RecommendationStats = {
 	conversionRate: number;
 };
 
+// 商品バンドルの型定義
 type ProductBundle = {
 	product1: {
 		id: string;
@@ -180,18 +213,6 @@ type ProductBundle = {
 		name: string;
 	};
 	purchaseCount: number;
-};
-
-// フィードバック統計のデータ型
-type FeedbackStats = {
-	type: string;
-	count: number;
-};
-
-// 購入データの時系列統計の型
-type PurchaseTimeSeries = {
-	date: string;
-	count: number;
 };
 
 // Chart.jsのオプション設定
@@ -224,10 +245,37 @@ const chartOptions: ChartOptions<"line"> = {
 			},
 		},
 	},
-};
+} as const;
 
 const barChartOptions: ChartOptions<"bar"> = {
-	...chartOptions,
+	responsive: true,
+	maintainAspectRatio: false,
+	scales: {
+		y: {
+			beginAtZero: true,
+			grid: {
+				color: "rgba(255, 255, 255, 0.1)",
+			},
+			ticks: {
+				color: "rgba(255, 255, 255, 0.7)",
+			},
+		},
+		x: {
+			grid: {
+				color: "rgba(255, 255, 255, 0.1)",
+			},
+			ticks: {
+				color: "rgba(255, 255, 255, 0.7)",
+			},
+		},
+	},
+	plugins: {
+		legend: {
+			labels: {
+				color: "rgba(255, 255, 255, 0.8)",
+			},
+		},
+	},
 };
 
 const MarketingDashboard: React.FC = () => {
@@ -239,7 +287,7 @@ const MarketingDashboard: React.FC = () => {
 		"overview" | "recommendations" | "bundles"
 	>("overview");
 	const [isLoading, setIsLoading] = useState(true);
-	const [statsData, setStatsData] = useState({
+	const [statsData, setStatsData] = useState<StatsData>({
 		totalUsers: 0,
 		totalProducts: 0,
 		totalPurchases: 0,
@@ -256,33 +304,8 @@ const MarketingDashboard: React.FC = () => {
 		[]
 	);
 
-	// すべての関数を依存配列に追加
-	useEffect(() => {
-		if (!user || !isAdmin(user)) return;
-
-		const fetchDashboardData = async () => {
-			setIsLoading(true);
-			try {
-				await Promise.all([
-					fetchBasicStats(),
-					fetchFeedbackStats(),
-					fetchPurchaseTimeSeries(),
-					fetchTopRecommendations(),
-					fetchProductBundles(),
-				]);
-			} catch (error) {
-				console.error("Failed to fetch dashboard data:", error);
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		fetchDashboardData();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [user, isAdmin, allProducts]);
-
 	// 基本的な統計情報の取得
-	const fetchBasicStats = async () => {
+	const fetchBasicStats = useCallback(async () => {
 		// ユーザー数を取得
 		const { count: userCount } = await supabase
 			.from("profiles")
@@ -292,7 +315,8 @@ const MarketingDashboard: React.FC = () => {
 		const productCount = allProducts.length;
 
 		// 購入総数と総収益を計算
-		const purchaseHistory = getPurchaseHistory();
+		const purchaseHistory =
+			getPurchaseHistory() as unknown as PurchaseWithAmount[];
 		const totalPurchases = purchaseHistory.length;
 		const totalRevenue = purchaseHistory.reduce(
 			(sum, item) => sum + (item.amount || 0),
@@ -305,13 +329,13 @@ const MarketingDashboard: React.FC = () => {
 			totalPurchases,
 			totalRevenue,
 		});
-	};
+	}, [allProducts, getPurchaseHistory]);
 
 	// フィードバック統計の取得
-	const fetchFeedbackStats = async () => {
+	const fetchFeedbackStats = useCallback(async () => {
 		try {
 			// 実際のデータが取得できない場合はモックデータを使用
-			const mockFeedbackStats = [
+			const mockFeedbackStats: FeedbackStats[] = [
 				{ type: "like", count: 124 },
 				{ type: "purchase", count: 85 },
 				{ type: "view", count: 523 },
@@ -323,10 +347,10 @@ const MarketingDashboard: React.FC = () => {
 			console.error("Failed to fetch feedback stats:", error);
 			setFeedbackStats([]);
 		}
-	};
+	}, []);
 
 	// 購入時系列データの取得
-	const fetchPurchaseTimeSeries = async () => {
+	const fetchPurchaseTimeSeries = useCallback(async () => {
 		try {
 			// 過去7日間の日付を生成
 			const dates = Array.from({ length: 7 }, (_, i) => {
@@ -336,7 +360,7 @@ const MarketingDashboard: React.FC = () => {
 			}).reverse();
 
 			// 実際のデータが取得できない場合はモックデータを使用
-			const mockPurchaseData = dates.map((date) => ({
+			const mockPurchaseData: PurchaseTimeSeries[] = dates.map((date) => ({
 				date,
 				count: Math.floor(Math.random() * 20) + 5,
 			}));
@@ -346,30 +370,32 @@ const MarketingDashboard: React.FC = () => {
 			console.error("Failed to fetch purchase time series:", error);
 			setPurchaseTimeSeries([]);
 		}
-	};
+	}, []);
 
 	// 最も推薦された商品のデータ取得
-	const fetchTopRecommendations = async () => {
+	const fetchTopRecommendations = useCallback(async () => {
 		try {
 			// 実際のデータが取得できない場合はモックデータを使用
-			const mockRecommendations = allProducts.slice(0, 10).map((product) => ({
-				productId: product.id,
-				recommendationCount: Math.floor(Math.random() * 100) + 20,
-				clickCount: Math.floor(Math.random() * 50) + 10,
-				purchaseCount: Math.floor(Math.random() * 20) + 1,
-				clickRate: Math.random() * 0.3 + 0.2,
-				conversionRate: Math.random() * 0.15 + 0.05,
-			}));
+			const mockRecommendations: RecommendationStats[] = allProducts
+				.slice(0, 10)
+				.map((product) => ({
+					productId: product.id,
+					recommendationCount: Math.floor(Math.random() * 100) + 20,
+					clickCount: Math.floor(Math.random() * 50) + 10,
+					purchaseCount: Math.floor(Math.random() * 20) + 1,
+					clickRate: Math.random() * 0.3 + 0.2,
+					conversionRate: Math.random() * 0.15 + 0.05,
+				}));
 
 			setTopRecommendedProducts(mockRecommendations);
 		} catch (error) {
 			console.error("Failed to fetch top recommendations:", error);
 			setTopRecommendedProducts([]);
 		}
-	};
+	}, [allProducts]);
 
 	// 一緒に購入されることが多い商品バンドルの取得
-	const fetchProductBundles = async () => {
+	const fetchProductBundles = useCallback(async () => {
 		try {
 			// 実際のデータが取得できない場合はモックデータを使用
 			const mockBundles: ProductBundle[] = [];
@@ -377,10 +403,10 @@ const MarketingDashboard: React.FC = () => {
 			// ランダムな商品バンドルを生成
 			for (let i = 0; i < 8; i++) {
 				const product1Index = Math.floor(Math.random() * allProducts.length);
-				let product2Index;
-				do {
-					product2Index = Math.floor(Math.random() * allProducts.length);
-				} while (product1Index === product2Index);
+				const product2Index = Math.floor(Math.random() * allProducts.length);
+
+				// 同じ商品の組み合わせを避ける
+				if (product1Index === product2Index) continue;
 
 				mockBundles.push({
 					product1: {
@@ -403,14 +429,61 @@ const MarketingDashboard: React.FC = () => {
 			console.error("Failed to fetch product bundles:", error);
 			setTopProductBundles([]);
 		}
-	};
+	}, [allProducts]);
 
+	// データ取得の実行
+	useEffect(() => {
+		if (!user || !isAdmin(user)) return;
+
+		const fetchDashboardData = async () => {
+			setIsLoading(true);
+			try {
+				await Promise.all([
+					fetchBasicStats(),
+					fetchFeedbackStats(),
+					fetchPurchaseTimeSeries(),
+					fetchTopRecommendations(),
+					fetchProductBundles(),
+				]);
+			} catch (error: unknown) {
+				const dashboardError = error as DashboardError;
+				console.error(
+					"Failed to fetch dashboard data:",
+					dashboardError.message
+				);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchDashboardData();
+	}, [
+		user,
+		isAdmin,
+		fetchBasicStats,
+		fetchFeedbackStats,
+		fetchPurchaseTimeSeries,
+		fetchTopRecommendations,
+		fetchProductBundles,
+	]);
+
+	// データ更新関数
 	const refreshData = () => {
-		fetchBasicStats();
-		fetchFeedbackStats();
-		fetchPurchaseTimeSeries();
-		fetchTopRecommendations();
-		fetchProductBundles();
+		setIsLoading(true);
+		Promise.all([
+			fetchBasicStats(),
+			fetchFeedbackStats(),
+			fetchPurchaseTimeSeries(),
+			fetchTopRecommendations(),
+			fetchProductBundles(),
+		])
+			.catch((error: unknown) => {
+				const dashboardError = error as DashboardError;
+				console.error("Failed to refresh data:", dashboardError.message);
+			})
+			.finally(() => {
+				setIsLoading(false);
+			});
 	};
 
 	// 管理者でない場合はアクセス拒否
@@ -536,15 +609,58 @@ const MarketingDashboard: React.FC = () => {
 
 	// 商品バンドル表示のオプション
 	const bundleChartOptions: ChartOptions<"bar"> = {
-		...chartOptions,
-		indexAxis: "y" as const,
-	};
+		responsive: true,
+		maintainAspectRatio: false,
+		scales: {
+			y: {
+				beginAtZero: true,
+				grid: {
+					color: "rgba(255, 255, 255, 0.1)",
+				},
+				ticks: {
+					color: "rgba(255, 255, 255, 0.7)",
+				},
+			},
+			x: {
+				grid: {
+					color: "rgba(255, 255, 255, 0.1)",
+				},
+				ticks: {
+					color: "rgba(255, 255, 255, 0.7)",
+				},
+			},
+		},
+		plugins: {
+			legend: {
+				labels: {
+					color: "rgba(255, 255, 255, 0.8)",
+				},
+			},
+		},
+		indexAxis: "y",
+	} as const;
 
 	return (
 		<DashboardContainer>
 			<Header>
 				<DashboardTitle>マーケティングダッシュボード</DashboardTitle>
-				<RefreshButton onClick={refreshData}>データを更新</RefreshButton>
+				<button
+					type="button"
+					className="mantine-button"
+					onClick={refreshData}
+					style={{
+						background: "linear-gradient(135deg, #3ea8ff, #0066cc)",
+						color: "white",
+						border: "none",
+						padding: "8px 16px",
+						borderRadius: "6px",
+						fontSize: "14px",
+						fontWeight: 500,
+						cursor: "pointer",
+					}}
+				>
+					データを更新
+				</button>
 			</Header>
 
 			<TabContainer>
@@ -676,7 +792,24 @@ const MarketingDashboard: React.FC = () => {
 										<Td>{bundle.product2.name}</Td>
 										<Td>{bundle.purchaseCount}</Td>
 										<Td>
-											<MButton>バンドル作成</MButton>
+											<button
+												type="button"
+												className="mantine-button"
+												onClick={() => {}}
+												style={{
+													background:
+														"linear-gradient(135deg, #3b82f6, #1d4ed8)",
+													color: "white",
+													border: "none",
+													padding: "8px 16px",
+													borderRadius: "6px",
+													fontSize: "14px",
+													fontWeight: 500,
+													cursor: "pointer",
+												}}
+											>
+												バンドル作成
+											</button>
 										</Td>
 									</tr>
 								))}

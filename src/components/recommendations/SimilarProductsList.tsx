@@ -98,12 +98,11 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 	const { similarItems, isLoading, error, refetch, clearError } =
 		useSimilarProducts(productId, filteredProducts, maxItems);
 
-	// デバッグ: Gorseから返されたデータを確認
-	console.log("🔍 SimilarProductsList Debug:");
-	console.log("  - similarItems:", similarItems);
-	console.log("  - filteredProducts count:", filteredProducts.length);
+	// Gorseから返されたIDをダミー商品として表示
+	console.log("🎯 UI表示用の類似商品データ:");
+	console.log("  - Gorseから取得したID:", similarItems);
+	console.log("  - 表示予定の商品数:", similarItems.length);
 
-	// 一時的に：Gorseから返されたIDを無条件で表示
 	const similarProducts = similarItems
 		.filter((id: string) => id !== productId) // 自分自身を除外
 		.slice(0, maxItems)
@@ -133,8 +132,8 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 		});
 
 	console.log(
-		"  - Final similarProducts (dummy):",
-		similarProducts.map((p) => p.id)
+		"  - UIに表示される商品:",
+		similarProducts.map((p) => p.name)
 	);
 
 	// ローディング中の表示

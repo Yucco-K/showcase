@@ -464,7 +464,7 @@ export const getSimilarItems = async (
 	allProducts: Product[] = [],
 	limit: number = 5
 ): Promise<string[]> => {
-	console.log(`[Gorse] Getting similar items for ${itemId}, limit: ${limit}`);
+	console.log(`[Gorse] 類似商品を取得中: ${itemId} (最大${limit}個)`);
 
 	if (!itemId) {
 		console.error("[Gorse] Invalid itemId provided:", itemId);
@@ -472,22 +472,15 @@ export const getSimilarItems = async (
 	}
 
 	try {
-		console.log(
-			`[Gorse] Attempting to get similar items from API for ${itemId}`
-		);
+		console.log(`[Gorse] APIから類似商品を取得中...`);
 		const similarItems = await gorse.getSimilarItems(itemId, limit);
 
 		// APIレスポンスの検証
 		if (Array.isArray(similarItems) && similarItems.length > 0) {
-			console.log(`[Gorse] Raw API response:`, similarItems);
-			console.log(
-				`[Gorse] API returned ${similarItems.length} similar items:`,
-				similarItems.map((r) => r.ItemId || r.Id)
-			);
 			const result = similarItems
 				.map((r) => r.ItemId || r.Id)
 				.filter((id): id is string => id !== undefined);
-			console.log(`[Gorse] Final result:`, result);
+			console.log(`[Gorse] 類似商品ID (${result.length}個):`, result);
 			return result;
 		}
 

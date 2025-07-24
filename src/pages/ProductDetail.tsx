@@ -401,20 +401,20 @@ const TruncatedDescription = styled.div<{ $expanded: boolean }>`
 		!$expanded &&
 		`
 		display: -webkit-box;
-		-webkit-line-clamp: 5;
+		-webkit-line-clamp: 6;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		
 		-webkit-mask: linear-gradient(
 			to bottom,
 			black 0%,
-			black 60%,
+			black 70%,
 			transparent 100%
 		);
 		mask: linear-gradient(
 			to bottom,
 			black 0%,
-			black 60%,
+			black 70%,
 			transparent 100%
 		);
 	`}
@@ -603,7 +603,7 @@ const ProductDetail: React.FC = () => {
 		if (descriptionRef.current && !descriptionExpanded && product) {
 			const element = descriptionRef.current;
 			const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
-			const maxHeight = lineHeight * 5; // 5行分の高さ
+			const maxHeight = lineHeight * 6; // 6行分の高さ
 
 			setShowReadMoreButton(element.scrollHeight > maxHeight);
 		}

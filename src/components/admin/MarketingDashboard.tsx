@@ -174,7 +174,12 @@ type StatsData = {
 
 // amount型ガード
 function hasAmount(item: unknown): item is { amount: number } {
-	return typeof (item as any).amount === "number";
+	return (
+		typeof item === "object" &&
+		item !== null &&
+		"amount" in item &&
+		typeof (item as { amount: unknown }).amount === "number"
+	);
 }
 
 // エラーの型定義

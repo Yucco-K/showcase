@@ -41,7 +41,8 @@ export interface GorseFeedback {
 }
 
 export interface GorseRecommendation {
-	ItemId: string;
+	ItemId?: string;
+	Id?: string;
 	Score: number;
 }
 
@@ -375,7 +376,9 @@ export const getRecommendations = async (
 ): Promise<string[]> => {
 	try {
 		const recommendations = await gorse.getRecommendations(userId, limit);
-		return recommendations.map((r) => r.ItemId);
+		return recommendations
+			.map((r) => r.ItemId || r.Id)
+			.filter((id): id is string => id !== undefined);
 	} catch (error) {
 		console.error("Failed to get recommendations from Gorse:", error);
 		// フォールバック: 空の配列を返す
@@ -476,11 +479,16 @@ export const getSimilarItems = async (
 
 		// APIレスポンスの検証
 		if (Array.isArray(similarItems) && similarItems.length > 0) {
+			console.log(`[Gorse] Raw API response:`, similarItems);
 			console.log(
 				`[Gorse] API returned ${similarItems.length} similar items:`,
 				similarItems.map((r) => r.ItemId || r.Id)
 			);
-			return similarItems.map((r) => r.ItemId || r.Id);
+			const result = similarItems
+				.map((r) => r.ItemId || r.Id)
+				.filter((id): id is string => id !== undefined);
+			console.log(`[Gorse] Final result:`, result);
+			return result;
 		}
 
 		console.log("[Gorse] API returned empty result, using local fallback");

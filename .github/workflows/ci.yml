@@ -44,6 +44,10 @@ jobs:
           npm run type-check
           echo "TypeScript type check completed"
 
+      - name: Clear ESLint cache
+        run: |
+          find . -name ".eslintcache" -delete || true
+
       - name: Lint
         run: |
           echo "Starting ESLint..."

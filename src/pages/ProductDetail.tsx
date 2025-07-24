@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useProduct } from "../hooks/useProducts";
@@ -15,7 +15,7 @@ import { ReplyItem } from "../components/reviews/ReplyItem";
 import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
 import { ProductDetailSkeleton } from "../components/ui/Skeleton";
-import { formatDate } from "../utils/date";
+import { SimilarProductsList } from "../components/recommendations/SimilarProductsList";
 
 const Container = styled.div`
 	min-height: 100vh;
@@ -47,13 +47,20 @@ const ProductHeader = styled.div`
 	margin-bottom: 60px;
 
 	@media (max-width: 768px) {
-		grid-template-columns: 1fr;
+		display: flex;
+		flex-direction: column;
 		gap: 32px;
 	}
 `;
 
 const ImageSection = styled.div`
 	position: relative;
+	width: 100%;
+	max-width: 400px;
+
+	@media (max-width: 768px) {
+		margin: 0 auto;
+	}
 `;
 
 const MainImage = styled.div`
@@ -69,6 +76,10 @@ const MainImage = styled.div`
 	font-size: 24px;
 	font-weight: bold;
 	margin-bottom: 16px;
+
+	@media (max-width: 768px) {
+		height: 250px;
+	}
 `;
 
 const ProductImage = styled.img`
@@ -386,10 +397,59 @@ const RequirementItem = styled.li`
 	}
 `;
 
-const LongDescription = styled.div`
+// LongDescription は使用されなくなったため削除
+
+const TruncatedDescription = styled.div<{
+	$expanded: boolean;
+	$needsGradient: boolean;
+}>`
 	white-space: pre-line;
 	font-size: 16px;
 	line-height: 1.7;
+	position: relative;
+	overflow: hidden;
+	color: rgba(255, 255, 255, 0.8);
+
+	${({ $expanded, $needsGradient }) =>
+		!$expanded &&
+		$needsGradient &&
+		`
+		display: -webkit-box;
+		-webkit-line-clamp: 6;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		
+		-webkit-mask: linear-gradient(
+			to bottom,
+			black 0%,
+			black 70%,
+			transparent 100%
+		);
+		mask: linear-gradient(
+			to bottom,
+			black 0%,
+			black 70%,
+			transparent 100%
+		);
+	`}
+`;
+
+const ReadMoreButton = styled.button`
+	background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+	color: white;
+	border: none;
+	padding: 8px 16px;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	margin-top: 12px;
+	transition: all 0.2s ease;
+
+	&:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+	}
 `;
 
 const TagsContainer = styled.div`
@@ -472,13 +532,17 @@ const ClearFilterButton = styled.button`
 `;
 
 const ProductDetail: React.FC = () => {
+	const { id } = useParams<{ id: string }>();
+
 	useEffect(() => {
 		document.title = "Dummy App Store";
-		// ページトップにスクロール
-		window.scrollTo(0, 0);
-	}, []);
-
-	const { id } = useParams<{ id: string }>();
+		// ページトップにスムーズスクロール
+		window.scrollTo({
+			top: 0,
+			left: 0,
+			behavior: "smooth",
+		});
+	}, [id]); // idが変更された時にもスクロール
 	const navigate = useNavigate();
 	const { product, isFound, isLoading } = useProduct(id || "");
 	const { toggleFavorite, isFavorite, allProducts } = useProducts();
@@ -538,16 +602,20 @@ const ProductDetail: React.FC = () => {
 	const [deleteTargetReview, setDeleteTargetReview] = useState<null | string>(
 		null
 	);
+	const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+	const [showReadMoreButton, setShowReadMoreButton] = useState(false);
+	const descriptionRef = useRef<HTMLDivElement>(null);
 
-	const formatDate = (dateString: string) => {
-		return new Date(dateString).toLocaleDateString("ja-JP", {
-			year: "numeric",
-			month: "short",
-			day: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-	};
+	// 説明文の高さをチェックしてボタン表示を制御
+	useEffect(() => {
+		if (descriptionRef.current && !descriptionExpanded && product) {
+			const element = descriptionRef.current;
+			const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
+			const maxHeight = lineHeight * 6; // 6行分の高さ
+
+			setShowReadMoreButton(element.scrollHeight > maxHeight);
+		}
+	}, [descriptionExpanded, product]);
 
 	if (!id || isLoading) {
 		return <ProductDetailSkeleton />;
@@ -828,7 +896,7 @@ const ProductDetail: React.FC = () => {
 						</MetaItem>
 						<MetaItem>
 							<MetaLabel>最終更新</MetaLabel>
-							<MetaValue>{formatDate(product.lastUpdated)}</MetaValue>
+							<MetaValue>{product.lastUpdated}</MetaValue>
 						</MetaItem>
 					</MetaInfo>
 
@@ -863,7 +931,24 @@ const ProductDetail: React.FC = () => {
 
 						<TabContent>
 							{activeTab === "description" && (
-								<LongDescription>{product.longDescription}</LongDescription>
+								<div>
+									<TruncatedDescription
+										ref={descriptionRef}
+										$expanded={descriptionExpanded}
+										$needsGradient={showReadMoreButton}
+									>
+										{product.longDescription}
+									</TruncatedDescription>
+									{showReadMoreButton && (
+										<ReadMoreButton
+											onClick={() =>
+												setDescriptionExpanded(!descriptionExpanded)
+											}
+										>
+											{descriptionExpanded ? "閉じる" : "続きを読む"}
+										</ReadMoreButton>
+									)}
+								</div>
 							)}
 
 							{activeTab === "features" && (
@@ -885,6 +970,13 @@ const ProductDetail: React.FC = () => {
 							)}
 						</TabContent>
 					</DetailsTabs>
+
+					{/* 似たアプリセクション */}
+					<SimilarProductsList
+						productId={product.id}
+						title="似たアプリ"
+						maxItems={4}
+					/>
 
 					{/* Reviews */}
 					<ReviewsSection>
@@ -1024,7 +1116,7 @@ const ProductDetail: React.FC = () => {
 													color: "rgba(255, 255, 255, 0.5)",
 												}}
 											>
-												{formatDate(rev.created_at)}
+												{rev.created_at}
 											</div>
 											{rev.comment && (
 												<div>
@@ -1276,102 +1368,99 @@ const ProductDetail: React.FC = () => {
 							</PreventDoubleClickButton>
 						)}
 
-						{user && !purchaseLoading && (
-							<>
-								{!showReviewForm ? (
-									<PreventDoubleClickButton
-										onClick={() => {
-											setShowReviewForm(true);
-											// 既存のレビューがある場合は、その内容を設定
-											if (myReview) {
-												setRatingInput(myReview.rating ?? 3);
-												setCommentInput(myReview.comment || "");
-											} else {
-												// 新規レビューの場合はデフォルト値を設定
-												setRatingInput(3);
-												setCommentInput("");
-											}
+						{user &&
+							!purchaseLoading &&
+							(!showReviewForm ? (
+								<PreventDoubleClickButton
+									onClick={() => {
+										setShowReviewForm(true);
+										// 既存のレビューがある場合は、その内容を設定
+										if (myReview) {
+											setRatingInput(myReview.rating ?? 3);
+											setCommentInput(myReview.comment || "");
+										} else {
+											// 新規レビューの場合はデフォルト値を設定
+											setRatingInput(3);
+											setCommentInput("");
+										}
+									}}
+								>
+									{myReview ? "レビューを編集" : "レビューを書く"}
+								</PreventDoubleClickButton>
+							) : showReviewForm ? (
+								<ReviewForm
+									onSubmit={handleSubmitReview}
+									data-testid="review-form"
+								>
+									<StarRow>
+										{[1, 2, 3, 4, 5].map((rating) => (
+											<Star
+												key={`rating-${rating}`}
+												$filled={rating <= ratingInput}
+												onClick={() => {
+													// トグル機能: 同じ星をクリックした場合は1つ減らす
+													if (ratingInput === rating) {
+														setRatingInput(Math.max(1, rating - 1));
+													} else {
+														setRatingInput(rating);
+													}
+												}}
+											>
+												★
+											</Star>
+										))}
+									</StarRow>
+									<TextArea
+										name="comment"
+										placeholder="レビューを書いてください..."
+										value={commentInput}
+										onChange={(e) => setCommentInput(e.target.value)}
+									/>
+									<input type="hidden" name="rating" value={ratingInput} />
+									<div
+										style={{
+											display: "flex",
+											gap: "12px",
+											marginTop: "8px",
 										}}
 									>
-										{myReview ? "レビューを編集" : "レビューを書く"}
-									</PreventDoubleClickButton>
-								) : showReviewForm ? (
-									<ReviewForm
-										onSubmit={handleSubmitReview}
-										data-testid="review-form"
-									>
-										<StarRow>
-											{[1, 2, 3, 4, 5].map((rating) => (
-												<Star
-													key={`rating-${rating}`}
-													$filled={rating <= ratingInput}
-													onClick={() => {
-														// トグル機能: 同じ星をクリックした場合は1つ減らす
-														if (ratingInput === rating) {
-															setRatingInput(Math.max(1, rating - 1));
-														} else {
-															setRatingInput(rating);
-														}
-													}}
-												>
-													★
-												</Star>
-											))}
-										</StarRow>
-										<TextArea
-											name="comment"
-											placeholder="レビューを書いてください..."
-											value={commentInput}
-											onChange={(e) => setCommentInput(e.target.value)}
-										/>
-										<input type="hidden" name="rating" value={ratingInput} />
-										<div
+										<button
+											type="submit"
 											style={{
-												display: "flex",
-												gap: "12px",
-												marginTop: "8px",
+												background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+												color: "white",
+												border: "none",
+												padding: "12px 24px",
+												borderRadius: "8px",
+												fontWeight: "600",
+												cursor: "pointer",
+												transition: "all 0.2s ease",
 											}}
 										>
-											<button
-												type="submit"
-												style={{
-													background:
-														"linear-gradient(135deg, #3b82f6, #1d4ed8)",
-													color: "white",
-													border: "none",
-													padding: "12px 24px",
-													borderRadius: "8px",
-													fontWeight: "600",
-													cursor: "pointer",
-													transition: "all 0.2s ease",
-												}}
-											>
-												{myReview ? "更新する" : "投稿する"}
-											</button>
-											<button
-												type="button"
-												style={{
-													background: "rgba(255,255,255,0.15)",
-													color: "#333",
-													border: "1px solid #ccc",
-													padding: "12px 24px",
-													borderRadius: "8px",
-													fontWeight: "600",
-													cursor: "pointer",
-												}}
-												onClick={() => {
-													setShowReviewForm(false);
-													setRatingInput(myReview?.rating ?? 3);
-													setCommentInput(myReview?.comment || "");
-												}}
-											>
-												キャンセル
-											</button>
-										</div>
-									</ReviewForm>
-								) : null}
-							</>
-						)}
+											{myReview ? "更新する" : "投稿する"}
+										</button>
+										<button
+											type="button"
+											style={{
+												background: "rgba(255,255,255,0.15)",
+												color: "#333",
+												border: "1px solid #ccc",
+												padding: "12px 24px",
+												borderRadius: "8px",
+												fontWeight: "600",
+												cursor: "pointer",
+											}}
+											onClick={() => {
+												setShowReviewForm(false);
+												setRatingInput(myReview?.rating ?? 3);
+												setCommentInput(myReview?.comment || "");
+											}}
+										>
+											キャンセル
+										</button>
+									</div>
+								</ReviewForm>
+							) : null)}
 					</ReviewsSection>
 					<DeleteConfirmationModal
 						isOpen={deleteTargetReview !== null}

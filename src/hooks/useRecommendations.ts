@@ -150,12 +150,12 @@ export const useSimilarProducts = (
 
 		try {
 			console.log(
-				`[Recommendations] Fetching similar items for ${productId}, attempt: ${
-					retryCount + 1
-				}/${maxRetries + 1}`
+				`[Recommendations] 類似商品を取得中 (${retryCount + 1}/${
+					maxRetries + 1
+				}回目)`
 			);
 			const items = await getSimilarItems(productId, allProducts, limit);
-			console.log(`[Recommendations] Similar items for ${productId}:`, items);
+			console.log(`[Recommendations] Gorseから取得した類似商品ID:`, items);
 			setSimilarItems(items);
 			// 成功したらリトライカウントをリセット
 			setRetryCount(0);

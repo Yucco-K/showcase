@@ -21,16 +21,31 @@ export const useRecommendations = ({
 	const [error, setError] = useState<string | null>(null);
 	const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
+	function applyFallbackRecommendations(
+		fallbackProducts: Product[],
+		maxItems: number,
+		config?: RecommendationConfig,
+		setRecommendations?: (ids: string[]) => void
+	): string[] {
+		const fallbackIds = fallbackProducts
+			.slice(0, config?.maxItems || maxItems)
+			.map((p) => p.id);
+		if (setRecommendations) setRecommendations(fallbackIds);
+		return fallbackIds;
+	}
+
 	// ユーザー向け推薦取得
 	const fetchRecommendations = useCallback(
 		async (config?: RecommendationConfig) => {
 			if (!user?.id) {
 				// ログインしていない場合はフォールバック商品を使用
 				if (fallbackProducts.length > 0) {
-					const fallbackIds = fallbackProducts
-						.slice(0, config?.maxItems || maxItems)
-						.map((p) => p.id);
-					setRecommendations(fallbackIds);
+					applyFallbackRecommendations(
+						fallbackProducts,
+						maxItems,
+						config,
+						setRecommendations
+					);
 				}
 				return;
 			}
@@ -46,10 +61,12 @@ export const useRecommendations = ({
 
 				// 推薦結果がない場合はフォールバック
 				if (items.length === 0 && fallbackProducts.length > 0) {
-					const fallbackIds = fallbackProducts
-						.slice(0, config?.maxItems || maxItems)
-						.map((p) => p.id);
-					setRecommendations(fallbackIds);
+					applyFallbackRecommendations(
+						fallbackProducts,
+						maxItems,
+						config,
+						setRecommendations
+					);
 				} else {
 					setRecommendations(items);
 				}
@@ -61,10 +78,12 @@ export const useRecommendations = ({
 
 				// エラー時もフォールバックを使用
 				if (fallbackProducts.length > 0) {
-					const fallbackIds = fallbackProducts
-						.slice(0, config?.maxItems || maxItems)
-						.map((p) => p.id);
-					setRecommendations(fallbackIds);
+					applyFallbackRecommendations(
+						fallbackProducts,
+						maxItems,
+						config,
+						setRecommendations
+					);
 				}
 			} finally {
 				setIsLoading(false);

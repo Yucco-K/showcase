@@ -3,6 +3,7 @@ import { insertItem, insertUser } from "../lib/gorse";
 import type { Product, ProductCategory } from "../types/product";
 import type { Profile } from "../types/database";
 import { useToast } from "./useToast";
+import { supabase } from "../lib/supabase";
 
 // 定数定義
 const API_RATE_LIMIT_DELAY_MS = 100;
@@ -89,10 +90,8 @@ export const useGorseSync = () => {
 	// 既存の商品データを全てGorseに同期
 	const syncAllProductsToGorse = useCallback(async () => {
 		try {
-			// 商品データを取得（useProductsフックから）
-			const { data: products } = await import("../lib/supabase").then((m) =>
-				m.supabase.from("products").select("*")
-			);
+			// 商品データを取得
+			const { data: products } = await supabase.from("products").select("*");
 
 			if (!products || products.length === 0) {
 				showError("同期する商品データが見つかりません");

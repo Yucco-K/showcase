@@ -10,6 +10,18 @@ const GORSE_API_KEY =
 	import.meta.env.VITE_GORSE_API_KEY ||
 	"kmKLLA5eCveQTVOVDftScxlWJaKmJJVbfSlPMZYSqno=";
 
+// バリデーション
+if (!GORSE_ENDPOINT || !/^https?:\/\/.+$/.test(GORSE_ENDPOINT)) {
+	console.error(
+		"Invalid or missing Gorse endpoint. Please set VITE_GORSE_ENDPOINT to a valid URL."
+	);
+	throw new Error("Gorse configuration error: Invalid endpoint.");
+}
+if (!GORSE_API_KEY) {
+	console.error("Missing Gorse API key. Please set VITE_GORSE_API_KEY.");
+	throw new Error("Gorse configuration error: Missing API key.");
+}
+
 console.log(`[Gorse] Using API endpoint: ${GORSE_ENDPOINT}`);
 // APIキーはセキュリティ上の理由で完全には表示しない
 console.log(

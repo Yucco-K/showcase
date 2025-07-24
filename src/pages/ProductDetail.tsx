@@ -405,22 +405,18 @@ const TruncatedDescription = styled.div<{ $expanded: boolean }>`
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		
-		&::after {
-			content: '';
-			position: absolute;
-			bottom: 0;
-			left: 0;
-			right: 0;
-			height: 60px;
-			background: linear-gradient(
-				to bottom,
-				transparent 0%,
-				rgba(255, 255, 255, 0.1) 40%,
-				rgba(255, 255, 255, 0.3) 70%,
-				rgba(255, 255, 255, 0.6) 100%
-			);
-			pointer-events: none;
-		}
+		-webkit-mask: linear-gradient(
+			to bottom,
+			black 0%,
+			black 60%,
+			transparent 100%
+		);
+		mask: linear-gradient(
+			to bottom,
+			black 0%,
+			black 60%,
+			transparent 100%
+		);
 	`}
 `;
 

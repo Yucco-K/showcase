@@ -155,9 +155,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		(import.meta.env.VITE_ADMIN_EMAILS as string | undefined)
 			?.split(",")
 			.map((e) => e.trim().toLowerCase()) ?? [];
+
+	// 管理者かどうかの判定を元に戻す（test123@gmail.comは一般ユーザー）
 	const isAdmin = (targetUser: User | null) => {
 		if (!targetUser) return false;
-		return adminEmails.includes(targetUser.email?.toLowerCase() ?? "");
+		const userEmail = targetUser.email?.toLowerCase() ?? "";
+		return adminEmails.includes(userEmail);
 	};
 
 	return (

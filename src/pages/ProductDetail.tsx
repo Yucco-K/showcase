@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useProduct } from "../hooks/useProducts";
@@ -395,6 +395,7 @@ const TruncatedDescription = styled.div<{ $expanded: boolean }>`
 	line-height: 1.7;
 	position: relative;
 	overflow: hidden;
+	color: rgba(255, 255, 255, 0.8);
 
 	${({ $expanded }) =>
 		!$expanded &&
@@ -414,9 +415,9 @@ const TruncatedDescription = styled.div<{ $expanded: boolean }>`
 			background: linear-gradient(
 				to bottom,
 				transparent 0%,
-				rgba(0, 0, 0, 0.1) 40%,
-				rgba(0, 0, 0, 0.3) 70%,
-				rgba(0, 0, 0, 0.6) 100%
+				rgba(255, 255, 255, 0.1) 40%,
+				rgba(255, 255, 255, 0.3) 70%,
+				rgba(255, 255, 255, 0.6) 100%
 			);
 			pointer-events: none;
 		}
@@ -588,6 +589,8 @@ const ProductDetail: React.FC = () => {
 		null
 	);
 	const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+	const [showReadMoreButton, setShowReadMoreButton] = useState(false);
+	const descriptionRef = useRef<HTMLDivElement>(null);
 
 	const formatDate = (dateString: string) => {
 		return new Date(dateString).toLocaleDateString("ja-JP", {
@@ -598,6 +601,17 @@ const ProductDetail: React.FC = () => {
 			minute: "2-digit",
 		});
 	};
+
+	// 説明文の高さをチェックしてボタン表示を制御
+	useEffect(() => {
+		if (descriptionRef.current && !descriptionExpanded && product) {
+			const element = descriptionRef.current;
+			const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
+			const maxHeight = lineHeight * 5; // 5行分の高さ
+
+			setShowReadMoreButton(element.scrollHeight > maxHeight);
+		}
+	}, [descriptionExpanded, product]);
 
 	if (!id || isLoading) {
 		return <ProductDetailSkeleton />;
@@ -914,10 +928,13 @@ const ProductDetail: React.FC = () => {
 						<TabContent>
 							{activeTab === "description" && (
 								<div>
-									<TruncatedDescription $expanded={descriptionExpanded}>
+									<TruncatedDescription
+										ref={descriptionRef}
+										$expanded={descriptionExpanded}
+									>
 										{product.longDescription}
 									</TruncatedDescription>
-									{product.longDescription.split("\n").length > 5 && (
+									{showReadMoreButton && (
 										<ReadMoreButton
 											onClick={() =>
 												setDescriptionExpanded(!descriptionExpanded)

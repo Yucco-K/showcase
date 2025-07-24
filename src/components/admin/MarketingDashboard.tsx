@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthProvider";
 import { useProducts } from "../../hooks/useProducts";
@@ -16,6 +16,7 @@ import {
 	Title,
 	Tooltip,
 	Legend,
+	Filler,
 } from "chart.js";
 import type { ChartData, ChartOptions, ScriptableContext } from "chart.js";
 import { Bar, Line } from "react-chartjs-2";
@@ -30,7 +31,8 @@ ChartJS.register(
 	BarElement,
 	Title,
 	Tooltip,
-	Legend
+	Legend,
+	Filler
 );
 
 // ダッシュボードコンテナ
@@ -127,14 +129,14 @@ const TabContainer = styled.div`
 	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 `;
 
-const Tab = styled.button<{ active: boolean }>`
+const Tab = styled.button<{ $active: boolean }>`
 	padding: 0.75rem 1.5rem;
 	border: none;
 	background: ${(props) =>
-		props.active ? "rgba(255, 255, 255, 0.1)" : "transparent"};
-	color: ${(props) => (props.active ? "white" : "rgba(255, 255, 255, 0.6)")};
+		props.$active ? "rgba(255, 255, 255, 0.1)" : "transparent"};
+	color: ${(props) => (props.$active ? "white" : "rgba(255, 255, 255, 0.6)")};
 	border-bottom: 2px solid
-		${(props) => (props.active ? "#3ea8ff" : "transparent")};
+		${(props) => (props.$active ? "#3ea8ff" : "transparent")};
 	cursor: pointer;
 	transition: all 0.2s ease;
 
@@ -168,6 +170,11 @@ type StatsData = {
 // 購入データの型定義
 interface PurchaseWithAmount extends DBPurchase {
 	amount: number;
+}
+
+// amount型ガード
+function hasAmount(item: any): item is { amount: number } {
+	return typeof item.amount === "number";
 }
 
 // エラーの型定義
@@ -281,7 +288,7 @@ const barChartOptions: ChartOptions<"bar"> = {
 const MarketingDashboard: React.FC = () => {
 	const { user, isAdmin } = useAuth();
 	const { allProducts } = useProducts();
-	const { getAllPurchaseHistory } = usePurchaseHistory();
+	const { getAllPurchaseHistory, getPurchaseCount } = usePurchaseHistory();
 
 	const [activeTab, setActiveTab] = useState<
 		"overview" | "recommendations" | "bundles"
@@ -312,25 +319,25 @@ const MarketingDashboard: React.FC = () => {
 		const { count: userCount } = await supabase
 			.from("profiles")
 			.select("id", { count: "exact", head: true });
-
 		// 商品数はメモリ内のデータを使用
 		const productCount = allProducts.length;
-
-		// 購入総数と総収益を計算（Supabaseから取得）
+		// 総購入数はgetPurchaseCountで取得
+		const totalPurchases = await getPurchaseCount();
+		// 総収益はgetAllPurchaseHistoryで計算
 		const purchaseHistory = await getAllPurchaseHistory();
-		const totalPurchases = purchaseHistory.length;
 		const totalRevenue = purchaseHistory.reduce(
-			(sum, item) => sum + ((item as any).amount || 0),
+			(sum, item) => sum + (hasAmount(item) ? item.amount : 0),
 			0
 		);
-
+		console.log("[Dashboard] purchaseHistory:", purchaseHistory);
+		console.log("[Dashboard] totalRevenue:", totalRevenue);
 		setStatsData({
 			totalUsers: userCount || 0,
 			totalProducts: productCount,
 			totalPurchases,
 			totalRevenue,
 		});
-	}, [allProducts, getAllPurchaseHistory]);
+	}, [allProducts, getAllPurchaseHistory, getPurchaseCount]);
 
 	// 購入時系列データの取得
 	const fetchPurchaseTimeSeries = useCallback(async () => {
@@ -562,10 +569,10 @@ const MarketingDashboard: React.FC = () => {
 				label: "フィードバック数",
 				data: feedbackStats.map((item) => item.count),
 				backgroundColor: [
-					"rgba(255, 99, 132, 0.7)",
-					"rgba(54, 162, 235, 0.7)",
-					"rgba(255, 206, 86, 0.7)",
-					"rgba(75, 192, 192, 0.7)",
+					"rgba(255, 99, 132, 0.7)", // 赤
+					"rgba(54, 162, 235, 0.7)", // 青
+					"rgba(255, 206, 86, 0.7)", // 黄
+					"rgba(75, 192, 192, 0.7)", // 緑
 				],
 				borderColor: [
 					"rgba(255, 99, 132, 1)",
@@ -692,19 +699,19 @@ const MarketingDashboard: React.FC = () => {
 
 			<TabContainer>
 				<Tab
-					active={activeTab === "overview"}
+					$active={activeTab === "overview"}
 					onClick={() => setActiveTab("overview")}
 				>
 					概要
 				</Tab>
 				<Tab
-					active={activeTab === "recommendations"}
+					$active={activeTab === "recommendations"}
 					onClick={() => setActiveTab("recommendations")}
 				>
 					レコメンデーション分析
 				</Tab>
 				<Tab
-					active={activeTab === "bundles"}
+					$active={activeTab === "bundles"}
 					onClick={() => setActiveTab("bundles")}
 				>
 					商品バンドル分析

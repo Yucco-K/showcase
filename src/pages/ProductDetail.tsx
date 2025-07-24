@@ -47,13 +47,20 @@ const ProductHeader = styled.div`
 	margin-bottom: 60px;
 
 	@media (max-width: 768px) {
-		grid-template-columns: 1fr;
+		display: flex;
+		flex-direction: column;
 		gap: 32px;
 	}
 `;
 
 const ImageSection = styled.div`
 	position: relative;
+	width: 100%;
+	max-width: 400px;
+
+	@media (max-width: 768px) {
+		margin: 0 auto;
+	}
 `;
 
 const MainImage = styled.div`
@@ -69,6 +76,10 @@ const MainImage = styled.div`
 	font-size: 24px;
 	font-weight: bold;
 	margin-bottom: 16px;
+
+	@media (max-width: 768px) {
+		height: 250px;
+	}
 `;
 
 const ProductImage = styled.img`

@@ -38,8 +38,16 @@ const Grid = styled.div`
 	gap: 1rem;
 
 	@media (max-width: 768px) {
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		display: flex;
+		overflow-x: auto;
 		gap: 0.75rem;
+		scroll-snap-type: x mandatory;
+
+		& > * {
+			flex: 0 0 80%;
+			max-width: 80%;
+			scroll-snap-align: start;
+		}
 	}
 `;
 

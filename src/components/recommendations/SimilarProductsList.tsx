@@ -131,31 +131,41 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 	console.log("  - Gorseから取得したID:", similarItems);
 	console.log("  - 表示予定の商品数:", displayItems.length);
 
+	// Gorseから返されたIDを使って実際の商品データを取得
 	const similarProducts = displayItems
 		.filter((id: string) => id !== productId) // 自分自身を除外
 		.map((id: string) => {
-			// ダミー商品データを作成（テスト用）
-			const dummyProduct: Product = {
-				id,
-				name: `Gorse Product (${id.slice(0, 8)})`,
-				description: `Auto-generated from Gorse recommendation (ID: ${id})`,
-				longDescription: `This is a product recommended by Gorse recommendation system. Original ID: ${id}`,
-				price: Math.floor(Math.random() * 5000) + 1000,
-				category: ProductCategory.PRODUCTIVITY,
-				imageUrl: "https://via.placeholder.com/300",
-				screenshots: [],
-				features: ["Gorse Recommended", "Auto Generated"],
-				requirements: [],
-				version: "1.0.0",
-				lastUpdated: new Date().toISOString(),
-				rating: 0,
-				reviewCount: 0,
-				likes: 0,
-				tags: ["gorse", "recommendation"],
-				isPopular: false,
-				isFeatured: false,
-			};
-			return dummyProduct;
+			// 実際の商品データベースから商品を検索
+			const actualProduct = allProducts.find((product) => product.id === id);
+
+			if (actualProduct) {
+				// 実際の商品データが見つかった場合
+				return actualProduct;
+			} else {
+				// 商品データが見つからない場合のフォールバック
+				console.warn(`商品データが見つかりません: ${id}`);
+				const fallbackProduct: Product = {
+					id,
+					name: `商品 (${id.slice(0, 8)})`,
+					description: `商品ID: ${id} - データが見つかりませんでした`,
+					longDescription: `この商品の詳細情報は現在利用できません。商品ID: ${id}`,
+					price: 0,
+					category: ProductCategory.PRODUCTIVITY,
+					imageUrl: "",
+					screenshots: [],
+					features: [],
+					requirements: [],
+					version: "1.0.0",
+					lastUpdated: new Date().toISOString(),
+					rating: 0,
+					reviewCount: 0,
+					likes: 0,
+					tags: [],
+					isPopular: false,
+					isFeatured: false,
+				};
+				return fallbackProduct;
+			}
 		});
 
 	console.log(

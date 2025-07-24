@@ -135,15 +135,24 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 	const similarProducts = displayItems
 		.filter((id: string) => id !== productId) // 自分自身を除外
 		.map((id: string) => {
+			console.log(`🔍 商品ID検索: ${id}`);
+			console.log(
+				`📋 利用可能な商品ID:`,
+				allProducts.map((p) => p.id)
+			);
+
 			// 実際の商品データベースから商品を検索
 			const actualProduct = allProducts.find((product) => product.id === id);
 
 			if (actualProduct) {
 				// 実際の商品データが見つかった場合
+				console.log(
+					`✅ 商品データ発見: ${actualProduct.name} (ID: ${actualProduct.id})`
+				);
 				return actualProduct;
 			} else {
 				// 商品データが見つからない場合のフォールバック
-				console.warn(`商品データが見つかりません: ${id}`);
+				console.warn(`❌ 商品データが見つかりません: ${id}`);
 				const fallbackProduct: Product = {
 					id,
 					name: `商品 (${id.slice(0, 8)})`,

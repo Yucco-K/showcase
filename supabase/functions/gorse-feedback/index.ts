@@ -171,7 +171,12 @@ serve(async (req: Request) => {
 		const supabaseUrl = getEnvVar("SUPABASE_URL");
 		const supabaseServiceKey = getEnvVar("SUPABASE_SERVICE_ROLE_KEY");
 		const gorseEndpoint = getEnvVar("GORSE_ENDPOINT");
-		const gorseApiKey = Deno.env.get("GORSE_API_KEY") || "";
+		const gorseApiKey = Deno.env.get("GORSE_API_KEY");
+		if (!gorseApiKey) {
+			throw new Error(
+				"GORSE_API_KEY is not set. Please set the environment variable."
+			);
+		}
 
 		// Supabaseクライアントの初期化
 		const supabase = createClient(supabaseUrl, supabaseServiceKey);

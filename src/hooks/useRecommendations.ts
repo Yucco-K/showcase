@@ -136,6 +136,8 @@ export const useSimilarProducts = (
 	const [similarItems, setSimilarItems] = useState<string[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [retryCount, setRetryCount] = useState(0);
+	const maxRetries = 2;
 
 	const fetchSimilar = useCallback(async () => {
 		if (!productId) {
@@ -147,19 +149,79 @@ export const useSimilarProducts = (
 		setError(null);
 
 		try {
+			console.log(
+				`[Recommendations] Fetching similar items for ${productId}, attempt: ${
+					retryCount + 1
+				}/${maxRetries + 1}`
+			);
 			const items = await getSimilarItems(productId, allProducts, limit);
-			console.log(`Similar items for ${productId}:`, items);
+			console.log(`[Recommendations] Similar items for ${productId}:`, items);
 			setSimilarItems(items);
+			// 成功したらリトライカウントをリセット
+			setRetryCount(0);
 		} catch (err) {
-			console.error(`Failed to fetch similar items for ${productId}:`, err);
-			// エラー時はフォールバックを使用せず、空配列にして表示しない
-			setSimilarItems([]);
-			// エラーメッセージも表示しない（フォールバック機能が動作するはず）
-			setError(null);
+			const errorMessage = err instanceof Error ? err.message : String(err);
+			console.error(
+				`[Recommendations] Failed to fetch similar items for ${productId}:`,
+				errorMessage
+			);
+
+			// エラーメッセージを設定
+			if (errorMessage.includes("タイムアウト")) {
+				setError(
+					`APIリクエストがタイムアウトしました。サーバーの応答が遅いか、接続に問題がある可能性があります。`
+				);
+			} else if (errorMessage.includes("CORS")) {
+				setError(
+					`CORSポリシーエラー: APIサーバーへのアクセスが制限されています。`
+				);
+			} else {
+				setError(`類似アイテムの取得に失敗しました: ${errorMessage}`);
+			}
+
+			// フォールバックロジック
+			if (allProducts.length > 0) {
+				console.log(`[Recommendations] Using local fallback for ${productId}`);
+				const current = allProducts.find((p) => p.id === productId);
+				if (current) {
+					const sameCategory = allProducts
+						.filter(
+							(p) => p.id !== productId && p.category === current.category
+						)
+						.slice(0, limit)
+						.map((p) => p.id);
+
+					if (sameCategory.length > 0) {
+						console.log(
+							`[Recommendations] Found ${sameCategory.length} fallback items in same category`
+						);
+						setSimilarItems(sameCategory);
+					}
+				}
+			}
 		} finally {
 			setIsLoading(false);
 		}
-	}, [productId, allProducts, limit]);
+	}, [productId, allProducts, limit, retryCount]);
+
+	// 自動リトライロジック
+	useEffect(() => {
+		if (error && retryCount < maxRetries) {
+			const retryDelay = Math.pow(2, retryCount) * 1000; // 指数バックオフ: 1秒、2秒、4秒...
+			console.log(
+				`[Recommendations] Will retry in ${retryDelay}ms (attempt ${
+					retryCount + 1
+				}/${maxRetries})`
+			);
+
+			const timeoutId = setTimeout(() => {
+				setRetryCount((prev) => prev + 1);
+				fetchSimilar();
+			}, retryDelay);
+
+			return () => clearTimeout(timeoutId);
+		}
+	}, [error, retryCount, fetchSimilar]);
 
 	useEffect(() => {
 		fetchSimilar();
@@ -169,7 +231,10 @@ export const useSimilarProducts = (
 		similarItems,
 		isLoading,
 		error,
-		refetch: fetchSimilar,
+		refetch: () => {
+			setRetryCount(0);
+			return fetchSimilar();
+		},
 		clearError: () => setError(null),
 	};
 };

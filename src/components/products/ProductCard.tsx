@@ -341,7 +341,16 @@ export const ProductCardComponent: React.FC<ProductCardProps> = ({
 					))}
 				</TagsContainer>
 
-				<ViewButton to={`/products/${product.id}`}>詳細を見る</ViewButton>
+				<ViewButton
+					to={`/products/${product.id}`}
+					onClick={() =>
+						console.log(
+							`🔗 詳細ボタンクリック: ${product.name} (ID: ${product.id})`
+						)
+					}
+				>
+					詳細を見る
+				</ViewButton>
 			</Card>
 			<LoginModal
 				isOpen={isLoginModalOpen}

@@ -238,14 +238,22 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 		<Container className={className}>
 			<Title>{title}</Title>
 			<Grid>
-				{similarProducts.map((product) => (
-					<ProductCard
-						key={product.id}
-						product={product}
-						isFavorite={isFavorite(product.id)}
-						onToggleFavorite={toggleFavorite}
-					/>
-				))}
+				{similarProducts.map((product) => {
+					console.log(`🎯 ProductCardに渡す商品データ:`, {
+						id: product.id,
+						name: product.name,
+						price: product.price,
+						description: product.description,
+					});
+					return (
+						<ProductCard
+							key={product.id}
+							product={product}
+							isFavorite={isFavorite(product.id)}
+							onToggleFavorite={toggleFavorite}
+						/>
+					);
+				})}
 			</Grid>
 			{similarItems.length > 2 && (
 				<ShowMoreButton onClick={() => setShowAll(!showAll)}>

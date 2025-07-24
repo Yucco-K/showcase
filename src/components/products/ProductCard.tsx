@@ -343,11 +343,14 @@ export const ProductCardComponent: React.FC<ProductCardProps> = ({
 
 				<ViewButton
 					to={`/products/${product.id}`}
-					onClick={() =>
-						console.log(
-							`🔗 詳細ボタンクリック: ${product.name} (ID: ${product.id})`
-						)
-					}
+					onClick={() => {
+						if (import.meta.env.DEV) {
+							 
+							console.debug(
+								`🔗 詳細ボタンクリック: ${product.name} (ID: ${product.id})`
+							);
+						}
+					}}
 				>
 					詳細を見る
 				</ViewButton>

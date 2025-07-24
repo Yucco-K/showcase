@@ -387,10 +387,58 @@ const RequirementItem = styled.li`
 	}
 `;
 
-const LongDescription = styled.div`
+// LongDescription は使用されなくなったため削除
+
+const TruncatedDescription = styled.div<{ $expanded: boolean }>`
 	white-space: pre-line;
 	font-size: 16px;
 	line-height: 1.7;
+	position: relative;
+	overflow: hidden;
+
+	${({ $expanded }) =>
+		!$expanded &&
+		`
+		display: -webkit-box;
+		-webkit-line-clamp: 5;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		
+		&::after {
+			content: '';
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			height: 60px;
+			background: linear-gradient(
+				to bottom,
+				transparent 0%,
+				rgba(0, 0, 0, 0.1) 40%,
+				rgba(0, 0, 0, 0.3) 70%,
+				rgba(0, 0, 0, 0.6) 100%
+			);
+			pointer-events: none;
+		}
+	`}
+`;
+
+const ReadMoreButton = styled.button`
+	background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+	color: white;
+	border: none;
+	padding: 8px 16px;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	margin-top: 12px;
+	transition: all 0.2s ease;
+
+	&:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+	}
 `;
 
 const TagsContainer = styled.div`
@@ -539,6 +587,7 @@ const ProductDetail: React.FC = () => {
 	const [deleteTargetReview, setDeleteTargetReview] = useState<null | string>(
 		null
 	);
+	const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
 	const formatDate = (dateString: string) => {
 		return new Date(dateString).toLocaleDateString("ja-JP", {
@@ -864,7 +913,20 @@ const ProductDetail: React.FC = () => {
 
 						<TabContent>
 							{activeTab === "description" && (
-								<LongDescription>{product.longDescription}</LongDescription>
+								<div>
+									<TruncatedDescription $expanded={descriptionExpanded}>
+										{product.longDescription}
+									</TruncatedDescription>
+									{product.longDescription.split("\n").length > 5 && (
+										<ReadMoreButton
+											onClick={() =>
+												setDescriptionExpanded(!descriptionExpanded)
+											}
+										>
+											{descriptionExpanded ? "閉じる" : "続きを読む"}
+										</ReadMoreButton>
+									)}
+								</div>
 							)}
 
 							{activeTab === "features" && (

@@ -42,9 +42,12 @@ const Grid = styled.div`
 		flex-direction: column;
 		gap: 1.5rem;
 		padding: 0.5rem 0;
+		align-items: center;
 
 		& > * {
 			margin: 0.5rem 0;
+			width: 100%;
+			max-width: 400px;
 		}
 	}
 `;

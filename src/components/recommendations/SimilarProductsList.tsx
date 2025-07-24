@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { ProductCard } from "../products/ProductCard";
 import Spinner from "../ui/Spinner";
@@ -86,26 +86,53 @@ const RetryButton = styled.button`
 	}
 `;
 
+const ShowMoreButton = styled.button`
+	background: linear-gradient(135deg, #10b981, #059669);
+	color: white;
+	border: none;
+	padding: 0.5rem 1rem;
+	border-radius: 6px;
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+	margin-top: 1rem;
+	transition: all 0.2s ease;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+
+	&:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+	}
+
+	&:active {
+		transform: translateY(0);
+	}
+`;
+
 export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 	productId,
 	title = "似たアプリ",
-	maxItems = 4,
 	className,
 }) => {
 	const { user } = useAuth();
 	const { filteredProducts } = useProducts();
 	const { toggleFavorite, isFavorite } = useFavorites(user?.id);
 	const { similarItems, isLoading, error, refetch, clearError } =
-		useSimilarProducts(productId, filteredProducts, maxItems);
+		useSimilarProducts(productId, filteredProducts, 10); // 最大10件取得
+
+	// 表示状態の管理
+	const [showAll, setShowAll] = useState(false);
+	const displayItems = showAll ? similarItems : similarItems.slice(0, 2);
 
 	// Gorseから返されたIDをダミー商品として表示
 	console.log("🎯 UI表示用の類似商品データ:");
 	console.log("  - Gorseから取得したID:", similarItems);
-	console.log("  - 表示予定の商品数:", similarItems.length);
+	console.log("  - 表示予定の商品数:", displayItems.length);
 
-	const similarProducts = similarItems
+	const similarProducts = displayItems
 		.filter((id: string) => id !== productId) // 自分自身を除外
-		.slice(0, maxItems)
 		.map((id: string) => {
 			// ダミー商品データを作成（テスト用）
 			const dummyProduct: Product = {
@@ -201,6 +228,11 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 					/>
 				))}
 			</Grid>
+			{similarItems.length > 2 && (
+				<ShowMoreButton onClick={() => setShowAll(!showAll)}>
+					{showAll ? "閉じる" : `もっと見る (${similarItems.length - 2}件)`}
+				</ShowMoreButton>
+			)}
 		</Container>
 	);
 };

@@ -4,6 +4,9 @@ import type { Product, ProductCategory } from "../types/product";
 import type { Profile } from "../types/database";
 import { useToast } from "./useToast";
 
+// 定数定義
+const API_RATE_LIMIT_DELAY_MS = 100;
+
 export const useGorseSync = () => {
 	const { showError, showSuccess } = useToast();
 
@@ -47,7 +50,9 @@ export const useGorseSync = () => {
 				}
 
 				// APIレート制限を避けるため少し待機
-				await new Promise((resolve) => setTimeout(resolve, 100));
+				await new Promise((resolve) =>
+					setTimeout(resolve, API_RATE_LIMIT_DELAY_MS)
+				);
 			}
 
 			if (failureCount === 0) {

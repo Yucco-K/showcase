@@ -7,6 +7,7 @@ import { useProducts } from "../../hooks/useProducts";
 import { useFavorites } from "../../hooks/useFavorites";
 import { useAuth } from "../../contexts/AuthProvider";
 import type { Product } from "../../types/product";
+import { ProductCategory } from "../../types/product";
 
 interface SimilarProductsListProps {
 	productId: string;
@@ -97,28 +98,42 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 	const { similarItems, isLoading, error, refetch, clearError } =
 		useSimilarProducts(productId, filteredProducts, maxItems);
 
-	// デバッグ: filteredProductsの内容を確認
+	// デバッグ: Gorseから返されたデータを確認
 	console.log("🔍 SimilarProductsList Debug:");
 	console.log("  - similarItems:", similarItems);
 	console.log("  - filteredProducts count:", filteredProducts.length);
-	console.log(
-		"  - filteredProducts IDs:",
-		filteredProducts.map((p) => p.id)
-	);
 
-	// 類似商品IDに対応する商品データを取得
+	// 一時的に：Gorseから返されたIDを無条件で表示
 	const similarProducts = similarItems
+		.filter((id: string) => id !== productId) // 自分自身を除外
+		.slice(0, maxItems)
 		.map((id: string) => {
-			const found = filteredProducts.find((p: Product) => p.id === id);
-			console.log(`  - Looking for ID ${id}:`, found ? "FOUND" : "NOT FOUND");
-			return found;
-		})
-		.filter((product): product is Product => product !== undefined)
-		.filter((product) => product.id !== productId) // 自分自身を除外
-		.slice(0, maxItems);
+			// ダミー商品データを作成（テスト用）
+			const dummyProduct: Product = {
+				id,
+				name: `Gorse Product (${id.slice(0, 8)})`,
+				description: `Auto-generated from Gorse recommendation (ID: ${id})`,
+				longDescription: `This is a product recommended by Gorse recommendation system. Original ID: ${id}`,
+				price: Math.floor(Math.random() * 5000) + 1000,
+				category: ProductCategory.PRODUCTIVITY,
+				imageUrl: "https://via.placeholder.com/300",
+				screenshots: [],
+				features: ["Gorse Recommended", "Auto Generated"],
+				requirements: [],
+				version: "1.0.0",
+				lastUpdated: new Date().toISOString(),
+				rating: 0,
+				reviewCount: 0,
+				likes: 0,
+				tags: ["gorse", "recommendation"],
+				isPopular: false,
+				isFeatured: false,
+			};
+			return dummyProduct;
+		});
 
 	console.log(
-		"  - Final similarProducts:",
+		"  - Final similarProducts (dummy):",
 		similarProducts.map((p) => p.id)
 	);
 

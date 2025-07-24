@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthProvider";
 import { useProducts } from "../../hooks/useProducts";
@@ -16,6 +16,7 @@ import {
 	Title,
 	Tooltip,
 	Legend,
+	Filler,
 } from "chart.js";
 import type { ChartData, ChartOptions, ScriptableContext } from "chart.js";
 import { Bar, Line } from "react-chartjs-2";
@@ -30,7 +31,8 @@ ChartJS.register(
 	BarElement,
 	Title,
 	Tooltip,
-	Legend
+	Legend,
+	Filler
 );
 
 // ダッシュボードコンテナ
@@ -51,10 +53,6 @@ const DashboardTitle = styled.h1`
 	font-size: 1.8rem;
 	color: white;
 	margin: 0;
-`;
-
-const RefreshButton = styled(MButton)`
-	background: linear-gradient(135deg, #3ea8ff, #0066cc);
 `;
 
 const CardGrid = styled.div`
@@ -131,14 +129,14 @@ const TabContainer = styled.div`
 	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 `;
 
-const Tab = styled.button<{ active: boolean }>`
+const Tab = styled.button<{ $active: boolean }>`
 	padding: 0.75rem 1.5rem;
 	border: none;
 	background: ${(props) =>
-		props.active ? "rgba(255, 255, 255, 0.1)" : "transparent"};
-	color: ${(props) => (props.active ? "white" : "rgba(255, 255, 255, 0.6)")};
+		props.$active ? "rgba(255, 255, 255, 0.1)" : "transparent"};
+	color: ${(props) => (props.$active ? "white" : "rgba(255, 255, 255, 0.6)")};
 	border-bottom: 2px solid
-		${(props) => (props.active ? "#3ea8ff" : "transparent")};
+		${(props) => (props.$active ? "#3ea8ff" : "transparent")};
 	cursor: pointer;
 	transition: all 0.2s ease;
 
@@ -170,8 +168,18 @@ type StatsData = {
 };
 
 // 購入データの型定義
-interface PurchaseWithAmount extends DBPurchase {
-	amount: number;
+// interface PurchaseWithAmount extends DBPurchase {
+//   amount: number;
+// }
+
+// amount型ガード
+function hasAmount(item: unknown): item is { amount: number } {
+	return (
+		typeof item === "object" &&
+		item !== null &&
+		"amount" in item &&
+		typeof (item as { amount: unknown }).amount === "number"
+	);
 }
 
 // エラーの型定義
@@ -214,6 +222,10 @@ type ProductBundle = {
 	};
 	purchaseCount: number;
 };
+
+// 粒度タイプ
+const TIME_GRANULARITIES = ["日", "週", "月"] as const;
+type TimeGranularity = (typeof TIME_GRANULARITIES)[number];
 
 // Chart.jsのオプション設定
 const chartOptions: ChartOptions<"line"> = {
@@ -281,12 +293,14 @@ const barChartOptions: ChartOptions<"bar"> = {
 const MarketingDashboard: React.FC = () => {
 	const { user, isAdmin } = useAuth();
 	const { allProducts } = useProducts();
-	const { getPurchaseHistory } = usePurchaseHistory();
+	const { getAllPurchaseHistory, getPurchaseCount } = usePurchaseHistory();
 
 	const [activeTab, setActiveTab] = useState<
 		"overview" | "recommendations" | "bundles"
 	>("overview");
 	const [isLoading, setIsLoading] = useState(true);
+	const [timeGranularity, setTimeGranularity] = useState<TimeGranularity>("日");
+	const [timePage, setTimePage] = useState(0); // 0=最新, 1=1つ前...
 	const [statsData, setStatsData] = useState<StatsData>({
 		totalUsers: 0,
 		totalProducts: 0,
@@ -310,26 +324,74 @@ const MarketingDashboard: React.FC = () => {
 		const { count: userCount } = await supabase
 			.from("profiles")
 			.select("id", { count: "exact", head: true });
-
 		// 商品数はメモリ内のデータを使用
 		const productCount = allProducts.length;
-
-		// 購入総数と総収益を計算
-		const purchaseHistory =
-			getPurchaseHistory() as unknown as PurchaseWithAmount[];
-		const totalPurchases = purchaseHistory.length;
+		// 総購入数はgetPurchaseCountで取得
+		const totalPurchases = await getPurchaseCount();
+		// 総収益はgetAllPurchaseHistoryで計算
+		const purchaseHistory = await getAllPurchaseHistory();
 		const totalRevenue = purchaseHistory.reduce(
-			(sum, item) => sum + (item.amount || 0),
+			(sum, item) => sum + (hasAmount(item) ? item.amount : 0),
 			0
 		);
-
+		console.log("[Dashboard] purchaseHistory:", purchaseHistory);
+		console.log("[Dashboard] totalRevenue:", totalRevenue);
 		setStatsData({
 			totalUsers: userCount || 0,
 			totalProducts: productCount,
 			totalPurchases,
 			totalRevenue,
 		});
-	}, [allProducts, getPurchaseHistory]);
+	}, [allProducts, getAllPurchaseHistory, getPurchaseCount]);
+
+	// 購入時系列データの取得
+	const fetchPurchaseTimeSeries = useCallback(async () => {
+		try {
+			// 粒度・ページごとの時系列データ生成（モック）
+			let timeSeriesData: PurchaseTimeSeries[];
+			if (timeGranularity === "日") {
+				const dates = Array.from({ length: 7 }, (_, i) => {
+					const date = new Date();
+					date.setDate(date.getDate() - (6 + timePage * 7) + i);
+					return date.toISOString().split("T")[0];
+				});
+				timeSeriesData = dates.map((date) => ({
+					date,
+					count: Math.floor(Math.random() * 20) + 5,
+				}));
+			} else if (timeGranularity === "週") {
+				const weeks = Array.from({ length: 8 }, (_, i) => {
+					const now = new Date();
+					now.setDate(now.getDate() - 7 * (7 + timePage * 8) + i * 7);
+					const weekStr = `${now.getFullYear()}-W${String(
+						Math.ceil((now.getDate() + 6) / 7)
+					).padStart(2, "0")}`;
+					return weekStr;
+				});
+				timeSeriesData = weeks.map((week) => ({
+					date: week,
+					count: Math.floor(Math.random() * 30) + 10,
+				}));
+			} else {
+				const months = Array.from({ length: 12 }, (_, i) => {
+					const now = new Date();
+					now.setMonth(now.getMonth() - (11 + timePage * 12) + i);
+					return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+						2,
+						"0"
+					)}`;
+				});
+				timeSeriesData = months.map((month) => ({
+					date: month,
+					count: Math.floor(Math.random() * 50) + 20,
+				}));
+			}
+			setPurchaseTimeSeries(timeSeriesData);
+		} catch (error) {
+			console.error("Failed to fetch purchase time series:", error);
+			setPurchaseTimeSeries([]);
+		}
+	}, [timeGranularity, timePage]);
 
 	// フィードバック統計の取得
 	const fetchFeedbackStats = useCallback(async () => {
@@ -346,29 +408,6 @@ const MarketingDashboard: React.FC = () => {
 		} catch (error) {
 			console.error("Failed to fetch feedback stats:", error);
 			setFeedbackStats([]);
-		}
-	}, []);
-
-	// 購入時系列データの取得
-	const fetchPurchaseTimeSeries = useCallback(async () => {
-		try {
-			// 過去7日間の日付を生成
-			const dates = Array.from({ length: 7 }, (_, i) => {
-				const date = new Date();
-				date.setDate(date.getDate() - i);
-				return date.toISOString().split("T")[0];
-			}).reverse();
-
-			// 実際のデータが取得できない場合はモックデータを使用
-			const mockPurchaseData: PurchaseTimeSeries[] = dates.map((date) => ({
-				date,
-				count: Math.floor(Math.random() * 20) + 5,
-			}));
-
-			setPurchaseTimeSeries(mockPurchaseData);
-		} catch (error) {
-			console.error("Failed to fetch purchase time series:", error);
-			setPurchaseTimeSeries([]);
 		}
 	}, []);
 
@@ -535,10 +574,10 @@ const MarketingDashboard: React.FC = () => {
 				label: "フィードバック数",
 				data: feedbackStats.map((item) => item.count),
 				backgroundColor: [
-					"rgba(255, 99, 132, 0.7)",
-					"rgba(54, 162, 235, 0.7)",
-					"rgba(255, 206, 86, 0.7)",
-					"rgba(75, 192, 192, 0.7)",
+					"rgba(255, 99, 132, 0.7)", // 赤
+					"rgba(54, 162, 235, 0.7)", // 青
+					"rgba(255, 206, 86, 0.7)", // 黄
+					"rgba(75, 192, 192, 0.7)", // 緑
 				],
 				borderColor: [
 					"rgba(255, 99, 132, 1)",
@@ -665,19 +704,19 @@ const MarketingDashboard: React.FC = () => {
 
 			<TabContainer>
 				<Tab
-					active={activeTab === "overview"}
+					$active={activeTab === "overview"}
 					onClick={() => setActiveTab("overview")}
 				>
 					概要
 				</Tab>
 				<Tab
-					active={activeTab === "recommendations"}
+					$active={activeTab === "recommendations"}
 					onClick={() => setActiveTab("recommendations")}
 				>
 					レコメンデーション分析
 				</Tab>
 				<Tab
-					active={activeTab === "bundles"}
+					$active={activeTab === "bundles"}
 					onClick={() => setActiveTab("bundles")}
 				>
 					商品バンドル分析
@@ -708,7 +747,48 @@ const MarketingDashboard: React.FC = () => {
 
 					{/* 購入数の時系列チャート */}
 					<ChartContainer>
-						<ChartTitle>日別購入数</ChartTitle>
+						<ChartTitle>購入数の推移</ChartTitle>
+						<div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+							{TIME_GRANULARITIES.map((g) => (
+								<button
+									key={g}
+									onClick={() => {
+										setTimeGranularity(g);
+										setTimePage(0);
+									}}
+									type="button"
+									style={{
+										padding: "6px 16px",
+										borderRadius: 6,
+										border:
+											g === timeGranularity
+												? "2px solid #3ea8ff"
+												: "1px solid #ccc",
+										background: g === timeGranularity ? "#3ea8ff" : "#fff",
+										color: g === timeGranularity ? "#fff" : "#333",
+										fontWeight: g === timeGranularity ? 700 : 400,
+										cursor: "pointer",
+									}}
+								>
+									{g}
+								</button>
+							))}
+							<div style={{ flex: 1 }} />
+							<button
+								onClick={() => setTimePage((p) => p + 1)}
+								style={{ marginRight: 4 }}
+								type="button"
+							>
+								前へ
+							</button>
+							<button
+								onClick={() => setTimePage((p) => Math.max(0, p - 1))}
+								disabled={timePage === 0}
+								type="button"
+							>
+								次へ
+							</button>
+						</div>
 						<div style={{ height: "300px" }}>
 							<Line data={timeSeriesChartData} options={chartOptions} />
 						</div>

@@ -4,6 +4,9 @@ import { useAuth } from "../contexts/AuthProvider";
 import { useToast } from "./useToast";
 import type { FeedbackType } from "../types/recommendation";
 
+// 定数定義
+const BATCH_FEEDBACK_DELAY_MS = 50;
+
 export const useGorseFeedback = () => {
 	const { user } = useAuth();
 	const { showError } = useToast();
@@ -94,7 +97,9 @@ export const useGorseFeedback = () => {
 				}
 
 				// APIレート制限を避けるため少し待機
-				await new Promise((resolve) => setTimeout(resolve, 50));
+				await new Promise((resolve) =>
+					setTimeout(resolve, BATCH_FEEDBACK_DELAY_MS)
+				);
 			}
 
 			console.log(

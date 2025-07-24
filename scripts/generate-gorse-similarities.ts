@@ -3,6 +3,10 @@ import { Gorse } from "gorsejs";
 import * as dotenv from "dotenv";
 import path from "path";
 
+// 定数定義
+const MAX_PRODUCTS_TO_SELECT = 3;
+const MIN_PRODUCTS_TO_SELECT = 1;
+
 // 環境変数を読み込む（.envと.env.local両方）
 dotenv.config();
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
@@ -93,7 +97,9 @@ async function generateSimilarityData() {
 				productsByCategory
 			)) {
 				// このカテゴリから何個の商品を選ぶか
-				const numToSelect = Math.floor(Math.random() * 3) + 1; // 1~3個
+				const numToSelect =
+					Math.floor(Math.random() * MAX_PRODUCTS_TO_SELECT) +
+					MIN_PRODUCTS_TO_SELECT; // 1~3個
 
 				// ランダムに商品を選択
 				const selectedProducts = [...categoryProducts]

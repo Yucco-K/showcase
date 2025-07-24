@@ -518,13 +518,17 @@ const ClearFilterButton = styled.button`
 `;
 
 const ProductDetail: React.FC = () => {
+	const { id } = useParams<{ id: string }>();
+
 	useEffect(() => {
 		document.title = "Dummy App Store";
-		// ページトップにスクロール
-		window.scrollTo(0, 0);
-	}, []);
-
-	const { id } = useParams<{ id: string }>();
+		// ページトップにスムーズスクロール
+		window.scrollTo({
+			top: 0,
+			left: 0,
+			behavior: "smooth",
+		});
+	}, [id]); // idが変更された時にもスクロール
 	const navigate = useNavigate();
 	const { product, isFound, isLoading } = useProduct(id || "");
 	const { toggleFavorite, isFavorite, allProducts } = useProducts();

@@ -770,6 +770,29 @@ const MarketingDashboard: React.FC = () => {
 
 			{activeTab === "bundles" && (
 				<>
+					{/*
+					// バンドル作成アクションは将来的に追加予定。現時点ではUIを非表示にしています。
+					<div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+						<ChartTitle>一緒に購入されることが多いアプリの組み合わせ</ChartTitle>
+						<button
+							type="button"
+							className="mantine-button"
+							onClick={() => {}}
+							style={{
+								background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+								color: "white",
+								border: "none",
+								padding: "8px 16px",
+								borderRadius: "6px",
+								fontSize: "14px",
+								fontWeight: 500,
+								cursor: "pointer",
+							}}
+						>
+							バンドル作成
+						</button>
+					</div>
+					*/}
 					<TableContainer>
 						<ChartTitle>
 							一緒に購入されることが多いアプリの組み合わせ
@@ -780,7 +803,7 @@ const MarketingDashboard: React.FC = () => {
 									<Th>アプリ1</Th>
 									<Th>アプリ2</Th>
 									<Th>一緒に購入された回数</Th>
-									<Th>アクション</Th>
+									{/* <Th>アクション</Th> バンドル作成機能は将来的に追加予定。現時点ではUIを非表示にしています。 */}
 								</tr>
 							</thead>
 							<tbody>
@@ -791,26 +814,7 @@ const MarketingDashboard: React.FC = () => {
 										<Td>{bundle.product1.name}</Td>
 										<Td>{bundle.product2.name}</Td>
 										<Td>{bundle.purchaseCount}</Td>
-										<Td>
-											<button
-												type="button"
-												className="mantine-button"
-												onClick={() => {}}
-												style={{
-													background:
-														"linear-gradient(135deg, #3b82f6, #1d4ed8)",
-													color: "white",
-													border: "none",
-													padding: "8px 16px",
-													borderRadius: "6px",
-													fontSize: "14px",
-													fontWeight: 500,
-													cursor: "pointer",
-												}}
-											>
-												バンドル作成
-											</button>
-										</Td>
+										{/* <Td></Td> バンドル作成アクションは将来的に追加予定。現時点ではUIを非表示にしています。 */}
 									</tr>
 								))}
 							</tbody>

@@ -117,7 +117,7 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 	className,
 }) => {
 	const { user } = useAuth();
-	const { filteredProducts } = useProducts();
+	const { filteredProducts, allProducts } = useProducts();
 	const { toggleFavorite, isFavorite } = useFavorites(user?.id);
 	const { similarItems, isLoading, error, refetch, clearError } =
 		useSimilarProducts(productId, filteredProducts, 10); // 最大10件取得

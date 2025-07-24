@@ -126,29 +126,28 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 	const [showAll, setShowAll] = useState(false);
 	const displayItems = showAll ? similarItems : similarItems.slice(0, 2);
 
-	// Gorseから返されたIDをダミー商品として表示
-	console.log("🎯 UI表示用の類似商品データ:");
-	console.log("  - Gorseから取得したID:", similarItems);
-	console.log("  - 表示予定の商品数:", displayItems.length);
-
+	// 開発中のみ概要ログを出力
+	if (import.meta.env.DEV) {
+		console.debug("📊 SimilarProductsList", {
+			productId,
+			similarItems,
+			displayItemsCount: displayItems.length,
+		});
+	}
 	// Gorseから返されたIDを使って実際の商品データを取得
 	const similarProducts = displayItems
 		.filter((id: string) => id !== productId) // 自分自身を除外
 		.map((id: string) => {
-			console.log(`🔍 商品ID検索: ${id}`);
-			console.log(
-				`📋 利用可能な商品ID:`,
-				allProducts.map((p) => p.id)
-			);
-
 			// 実際の商品データベースから商品を検索
 			const actualProduct = allProducts.find((product) => product.id === id);
 
 			if (actualProduct) {
 				// 実際の商品データが見つかった場合
-				console.log(
-					`✅ 商品データ発見: ${actualProduct.name} (ID: ${actualProduct.id})`
-				);
+				if (import.meta.env.DEV) {
+					console.debug(
+						`✅ 商品データ発見: ${actualProduct.name} (${actualProduct.id})`
+					);
+				}
 				return actualProduct;
 			} else {
 				// 商品データが見つからない場合のフォールバック
@@ -177,10 +176,12 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 			}
 		});
 
-	console.log(
-		"  - UIに表示される商品:",
-		similarProducts.map((p) => p.name)
-	);
+	if (import.meta.env.DEV) {
+		console.debug(
+			"📋 UIに表示される商品:",
+			similarProducts.map((p) => p.name)
+		);
+	}
 
 	// ローディング中の表示
 	if (isLoading) {
@@ -239,12 +240,13 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 			<Title>{title}</Title>
 			<Grid>
 				{similarProducts.map((product) => {
-					console.log(`🎯 ProductCardに渡す商品データ:`, {
-						id: product.id,
-						name: product.name,
-						price: product.price,
-						description: product.description,
-					});
+					if (import.meta.env.DEV) {
+						console.debug("🛒 ProductCard props", {
+							id: product.id,
+							name: product.name,
+							price: product.price,
+						});
+					}
 					return (
 						<ProductCard
 							key={product.id}

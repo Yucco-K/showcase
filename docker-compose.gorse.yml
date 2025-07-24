@@ -1,0 +1,104 @@
+services:
+  # Redis（Gorseのキャッシュ用）
+  redis:
+    image: redis:7-alpine
+    container_name: gorse-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - gorse-network
+
+  # PostgreSQL（Gorseのデータストレージ用）
+  postgres:
+    image: postgres:15-alpine
+    container_name: gorse-postgres
+    environment:
+      POSTGRES_DB: gorse
+      POSTGRES_USER: gorse
+      POSTGRES_PASSWORD: gorsepassword
+    ports:
+      - "5433:5432" # メインのSupabaseと競合しないようにポート変更
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./gorse-init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - gorse-network
+
+  # Gorse Master（推薦エンジンのマスターノード）
+  gorse-master:
+    image: zhenghaoz/gorse-master:latest
+    container_name: gorse-master
+    ports:
+      - "8086:8086" # 管理用API
+      - "8088:8088" # Web UI（内部ポート8088を外部ポート8088にマッピング）
+    environment:
+      GORSE_CACHE_STORE: redis://redis:6379/0
+      GORSE_DATA_STORE: postgres://gorse:gorsepassword@postgres:5432/gorse?sslmode=disable
+      GORSE_SERVER_HOST: 0.0.0.0
+    volumes:
+      - ./gorse-config.toml:/etc/gorse/config.toml
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+    networks:
+      - gorse-network
+
+  # Gorse Server（推薦APIサーバー）
+  gorse-server:
+    image: zhenghaoz/gorse-server:latest
+    container_name: gorse-server
+    ports:
+      - "8087:8087" # 推薦API
+    command: >
+      --master-host gorse-master --master-port 8086 
+      --http-host 0.0.0.0 --http-port 8087
+    environment:
+      GORSE_CACHE_STORE: redis://redis:6379/0
+      GORSE_DATA_STORE: postgres://gorse:gorsepassword@postgres:5432/gorse?sslmode=disable
+      GORSE_MASTER_HOST: gorse-master
+      GORSE_MASTER_PORT: 8086
+      GORSE_SERVER_HOST: 0.0.0.0
+    volumes:
+      - ./gorse-config.toml:/etc/gorse/config.toml
+    depends_on:
+      - gorse-master
+    restart: unless-stopped
+    networks:
+      - gorse-network
+
+  # Gorse Worker（推薦アルゴリズム実行ワーカー）
+  gorse-worker:
+    image: zhenghaoz/gorse-worker:latest
+    container_name: gorse-worker
+    command: >
+      --master-host gorse-master --master-port 8086 
+      --http-host 0.0.0.0 --http-port 8089
+    environment:
+      GORSE_CACHE_STORE: redis://redis:6379/0
+      GORSE_DATA_STORE: postgres://gorse:gorsepassword@postgres:5432/gorse?sslmode=disable
+      GORSE_MASTER_HOST: gorse-master
+      GORSE_MASTER_PORT: 8086
+    volumes:
+      - ./gorse-config.toml:/etc/gorse/config.toml
+    depends_on:
+      - gorse-master
+    restart: unless-stopped
+    networks:
+      - gorse-network
+    deploy:
+      replicas: 1 # 必要に応じて複数のワーカーを起動可能
+
+volumes:
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+
+networks:
+  gorse-network:
+    driver: bridge

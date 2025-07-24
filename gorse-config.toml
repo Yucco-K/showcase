@@ -1,0 +1,58 @@
+# Gorse推薦エンジン設定ファイル（シンプル版）
+
+[database]
+data_store = "postgres://gorse:gorsepassword@localhost:5433/gorse?sslmode=disable"
+cache_store = "redis://localhost:6379/0"
+
+[master]
+port = 8086
+host = "0.0.0.0"
+n_jobs = 1
+meta_timeout = "30s"
+dashboard_port = 8088
+server_host = "0.0.0.0"
+server_port = 8086
+http_host = "0.0.0.0"
+http_port = 8088
+http_cors_domains = [".*"]
+
+[server]
+api_key = ""
+default_n = 10
+clock_error = "5s"
+host = "0.0.0.0"
+port = 8087
+master_host = "gorse-master"
+master_port = 8086
+
+[recommend.data_source]
+positive_feedback_types = ["purchase", "like"]
+read_feedback_types = ["view"]
+positive_feedback_ttl = 0
+item_ttl = 0
+
+[recommend.popular]
+popular_window = "720h"
+
+[recommend.collaborative]
+model_fit_period = "10m"
+model_search_period = "60m"
+model_search_epoch = 5
+model_search_trials = 5
+
+[recommend.offline]
+check_recommend_period = "30m"
+refresh_recommend_period = "60m"
+enable_latest_recommend = true
+enable_popular_recommend = true
+enable_user_based_recommend = true
+enable_item_based_recommend = true
+enable_collaborative_recommend = true
+enable_click_through_prediction = false
+
+[log]
+path = ""
+max_size = 1024
+max_age = 168
+max_backups = 5
+level = "debug" 

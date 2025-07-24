@@ -168,13 +168,13 @@ type StatsData = {
 };
 
 // 購入データの型定義
-interface PurchaseWithAmount extends DBPurchase {
-	amount: number;
-}
+// interface PurchaseWithAmount extends DBPurchase {
+//   amount: number;
+// }
 
 // amount型ガード
-function hasAmount(item: any): item is { amount: number } {
-	return typeof item.amount === "number";
+function hasAmount(item: unknown): item is { amount: number } {
+	return typeof (item as any).amount === "number";
 }
 
 // エラーの型定義

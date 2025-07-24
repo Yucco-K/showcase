@@ -389,7 +389,10 @@ const RequirementItem = styled.li`
 
 // LongDescription は使用されなくなったため削除
 
-const TruncatedDescription = styled.div<{ $expanded: boolean }>`
+const TruncatedDescription = styled.div<{
+	$expanded: boolean;
+	$needsGradient: boolean;
+}>`
 	white-space: pre-line;
 	font-size: 16px;
 	line-height: 1.7;
@@ -397,8 +400,9 @@ const TruncatedDescription = styled.div<{ $expanded: boolean }>`
 	overflow: hidden;
 	color: rgba(255, 255, 255, 0.8);
 
-	${({ $expanded }) =>
+	${({ $expanded, $needsGradient }) =>
 		!$expanded &&
+		$needsGradient &&
 		`
 		display: -webkit-box;
 		-webkit-line-clamp: 6;
@@ -931,6 +935,7 @@ const ProductDetail: React.FC = () => {
 									<TruncatedDescription
 										ref={descriptionRef}
 										$expanded={descriptionExpanded}
+										$needsGradient={showReadMoreButton}
 									>
 										{product.longDescription}
 									</TruncatedDescription>

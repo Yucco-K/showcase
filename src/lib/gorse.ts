@@ -2,11 +2,19 @@
 
 import type { Product } from "../types/product.ts";
 
+// APIエンドポイントのデバッグ情報を出力
+// 注意: 本番環境ではhttps://forum.yu-cco.com/apiを使用
 const GORSE_ENDPOINT =
 	import.meta.env.VITE_GORSE_ENDPOINT || "http://18.183.44.71:8087";
 const GORSE_API_KEY =
 	import.meta.env.VITE_GORSE_API_KEY ||
 	"kmKLLA5eCveQTVOVDftScxlWJaKmJJVbfSlPMZYSqno=";
+
+console.log(`[Gorse] Using API endpoint: ${GORSE_ENDPOINT}`);
+// APIキーはセキュリティ上の理由で完全には表示しない
+console.log(
+	`[Gorse] API key configured: ${GORSE_API_KEY ? "Yes (hidden)" : "No"}`
+);
 
 export interface GorseItem {
 	ItemId: string;
@@ -37,6 +45,12 @@ export interface GorseRecommendation {
 	Score: number;
 }
 
+// APIレスポンスの形式が異なる場合に対応するインターフェース
+export interface GorseNeighborResponse {
+	Id: string;
+	Score: number;
+}
+
 // フィードバックタイプの定義
 export const FEEDBACK_TYPES = {
 	PURCHASE: "purchase",
@@ -58,97 +72,191 @@ class GorseClient {
 
 	private async request(path: string, options?: RequestInit): Promise<unknown> {
 		const url = `${this.endpoint}${path}`;
+		const controller = new AbortController();
+		const timeout = 5000; // 5秒タイムアウト
+		const timeoutId = setTimeout(() => controller.abort(), timeout);
 
 		try {
+			console.log(`[Gorse] Requesting: ${url}`, {
+				method: options?.method || "GET",
+				timestamp: new Date().toISOString(),
+			});
+
+			const startTime = performance.now();
 			const response = await fetch(url, {
 				...options,
+				signal: controller.signal,
 				headers: {
 					"Content-Type": "application/json",
 					"X-API-Key": this.apiKey,
 					...options?.headers,
 				},
+				// CORSエラー対策
+				mode: "cors",
+				credentials: "same-origin",
 			});
+			const endTime = performance.now();
+
+			console.log(
+				`[Gorse] Response received in ${Math.round(endTime - startTime)}ms`,
+				{
+					status: response.status,
+					url,
+					timestamp: new Date().toISOString(),
+				}
+			);
 
 			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
+				const errorText = await response
+					.text()
+					.catch(() => "No error text available");
+				throw new Error(
+					`HTTP error! status: ${response.status}, url: ${url}, details: ${errorText}`
+				);
 			}
 
 			const data = await response.json();
 			return data;
 		} catch (error) {
-			console.error(`Gorse API request failed: ${url}`, error);
+			if (error instanceof Error) {
+				if (error.name === "AbortError") {
+					console.error(`[Gorse] Request timeout after ${timeout}ms: ${url}`);
+					throw new Error(`リクエストがタイムアウトしました（${timeout}ms）`);
+				} else if (
+					error.name === "TypeError" &&
+					error.message.includes("Failed to fetch")
+				) {
+					console.error(
+						`[Gorse] Network error - likely CORS or connectivity issue: ${url}`
+					);
+					throw new Error(
+						`ネットワークエラー: APIサーバーに接続できません。CORSポリシーまたはサーバー接続の問題の可能性があります。`
+					);
+				}
+				console.error(`[Gorse] Request failed: ${url}`, {
+					error: error.message,
+					name: error.name,
+					stack: error.stack,
+					timestamp: new Date().toISOString(),
+				});
+			}
 			throw error;
+		} finally {
+			clearTimeout(timeoutId);
 		}
+	}
+
+	private async retryRequest(
+		path: string,
+		options?: RequestInit,
+		maxRetries: number = 3,
+		delay: number = 1000
+	): Promise<unknown> {
+		let lastError: Error | undefined;
+
+		for (let attempt = 1; attempt <= maxRetries; attempt++) {
+			try {
+				return await this.request(path, options);
+			} catch (error) {
+				lastError = error as Error;
+				if (attempt < maxRetries) {
+					console.log(
+						`[Gorse] Retry attempt ${attempt}/${maxRetries} for ${path}`
+					);
+					await new Promise((resolve) => setTimeout(resolve, delay * attempt));
+					continue;
+				}
+				break;
+			}
+		}
+
+		throw lastError;
 	}
 
 	// ヘルスチェック
 	async health(): Promise<boolean> {
 		try {
-			await this.request("/api/health");
-			return true;
-		} catch {
+			// 複数のパスを試す
+			const paths = ["/health", "/api/health"];
+			for (const path of paths) {
+				try {
+					await this.request(path);
+					console.log(`[Gorse] Health check succeeded with ${path} path`);
+					return true;
+				} catch {
+					console.log(`[Gorse] Health check failed with ${path} path`);
+				}
+			}
+			// すべてのパスが失敗した場合
+			console.error("[Gorse] All health check paths failed");
+			return false;
+		} catch (error) {
+			console.error(
+				"[Gorse] Health check failed:",
+				error instanceof Error ? error.message : error
+			);
 			return false;
 		}
 	}
 
 	// アイテム関連
 	async getItems(offset = 0, n = 10): Promise<GorseItem[]> {
-		return this.request(`/api/item?offset=${offset}&n=${n}`) as Promise<
+		return this.retryRequest(`/api/item?offset=${offset}&n=${n}`) as Promise<
 			GorseItem[]
 		>;
 	}
 
 	async getItem(itemId: string): Promise<GorseItem> {
-		return this.request(`/api/item/${itemId}`) as Promise<GorseItem>;
+		return this.retryRequest(`/api/item/${itemId}`) as Promise<GorseItem>;
 	}
 
 	async insertItem(item: GorseItem): Promise<void> {
-		await this.request(`/api/items`, {
+		await this.retryRequest(`/api/items`, {
 			method: "POST",
 			body: JSON.stringify([item]),
 		});
 	}
 
 	async deleteItem(itemId: string): Promise<void> {
-		await this.request(`/api/item/${itemId}`, {
+		await this.retryRequest(`/api/item/${itemId}`, {
 			method: "DELETE",
 		});
 	}
 
 	// ユーザー関連
 	async getUsers(offset = 0, n = 10): Promise<GorseUser[]> {
-		return this.request(`/api/user?offset=${offset}&n=${n}`) as Promise<
+		return this.retryRequest(`/api/user?offset=${offset}&n=${n}`) as Promise<
 			GorseUser[]
 		>;
 	}
 
 	async getUser(userId: string): Promise<GorseUser> {
-		return this.request(`/api/user/${userId}`) as Promise<GorseUser>;
+		return this.retryRequest(`/api/user/${userId}`) as Promise<GorseUser>;
 	}
 
 	async insertUser(user: GorseUser): Promise<void> {
-		await this.request(`/api/users`, {
+		await this.retryRequest(`/api/users`, {
 			method: "POST",
 			body: JSON.stringify([user]),
 		});
 	}
 
 	async deleteUser(userId: string): Promise<void> {
-		await this.request(`/api/user/${userId}`, {
+		await this.retryRequest(`/api/user/${userId}`, {
 			method: "DELETE",
 		});
 	}
 
 	// フィードバック関連
 	async insertFeedback(feedback: GorseFeedback): Promise<void> {
-		await this.request("/api/feedback", {
+		await this.retryRequest("/api/feedback", {
 			method: "POST",
 			body: JSON.stringify([feedback]),
 		});
 	}
 
 	async getFeedback(userId: string, itemId: string): Promise<GorseFeedback[]> {
-		return this.request(`/api/feedback/${userId}/${itemId}`) as Promise<
+		return this.retryRequest(`/api/feedback/${userId}/${itemId}`) as Promise<
 			GorseFeedback[]
 		>;
 	}
@@ -158,7 +266,7 @@ class GorseClient {
 		userId: string,
 		n = 10
 	): Promise<GorseRecommendation[]> {
-		return this.request(`/api/recommend/${userId}?n=${n}`) as Promise<
+		return this.retryRequest(`/api/recommend/${userId}?n=${n}`) as Promise<
 			GorseRecommendation[]
 		>;
 	}
@@ -167,7 +275,7 @@ class GorseClient {
 		userId: string,
 		n = 10
 	): Promise<GorseRecommendation[]> {
-		return this.request(`/api/latest/${userId}?n=${n}`) as Promise<
+		return this.retryRequest(`/api/latest/${userId}?n=${n}`) as Promise<
 			GorseRecommendation[]
 		>;
 	}
@@ -176,7 +284,7 @@ class GorseClient {
 		userId: string,
 		n = 10
 	): Promise<GorseRecommendation[]> {
-		return this.request(`/api/popular/${userId}?n=${n}`) as Promise<
+		return this.retryRequest(`/api/popular/${userId}?n=${n}`) as Promise<
 			GorseRecommendation[]
 		>;
 	}
@@ -186,9 +294,31 @@ class GorseClient {
 		itemId: string,
 		n = 10
 	): Promise<GorseRecommendation[]> {
-		return this.request(`/api/item/${itemId}/neighbors?n=${n}`) as Promise<
-			GorseRecommendation[]
-		>;
+		try {
+			const response = await this.retryRequest(
+				`/api/item/${itemId}/neighbors?n=${n}`
+			);
+
+			// レスポンス形式の確認とマッピング
+			if (Array.isArray(response)) {
+				// 新しい形式: { Id, Score } の配列
+				if (response.length > 0 && "Id" in response[0]) {
+					console.log("[Gorse] Converting neighbor response format");
+					return (response as GorseNeighborResponse[]).map((item) => ({
+						ItemId: item.Id,
+						Score: item.Score,
+					}));
+				}
+				// 元の形式: { ItemId, Score } の配列
+				return response as GorseRecommendation[];
+			}
+
+			console.error("[Gorse] Unexpected response format:", response);
+			return [];
+		} catch (error) {
+			console.error(`[Gorse] Error in getSimilarItems: ${error}`);
+			throw error;
+		}
 	}
 
 	// アイテムの詳細情報（カテゴリ、ラベルなど）
@@ -196,7 +326,7 @@ class GorseClient {
 		itemId: string,
 		n = 10
 	): Promise<GorseRecommendation[]> {
-		return this.request(`/api/item/${itemId}/neighbors?n=${n}`) as Promise<
+		return this.retryRequest(`/api/item/${itemId}/neighbors?n=${n}`) as Promise<
 			GorseRecommendation[]
 		>;
 	}
@@ -206,7 +336,7 @@ class GorseClient {
 		userId: string,
 		n = 10
 	): Promise<GorseRecommendation[]> {
-		return this.request(`/api/user/${userId}/neighbors?n=${n}`) as Promise<
+		return this.retryRequest(`/api/user/${userId}/neighbors?n=${n}`) as Promise<
 			GorseRecommendation[]
 		>;
 	}
@@ -297,16 +427,16 @@ const getLocalSimilarItems = (
 	allProducts: Product[],
 	limit: number = 5
 ): string[] => {
-	console.log(`Getting local related products for ${itemId}`);
+	console.log(`[Gorse] Using local fallback for item ${itemId}`);
 	const current: Product | undefined = allProducts.find(
 		(p: Product) => p.id === itemId
 	);
 	if (!current) {
-		console.log(`Current product not found for ID: ${itemId}`);
+		console.log(`[Gorse] Current product not found for ID: ${itemId}`);
 		return [];
 	}
 
-	console.log(`Current product:`, current);
+	console.log(`[Gorse] Current product:`, current);
 
 	// 同じカテゴリの商品を優先
 	const sameCategory = allProducts.filter(
@@ -321,7 +451,7 @@ const getLocalSimilarItems = (
 
 	const merged = [...sameCategory, ...additional];
 	const result = merged.slice(0, limit).map((p: Product) => p.id);
-	console.log(`Local related products result:`, result);
+	console.log(`[Gorse] Local similar items result:`, result);
 	return result;
 };
 
@@ -331,19 +461,36 @@ export const getSimilarItems = async (
 	allProducts: Product[] = [],
 	limit: number = 5
 ): Promise<string[]> => {
+	console.log(`[Gorse] Getting similar items for ${itemId}, limit: ${limit}`);
+
+	if (!itemId) {
+		console.error("[Gorse] Invalid itemId provided:", itemId);
+		return getLocalSimilarItems(itemId, allProducts, limit);
+	}
+
 	try {
+		console.log(
+			`[Gorse] Attempting to get similar items from API for ${itemId}`
+		);
 		const similarItems = await gorse.getSimilarItems(itemId, limit);
-		// Gorseから結果が返らなかった場合はローカルフォールバック
+
+		// APIレスポンスの検証
 		if (Array.isArray(similarItems) && similarItems.length > 0) {
-			return similarItems.map((r) => r.ItemId);
+			console.log(
+				`[Gorse] API returned ${similarItems.length} similar items:`,
+				similarItems.map((r) => r.ItemId || r.Id)
+			);
+			return similarItems.map((r) => r.ItemId || r.Id);
 		}
-		console.log("Gorse returned empty, using local related products fallback");
+
+		console.log("[Gorse] API returned empty result, using local fallback");
 		return getLocalSimilarItems(itemId, allProducts, limit);
 	} catch (error) {
 		console.error(
-			"Failed to get similar items from Gorse, using related products fallback:",
-			error
+			"[Gorse] Failed to get similar items from API:",
+			error instanceof Error ? error.message : error
 		);
+		console.log("[Gorse] Using local fallback due to API error");
 		return getLocalSimilarItems(itemId, allProducts, limit);
 	}
 };

@@ -1,10 +1,23 @@
 import { useCallback } from "react";
+import { supabase } from "../lib/supabase";
 import type { Purchase } from "../types/purchase";
 
 export function usePurchaseHistory() {
 	// 購入履歴を取得
 	const getPurchaseHistory = useCallback((): Purchase[] => {
 		return JSON.parse(localStorage.getItem("product-purchases") || "[]");
+	}, []);
+
+	// Supabaseから全購入履歴を取得
+	const getAllPurchaseHistory = useCallback(async (): Promise<Purchase[]> => {
+		const { data, error } = await supabase.from("purchases").select("*");
+		if (error) {
+			console.error("Failed to fetch purchase history:", error);
+			return [];
+		}
+		return (data || []).filter(
+			(item): item is Purchase => typeof item.productId === "string"
+		);
 	}, []);
 
 	// 購入履歴に追加
@@ -33,6 +46,7 @@ export function usePurchaseHistory() {
 
 	return {
 		getPurchaseHistory,
+		getAllPurchaseHistory,
 		addPurchase,
 		isPurchased,
 		clearPurchaseHistory,

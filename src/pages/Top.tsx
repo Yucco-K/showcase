@@ -1,7 +1,23 @@
+import { useState, useEffect } from "react";
 import LazyBubbleScene from "../components/LazyBubbleScene";
 import YuccoCat from "../components/YuccoCat";
 
 const Top: React.FC = () => {
+	const [isDesktop, setIsDesktop] = useState(true); // デフォルトはtrue（SSR対応）
+
+	useEffect(() => {
+		const checkScreenSize = () => {
+			setIsDesktop(window.innerWidth >= 768);
+		};
+
+		// 初回実行
+		checkScreenSize();
+
+		// リサイズイベントリスナー
+		window.addEventListener("resize", checkScreenSize);
+		return () => window.removeEventListener("resize", checkScreenSize);
+	}, []);
+
 	return (
 		<main
 			style={{
@@ -18,7 +34,7 @@ const Top: React.FC = () => {
 			}}
 		>
 			<LazyBubbleScene />
-			<YuccoCat />
+			{isDesktop && <YuccoCat />}
 			<div style={{ position: "relative", zIndex: 2 }}>
 				<h1
 					style={{

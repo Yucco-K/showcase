@@ -205,15 +205,15 @@ type RecommendationStats = {
 
 // 商品バンドルの型定義
 type ProductBundle = {
-	product1: {
-		id: string;
-		name: string;
-	};
-	product2: {
-		id: string;
-		name: string;
-	};
+	product1: { id: string; name: string };
+	product2: { id: string; name: string };
 	purchaseCount: number;
+};
+
+// Gorseフィードバックアイテムの型定義
+type GorseFeedbackItem = {
+	FeedbackType: string;
+	ItemId?: string;
 };
 
 // 粒度タイプ
@@ -389,18 +389,22 @@ const MarketingDashboard: React.FC = () => {
 	const fetchFeedbackStats = useCallback(async () => {
 		try {
 			// Gorseから全フィードバックを取得
-			const raw = await (gorse as any).request(
-				"/api/feedback?offset=0&n=10000"
-			);
+			const raw = await (
+				gorse as unknown as { request: (path: string) => Promise<unknown> }
+			).request("/api/feedback?offset=0&n=10000");
 			// API応答形式に柔軟に対応
-			let data: Array<{ FeedbackType: string; ItemId?: string }> = [];
+			let data: GorseFeedbackItem[] = [];
 			if (Array.isArray(raw)) {
-				data = raw;
+				data = raw as GorseFeedbackItem[];
 			} else if (raw && typeof raw === "object") {
-				if (Array.isArray((raw as any).Feedback)) {
-					data = (raw as any).Feedback;
-				} else if (Array.isArray((raw as any).feedback)) {
-					data = (raw as any).feedback;
+				const response = raw as {
+					Feedback?: GorseFeedbackItem[];
+					feedback?: GorseFeedbackItem[];
+				};
+				if (Array.isArray(response.Feedback)) {
+					data = response.Feedback;
+				} else if (Array.isArray(response.feedback)) {
+					data = response.feedback;
 				}
 			}
 			if (data.length === 0) {
@@ -423,17 +427,21 @@ const MarketingDashboard: React.FC = () => {
 	const fetchTopRecommendations = useCallback(async () => {
 		try {
 			// Gorse APIエラーを回避するため、フィードバックデータのみ使用
-			const raw = await (gorse as any).request(
-				"/api/feedback?offset=0&n=10000"
-			);
+			const raw = await (
+				gorse as unknown as { request: (path: string) => Promise<unknown> }
+			).request("/api/feedback?offset=0&n=10000");
 			let feedbackData: Array<{ FeedbackType: string; ItemId: string }> = [];
 			if (Array.isArray(raw)) {
-				feedbackData = raw as any;
+				feedbackData = raw as Array<{ FeedbackType: string; ItemId: string }>;
 			} else if (raw && typeof raw === "object") {
-				if (Array.isArray((raw as any).Feedback)) {
-					feedbackData = (raw as any).Feedback;
-				} else if (Array.isArray((raw as any).feedback)) {
-					feedbackData = (raw as any).feedback;
+				const response = raw as {
+					Feedback?: Array<{ FeedbackType: string; ItemId: string }>;
+					feedback?: Array<{ FeedbackType: string; ItemId: string }>;
+				};
+				if (Array.isArray(response.Feedback)) {
+					feedbackData = response.Feedback;
+				} else if (Array.isArray(response.feedback)) {
+					feedbackData = response.feedback;
 				}
 			}
 			if (feedbackData.length === 0) {

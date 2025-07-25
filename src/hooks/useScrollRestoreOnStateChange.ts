@@ -21,7 +21,8 @@ export const useScrollRestoreOnStateChange = () => {
 
 			// デバッグ用ログ
 			const isDev =
-				(typeof import.meta !== "undefined" && (import.meta as any).env?.DEV) ||
+				(typeof import.meta !== "undefined" &&
+					(import.meta as { env?: { DEV?: boolean } }).env?.DEV) ||
 				process.env.NODE_ENV === "development";
 			if (isDev) {
 				console.debug(
@@ -42,7 +43,8 @@ export const useScrollRestoreOnStateChange = () => {
 
 			// デバッグ用ログ
 			const isDev =
-				(typeof import.meta !== "undefined" && (import.meta as any).env?.DEV) ||
+				(typeof import.meta !== "undefined" &&
+					(import.meta as { env?: { DEV?: boolean } }).env?.DEV) ||
 				process.env.NODE_ENV === "development";
 			if (isDev) {
 				console.debug(`[ScrollRestore] Restoring position: x=${x}, y=${y}`);

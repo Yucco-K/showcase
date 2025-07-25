@@ -5,6 +5,7 @@ import { useProducts } from "../../hooks/useProducts";
 import { usePurchaseHistory } from "../../hooks/usePurchaseHistory";
 import { useScrollRestoreOnStateChange } from "../../hooks/useScrollRestoreOnStateChange";
 import { supabase } from "../../lib/supabase";
+import { fetchGorseFeedback } from "../../lib/gorseApi";
 import { MarketingDashboardSkeleton } from "../ui/Skeleton";
 import {
 	Chart as ChartJS,
@@ -21,6 +22,7 @@ import {
 import type { ChartData, ChartOptions } from "chart.js";
 import { Bar, Line } from "react-chartjs-2";
 import { gorse } from "../../lib/gorse";
+import type { GorseFeedbackItem } from "../../types/gorse";
 
 // Chart.jsの初期化
 ChartJS.register(
@@ -210,12 +212,6 @@ type ProductBundle = {
 	purchaseCount: number;
 };
 
-// Gorseフィードバックアイテムの型定義
-type GorseFeedbackItem = {
-	FeedbackType: string;
-	ItemId?: string;
-};
-
 // 粒度タイプ
 const TIME_GRANULARITIES = ["日", "週", "月"] as const;
 type TimeGranularity = (typeof TIME_GRANULARITIES)[number];
@@ -388,28 +384,9 @@ const MarketingDashboard: React.FC = () => {
 	// フィードバック統計の取得
 	const fetchFeedbackStats = useCallback(async () => {
 		try {
-			// Gorseから全フィードバックを取得
-			const raw = await (
-				gorse as unknown as { request: (path: string) => Promise<unknown> }
-			).request("/api/feedback?offset=0&n=10000");
-			// API応答形式に柔軟に対応
-			let data: GorseFeedbackItem[] = [];
-			if (Array.isArray(raw)) {
-				data = raw as GorseFeedbackItem[];
-			} else if (raw && typeof raw === "object") {
-				const response = raw as {
-					Feedback?: GorseFeedbackItem[];
-					feedback?: GorseFeedbackItem[];
-				};
-				if (Array.isArray(response.Feedback)) {
-					data = response.Feedback;
-				} else if (Array.isArray(response.feedback)) {
-					data = response.feedback;
-				}
-			}
-			if (data.length === 0) {
-				console.warn("[Gorse] feedback array empty or unexpected format", raw);
-			}
+			// 型安全なGorseフィードバック取得関数を使用
+			const data = await fetchGorseFeedback();
+
 			// like/purchase/view/cartごとに集計
 			const types = ["like", "purchase", "view", "cart"];
 			const stats = types.map((type) => ({
@@ -426,30 +403,8 @@ const MarketingDashboard: React.FC = () => {
 	// 最も推薦された商品のデータ取得
 	const fetchTopRecommendations = useCallback(async () => {
 		try {
-			// Gorse APIエラーを回避するため、フィードバックデータのみ使用
-			const raw = await (
-				gorse as unknown as { request: (path: string) => Promise<unknown> }
-			).request("/api/feedback?offset=0&n=10000");
-			let feedbackData: Array<{ FeedbackType: string; ItemId: string }> = [];
-			if (Array.isArray(raw)) {
-				feedbackData = raw as Array<{ FeedbackType: string; ItemId: string }>;
-			} else if (raw && typeof raw === "object") {
-				const response = raw as {
-					Feedback?: Array<{ FeedbackType: string; ItemId: string }>;
-					feedback?: Array<{ FeedbackType: string; ItemId: string }>;
-				};
-				if (Array.isArray(response.Feedback)) {
-					feedbackData = response.Feedback;
-				} else if (Array.isArray(response.feedback)) {
-					feedbackData = response.feedback;
-				}
-			}
-			if (feedbackData.length === 0) {
-				console.warn(
-					"[Gorse] feedbackData array empty or unexpected format",
-					raw
-				);
-			}
+			// 型安全なGorseフィードバック取得関数を使用
+			const feedbackData = await fetchGorseFeedback();
 
 			// フィードバックから商品ごとの統計を集計
 			const itemStatsMap = new Map<

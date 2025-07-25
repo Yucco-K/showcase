@@ -1,6 +1,7 @@
 // Gorse推薦システムクライアント（直接API呼び出し）
 
 import type { Product } from "../types/product.ts";
+import { isDevelopmentEnvironment } from "../utils/environment";
 
 // APIエンドポイントのデバッグ情報を出力
 // 注意: 本番環境ではhttps://forum.yu-cco.com/apiを使用
@@ -77,13 +78,9 @@ class GorseClient {
 		const timeout = 5000; // 5秒タイムアウト
 		const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-		const isDev =
-			(typeof import.meta !== "undefined" &&
-				(import.meta as { env?: { DEV?: boolean } }).env?.DEV) ||
-			process.env.NODE_ENV === "development";
 		try {
 			// 開発モードのみ詳細ログ
-			if (isDev) {
+			if (isDevelopmentEnvironment()) {
 				console.debug(`[Gorse] → ${options?.method || "GET"} ${url}`);
 			}
 
@@ -102,7 +99,7 @@ class GorseClient {
 			});
 			const endTime = performance.now();
 
-			if (isDev) {
+			if (isDevelopmentEnvironment()) {
 				console.debug(
 					`[Gorse] ← ${response.status} ${url} (${Math.round(
 						endTime - startTime
@@ -156,10 +153,6 @@ class GorseClient {
 		maxRetries: number = 3,
 		delay: number = 1000
 	): Promise<unknown> {
-		const isDevRetry =
-			(typeof import.meta !== "undefined" &&
-				(import.meta as { env?: { DEV?: boolean } }).env?.DEV) ||
-			process.env.NODE_ENV === "development";
 		let lastError: Error | undefined;
 
 		for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -168,7 +161,7 @@ class GorseClient {
 			} catch (error) {
 				lastError = error as Error;
 				if (attempt < maxRetries) {
-					if (isDevRetry) {
+					if (isDevelopmentEnvironment()) {
 						console.debug(`[Gorse] Retry ${attempt}/${maxRetries}: ${path}`);
 					}
 					await new Promise((resolve) => setTimeout(resolve, delay * attempt));

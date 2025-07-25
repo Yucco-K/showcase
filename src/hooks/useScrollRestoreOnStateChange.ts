@@ -1,4 +1,5 @@
 import { useRef, useCallback, useLayoutEffect } from "react";
+import { isDevelopmentEnvironment } from "../utils/environment";
 
 /**
  * スクロール位置を保持し、状態変更後に自動復元するためのフック
@@ -20,11 +21,7 @@ export const useScrollRestoreOnStateChange = () => {
 			};
 
 			// デバッグ用ログ
-			const isDev =
-				(typeof import.meta !== "undefined" &&
-					(import.meta as { env?: { DEV?: boolean } }).env?.DEV) ||
-				process.env.NODE_ENV === "development";
-			if (isDev) {
+			if (isDevelopmentEnvironment()) {
 				console.debug(
 					`[ScrollRestore] Saved position: x=${scrollPositionRef.current.x}, y=${scrollPositionRef.current.y}`
 				);
@@ -42,11 +39,7 @@ export const useScrollRestoreOnStateChange = () => {
 			scrollPositionRef.current = null;
 
 			// デバッグ用ログ
-			const isDev =
-				(typeof import.meta !== "undefined" &&
-					(import.meta as { env?: { DEV?: boolean } }).env?.DEV) ||
-				process.env.NODE_ENV === "development";
-			if (isDev) {
+			if (isDevelopmentEnvironment()) {
 				console.debug(`[ScrollRestore] Restoring position: x=${x}, y=${y}`);
 			}
 
@@ -63,7 +56,7 @@ export const useScrollRestoreOnStateChange = () => {
 					// モバイル向け: 複数回復元を試行
 					const restoreScroll = () => {
 						window.scrollTo(x, y);
-						if (isDev) {
+						if (isDevelopmentEnvironment()) {
 							console.debug(
 								`[ScrollRestore] Restored to: x=${window.scrollX}, y=${window.scrollY}`
 							);

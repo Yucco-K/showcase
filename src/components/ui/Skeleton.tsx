@@ -57,6 +57,39 @@ const SkeletonReviewItem = styled.div`
 	margin-bottom: 16px;
 `;
 
+const SkeletonCard = styled.div`
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 12px;
+	padding: 24px;
+	backdrop-filter: blur(10px);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+`;
+
+const SkeletonChartContainer = styled.div`
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 12px;
+	padding: 24px;
+	backdrop-filter: blur(10px);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	margin-bottom: 24px;
+`;
+
+const SkeletonTabContainer = styled.div`
+	display: flex;
+	gap: 16px;
+	margin-bottom: 32px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+	padding-bottom: 16px;
+`;
+
+const SkeletonTable = styled.div`
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 12px;
+	padding: 24px;
+	backdrop-filter: blur(10px);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+`;
+
 export const ProductDetailSkeleton: React.FC = () => {
 	return (
 		<SkeletonContainer>
@@ -200,6 +233,125 @@ export const ProductDetailSkeleton: React.FC = () => {
 					</SkeletonReviewItem>
 				))}
 			</div>
+		</SkeletonContainer>
+	);
+};
+
+export const MarketingDashboardSkeleton: React.FC = () => {
+	return (
+		<SkeletonContainer>
+			{/* ヘッダー */}
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					marginBottom: "32px",
+				}}
+			>
+				<SkeletonBase $width="220px" $height="32px" />
+				<SkeletonBase $width="120px" $height="40px" />
+			</div>
+
+			{/* タブ */}
+			<SkeletonTabContainer>
+				<SkeletonBase $width="80px" $height="32px" />
+				<SkeletonBase $width="160px" $height="32px" />
+				<SkeletonBase $width="140px" $height="32px" />
+			</SkeletonTabContainer>
+
+			{/* 統計カードグリッド */}
+			<div
+				style={{
+					display: "grid",
+					gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+					gap: "24px",
+					marginBottom: "32px",
+				}}
+			>
+				{[1, 2, 3, 4].map((i) => (
+					<SkeletonCard key={i}>
+						<SkeletonBase
+							$width="120px"
+							$height="16px"
+							style={{ marginBottom: "12px" }}
+						/>
+						<SkeletonBase $width="80px" $height="32px" />
+					</SkeletonCard>
+				))}
+			</div>
+
+			{/* チャート1 */}
+			<SkeletonChartContainer>
+				<SkeletonBase
+					$width="160px"
+					$height="24px"
+					style={{ marginBottom: "16px" }}
+				/>
+				<div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+					<SkeletonBase $width="40px" $height="32px" />
+					<SkeletonBase $width="40px" $height="32px" />
+					<SkeletonBase $width="40px" $height="32px" />
+					<div style={{ flex: 1 }} />
+					<SkeletonBase $width="60px" $height="32px" />
+					<SkeletonBase $width="60px" $height="32px" />
+				</div>
+				<SkeletonBase $width="100%" $height="300px" />
+			</SkeletonChartContainer>
+
+			{/* チャート2 */}
+			<SkeletonChartContainer>
+				<SkeletonBase
+					$width="200px"
+					$height="24px"
+					style={{ marginBottom: "16px" }}
+				/>
+				<SkeletonBase $width="100%" $height="300px" />
+			</SkeletonChartContainer>
+
+			{/* テーブル */}
+			<SkeletonTable>
+				<SkeletonBase
+					$width="180px"
+					$height="24px"
+					style={{ marginBottom: "16px" }}
+				/>
+				{/* テーブルヘッダー */}
+				<div
+					style={{
+						display: "grid",
+						gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr",
+						gap: "16px",
+						marginBottom: "16px",
+					}}
+				>
+					<SkeletonBase $width="100%" $height="16px" />
+					<SkeletonBase $width="100%" $height="16px" />
+					<SkeletonBase $width="100%" $height="16px" />
+					<SkeletonBase $width="100%" $height="16px" />
+					<SkeletonBase $width="100%" $height="16px" />
+					<SkeletonBase $width="100%" $height="16px" />
+				</div>
+				{/* テーブル行 */}
+				{[1, 2, 3, 4, 5].map((i) => (
+					<div
+						key={i}
+						style={{
+							display: "grid",
+							gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr",
+							gap: "16px",
+							marginBottom: "12px",
+						}}
+					>
+						<SkeletonBase $width="100%" $height="16px" />
+						<SkeletonBase $width="100%" $height="16px" />
+						<SkeletonBase $width="100%" $height="16px" />
+						<SkeletonBase $width="100%" $height="16px" />
+						<SkeletonBase $width="100%" $height="16px" />
+						<SkeletonBase $width="100%" $height="16px" />
+					</div>
+				))}
+			</SkeletonTable>
 		</SkeletonContainer>
 	);
 };

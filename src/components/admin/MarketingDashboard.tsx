@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { useAuth } from "../../contexts/AuthProvider";
 import { useProducts } from "../../hooks/useProducts";
 import { usePurchaseHistory } from "../../hooks/usePurchaseHistory";
+import { useScrollRestoreOnStateChange } from "../../hooks/useScrollRestoreOnStateChange";
 import { supabase } from "../../lib/supabase";
-import Spinner from "../ui/Spinner";
-import { MButton } from "../ui/MButton";
+import { MarketingDashboardSkeleton } from "../ui/Skeleton";
 import {
 	Chart as ChartJS,
 	CategoryScale,
@@ -18,9 +18,9 @@ import {
 	Legend,
 	Filler,
 } from "chart.js";
-import type { ChartData, ChartOptions, ScriptableContext } from "chart.js";
+import type { ChartData, ChartOptions } from "chart.js";
 import { Bar, Line } from "react-chartjs-2";
-import type { Purchase as DBPurchase } from "../../types/purchase";
+import { gorse } from "../../lib/gorse";
 
 // Chart.jsの初期化
 ChartJS.register(
@@ -146,13 +146,6 @@ const Tab = styled.button<{ $active: boolean }>`
 	}
 `;
 
-const LoadingContainer = styled.div`
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	padding: 4rem 0;
-`;
-
 const EmptyState = styled.div`
 	text-align: center;
 	padding: 3rem 0;
@@ -212,15 +205,15 @@ type RecommendationStats = {
 
 // 商品バンドルの型定義
 type ProductBundle = {
-	product1: {
-		id: string;
-		name: string;
-	};
-	product2: {
-		id: string;
-		name: string;
-	};
+	product1: { id: string; name: string };
+	product2: { id: string; name: string };
 	purchaseCount: number;
+};
+
+// Gorseフィードバックアイテムの型定義
+type GorseFeedbackItem = {
+	FeedbackType: string;
+	ItemId?: string;
 };
 
 // 粒度タイプ
@@ -294,6 +287,7 @@ const MarketingDashboard: React.FC = () => {
 	const { user, isAdmin } = useAuth();
 	const { allProducts } = useProducts();
 	const { getAllPurchaseHistory, getPurchaseCount } = usePurchaseHistory();
+	const { handleWithScrollRestore } = useScrollRestoreOnStateChange();
 
 	const [activeTab, setActiveTab] = useState<
 		"overview" | "recommendations" | "bundles"
@@ -334,8 +328,6 @@ const MarketingDashboard: React.FC = () => {
 			(sum, item) => sum + (hasAmount(item) ? item.amount : 0),
 			0
 		);
-		console.log("[Dashboard] purchaseHistory:", purchaseHistory);
-		console.log("[Dashboard] totalRevenue:", totalRevenue);
 		setStatsData({
 			totalUsers: userCount || 0,
 			totalProducts: productCount,
@@ -396,17 +388,37 @@ const MarketingDashboard: React.FC = () => {
 	// フィードバック統計の取得
 	const fetchFeedbackStats = useCallback(async () => {
 		try {
-			// 実際のデータが取得できない場合はモックデータを使用
-			const mockFeedbackStats: FeedbackStats[] = [
-				{ type: "like", count: 124 },
-				{ type: "purchase", count: 85 },
-				{ type: "view", count: 523 },
-				{ type: "cart", count: 42 },
-			];
-
-			setFeedbackStats(mockFeedbackStats);
+			// Gorseから全フィードバックを取得
+			const raw = await (
+				gorse as unknown as { request: (path: string) => Promise<unknown> }
+			).request("/api/feedback?offset=0&n=10000");
+			// API応答形式に柔軟に対応
+			let data: GorseFeedbackItem[] = [];
+			if (Array.isArray(raw)) {
+				data = raw as GorseFeedbackItem[];
+			} else if (raw && typeof raw === "object") {
+				const response = raw as {
+					Feedback?: GorseFeedbackItem[];
+					feedback?: GorseFeedbackItem[];
+				};
+				if (Array.isArray(response.Feedback)) {
+					data = response.Feedback;
+				} else if (Array.isArray(response.feedback)) {
+					data = response.feedback;
+				}
+			}
+			if (data.length === 0) {
+				console.warn("[Gorse] feedback array empty or unexpected format", raw);
+			}
+			// like/purchase/view/cartごとに集計
+			const types = ["like", "purchase", "view", "cart"];
+			const stats = types.map((type) => ({
+				type,
+				count: data.filter((item) => item.FeedbackType === type).length,
+			}));
+			setFeedbackStats(stats);
 		} catch (error) {
-			console.error("Failed to fetch feedback stats:", error);
+			console.error("Failed to fetch feedback stats from Gorse:", error);
 			setFeedbackStats([]);
 		}
 	}, []);
@@ -414,29 +426,84 @@ const MarketingDashboard: React.FC = () => {
 	// 最も推薦された商品のデータ取得
 	const fetchTopRecommendations = useCallback(async () => {
 		try {
-			// 実際のデータが取得できない場合はモックデータを使用
-			const mockRecommendations: RecommendationStats[] = allProducts
-				.slice(0, 10)
-				.map((product) => ({
-					productId: product.id,
-					recommendationCount: Math.floor(Math.random() * 100) + 20,
-					clickCount: Math.floor(Math.random() * 50) + 10,
-					purchaseCount: Math.floor(Math.random() * 20) + 1,
-					clickRate: Math.random() * 0.3 + 0.2,
-					conversionRate: Math.random() * 0.15 + 0.05,
-				}));
+			// Gorse APIエラーを回避するため、フィードバックデータのみ使用
+			const raw = await (
+				gorse as unknown as { request: (path: string) => Promise<unknown> }
+			).request("/api/feedback?offset=0&n=10000");
+			let feedbackData: Array<{ FeedbackType: string; ItemId: string }> = [];
+			if (Array.isArray(raw)) {
+				feedbackData = raw as Array<{ FeedbackType: string; ItemId: string }>;
+			} else if (raw && typeof raw === "object") {
+				const response = raw as {
+					Feedback?: Array<{ FeedbackType: string; ItemId: string }>;
+					feedback?: Array<{ FeedbackType: string; ItemId: string }>;
+				};
+				if (Array.isArray(response.Feedback)) {
+					feedbackData = response.Feedback;
+				} else if (Array.isArray(response.feedback)) {
+					feedbackData = response.feedback;
+				}
+			}
+			if (feedbackData.length === 0) {
+				console.warn(
+					"[Gorse] feedbackData array empty or unexpected format",
+					raw
+				);
+			}
 
-			setTopRecommendedProducts(mockRecommendations);
+			// フィードバックから商品ごとの統計を集計
+			const itemStatsMap = new Map<
+				string,
+				{ viewCount: number; purchaseCount: number }
+			>();
+
+			feedbackData.forEach((item) => {
+				const current = itemStatsMap.get(item.ItemId) || {
+					viewCount: 0,
+					purchaseCount: 0,
+				};
+				if (item.FeedbackType === "view") {
+					current.viewCount++;
+				} else if (item.FeedbackType === "purchase") {
+					current.purchaseCount++;
+				}
+				itemStatsMap.set(item.ItemId, current);
+			});
+
+			// RecommendationStats形式に変換（フィードバックベース）
+			const recommendations: RecommendationStats[] = Array.from(
+				itemStatsMap.entries()
+			)
+				.map(([productId, stats]) => {
+					const recommendationCount = stats.viewCount + stats.purchaseCount; // フィードバック総数
+					const clickRate =
+						recommendationCount > 0 ? stats.viewCount / recommendationCount : 0;
+					const conversionRate =
+						stats.viewCount > 0 ? stats.purchaseCount / stats.viewCount : 0;
+
+					return {
+						productId,
+						recommendationCount,
+						clickCount: stats.viewCount,
+						purchaseCount: stats.purchaseCount,
+						clickRate,
+						conversionRate,
+					};
+				})
+				.sort((a, b) => b.recommendationCount - a.recommendationCount)
+				.slice(0, 10); // 上位10件
+
+			setTopRecommendedProducts(recommendations);
 		} catch (error) {
-			console.error("Failed to fetch top recommendations:", error);
+			console.error("Failed to fetch top recommendations from Gorse:", error);
 			setTopRecommendedProducts([]);
 		}
-	}, [allProducts]);
+	}, []);
 
 	// 一緒に購入されることが多い商品バンドルの取得
 	const fetchProductBundles = useCallback(async () => {
 		try {
-			// 実際のデータが取得できない場合はモックデータを使用
+			// Gorse APIエラーを回避するため、モックデータを使用
 			const mockBundles: ProductBundle[] = [];
 
 			// ランダムな商品バンドルを生成
@@ -507,23 +574,32 @@ const MarketingDashboard: React.FC = () => {
 	]);
 
 	// データ更新関数
-	const refreshData = () => {
+	const refreshData = useCallback(async () => {
 		setIsLoading(true);
-		Promise.all([
-			fetchBasicStats(),
-			fetchFeedbackStats(),
-			fetchPurchaseTimeSeries(),
-			fetchTopRecommendations(),
-			fetchProductBundles(),
-		])
-			.catch((error: unknown) => {
-				const dashboardError = error as DashboardError;
-				console.error("Failed to refresh data:", dashboardError.message);
-			})
-			.finally(() => {
-				setIsLoading(false);
-			});
-	};
+		try {
+			await Promise.all([
+				fetchBasicStats(),
+				fetchFeedbackStats(),
+				fetchPurchaseTimeSeries(),
+				fetchTopRecommendations(),
+				fetchProductBundles(),
+			]);
+		} catch (error: unknown) {
+			const dashboardError = error as DashboardError;
+			console.error(
+				"Failed to refresh dashboard data:",
+				dashboardError.message
+			);
+		} finally {
+			setIsLoading(false);
+		}
+	}, [
+		fetchBasicStats,
+		fetchFeedbackStats,
+		fetchPurchaseTimeSeries,
+		fetchTopRecommendations,
+		fetchProductBundles,
+	]);
 
 	// 管理者でない場合はアクセス拒否
 	if (!user || !isAdmin(user)) {
@@ -539,16 +615,7 @@ const MarketingDashboard: React.FC = () => {
 
 	// ローディング表示
 	if (isLoading) {
-		return (
-			<DashboardContainer>
-				<Header>
-					<DashboardTitle>マーケティングダッシュボード</DashboardTitle>
-				</Header>
-				<LoadingContainer>
-					<Spinner text="データを読み込み中..." size={40} />
-				</LoadingContainer>
-			</DashboardContainer>
-		);
+		return <MarketingDashboardSkeleton />;
 	}
 
 	// 時系列データのチャートデータ
@@ -682,11 +749,11 @@ const MarketingDashboard: React.FC = () => {
 	return (
 		<DashboardContainer>
 			<Header>
-				<DashboardTitle>マーケティングダッシュボード</DashboardTitle>
+				<DashboardTitle>Marketing Dashboard</DashboardTitle>
 				<button
 					type="button"
 					className="mantine-button"
-					onClick={refreshData}
+					onClick={handleWithScrollRestore(refreshData)}
 					style={{
 						background: "linear-gradient(135deg, #3ea8ff, #0066cc)",
 						color: "white",
@@ -705,19 +772,21 @@ const MarketingDashboard: React.FC = () => {
 			<TabContainer>
 				<Tab
 					$active={activeTab === "overview"}
-					onClick={() => setActiveTab("overview")}
+					onClick={handleWithScrollRestore(() => setActiveTab("overview"))}
 				>
 					概要
 				</Tab>
 				<Tab
 					$active={activeTab === "recommendations"}
-					onClick={() => setActiveTab("recommendations")}
+					onClick={handleWithScrollRestore(() =>
+						setActiveTab("recommendations")
+					)}
 				>
 					レコメンデーション分析
 				</Tab>
 				<Tab
 					$active={activeTab === "bundles"}
-					onClick={() => setActiveTab("bundles")}
+					onClick={handleWithScrollRestore(() => setActiveTab("bundles"))}
 				>
 					商品バンドル分析
 				</Tab>
@@ -752,10 +821,10 @@ const MarketingDashboard: React.FC = () => {
 							{TIME_GRANULARITIES.map((g) => (
 								<button
 									key={g}
-									onClick={() => {
+									onClick={handleWithScrollRestore(() => {
 										setTimeGranularity(g);
 										setTimePage(0);
-									}}
+									})}
 									type="button"
 									style={{
 										padding: "6px 16px",
@@ -768,6 +837,15 @@ const MarketingDashboard: React.FC = () => {
 										color: g === timeGranularity ? "#fff" : "#333",
 										fontWeight: g === timeGranularity ? 700 : 400,
 										cursor: "pointer",
+										outline: "none",
+										textDecoration: "none",
+										// モバイル対応
+										WebkitTapHighlightColor: "transparent",
+										WebkitTouchCallout: "none",
+										WebkitUserSelect: "none",
+										userSelect: "none",
+										minHeight: "44px", // iOS推奨のタッチターゲットサイズ
+										minWidth: "44px",
 									}}
 								>
 									{g}
@@ -775,16 +853,54 @@ const MarketingDashboard: React.FC = () => {
 							))}
 							<div style={{ flex: 1 }} />
 							<button
-								onClick={() => setTimePage((p) => p + 1)}
-								style={{ marginRight: 4 }}
+								onClick={handleWithScrollRestore(() =>
+									setTimePage((p) => p + 1)
+								)}
+								style={{
+									marginRight: 4,
+									outline: "none",
+									textDecoration: "none",
+									// モバイル対応
+									WebkitTapHighlightColor: "transparent",
+									WebkitTouchCallout: "none",
+									WebkitUserSelect: "none",
+									userSelect: "none",
+									minHeight: "44px",
+									minWidth: "44px",
+									padding: "8px 16px",
+									borderRadius: 6,
+									border: "1px solid #ccc",
+									background: "#fff",
+									color: "#333",
+									cursor: "pointer",
+								}}
 								type="button"
 							>
 								前へ
 							</button>
 							<button
-								onClick={() => setTimePage((p) => Math.max(0, p - 1))}
+								onClick={handleWithScrollRestore(() =>
+									setTimePage((p) => Math.max(0, p - 1))
+								)}
 								disabled={timePage === 0}
 								type="button"
+								style={{
+									outline: "none",
+									textDecoration: "none",
+									// モバイル対応
+									WebkitTapHighlightColor: "transparent",
+									WebkitTouchCallout: "none",
+									WebkitUserSelect: "none",
+									userSelect: "none",
+									minHeight: "44px",
+									minWidth: "44px",
+									padding: "8px 16px",
+									borderRadius: 6,
+									border: "1px solid #ccc",
+									background: "#fff",
+									color: "#333",
+									cursor: "pointer",
+								}}
 							>
 								次へ
 							</button>

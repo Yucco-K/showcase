@@ -77,11 +77,15 @@ class GorseClient {
 		const timeout = 5000; // 5秒タイムアウト
 		const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+		const isDev =
+			(typeof import.meta !== "undefined" &&
+				(import.meta as { env?: { DEV?: boolean } }).env?.DEV) ||
+			process.env.NODE_ENV === "development";
 		try {
-			console.log(`[Gorse] Requesting: ${url}`, {
-				method: options?.method || "GET",
-				timestamp: new Date().toISOString(),
-			});
+			// 開発モードのみ詳細ログ
+			if (isDev) {
+				console.debug(`[Gorse] → ${options?.method || "GET"} ${url}`);
+			}
 
 			const startTime = performance.now();
 			const response = await fetch(url, {
@@ -98,14 +102,13 @@ class GorseClient {
 			});
 			const endTime = performance.now();
 
-			console.log(
-				`[Gorse] Response received in ${Math.round(endTime - startTime)}ms`,
-				{
-					status: response.status,
-					url,
-					timestamp: new Date().toISOString(),
-				}
-			);
+			if (isDev) {
+				console.debug(
+					`[Gorse] ← ${response.status} ${url} (${Math.round(
+						endTime - startTime
+					)}ms)`
+				);
+			}
 
 			if (!response.ok) {
 				const errorText = await response
@@ -153,6 +156,10 @@ class GorseClient {
 		maxRetries: number = 3,
 		delay: number = 1000
 	): Promise<unknown> {
+		const isDevRetry =
+			(typeof import.meta !== "undefined" &&
+				(import.meta as { env?: { DEV?: boolean } }).env?.DEV) ||
+			process.env.NODE_ENV === "development";
 		let lastError: Error | undefined;
 
 		for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -161,9 +168,9 @@ class GorseClient {
 			} catch (error) {
 				lastError = error as Error;
 				if (attempt < maxRetries) {
-					console.log(
-						`[Gorse] Retry attempt ${attempt}/${maxRetries} for ${path}`
-					);
+					if (isDevRetry) {
+						console.debug(`[Gorse] Retry ${attempt}/${maxRetries}: ${path}`);
+					}
 					await new Promise((resolve) => setTimeout(resolve, delay * attempt));
 					continue;
 				}
@@ -202,7 +209,7 @@ class GorseClient {
 
 	// アイテム関連
 	async getItems(offset = 0, n = 10): Promise<GorseItem[]> {
-		return this.retryRequest(`/api/item?offset=${offset}&n=${n}`) as Promise<
+		return this.retryRequest(`/api/items?offset=${offset}&n=${n}`) as Promise<
 			GorseItem[]
 		>;
 	}
@@ -226,7 +233,7 @@ class GorseClient {
 
 	// ユーザー関連
 	async getUsers(offset = 0, n = 10): Promise<GorseUser[]> {
-		return this.retryRequest(`/api/user?offset=${offset}&n=${n}`) as Promise<
+		return this.retryRequest(`/api/users?offset=${offset}&n=${n}`) as Promise<
 			GorseUser[]
 		>;
 	}

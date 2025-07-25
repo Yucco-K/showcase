@@ -8,8 +8,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
     session_id UUID DEFAULT gen_random_uuid(),
     
     -- Add constraints
-    CONSTRAINT messages_content_length CHECK (char_length(content) <= 10000),
-    CONSTRAINT messages_role_valid CHECK (role IN ('user', 'assistant'))
+    CONSTRAINT messages_content_length CHECK (char_length(content) <= 10000)
 );
 
 -- Create indexes for better performance

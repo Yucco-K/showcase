@@ -13,7 +13,7 @@ import {
 
 // Type definitions for chat messages stored in Supabase
 interface ChatMessage {
-	id: number;
+	id: string;
 	role: "user" | "assistant";
 	content: string;
 	created_at: string;
@@ -217,13 +217,15 @@ const ChatBot: React.FC = () => {
 	useEffect(() => {
 		if (!isOpen) return;
 
-		const fetchHistory = async () => {
+		const fetchHistory = async (page: number = 1) => {
+			const limit = 50; // Number of messages per page
+			const offset = (page - 1) * limit; // Calculate offset based on page
 			try {
 				const { data, error } = await supabase
 					.from("messages")
 					.select("id, role, content, created_at")
 					.order("created_at", { ascending: true })
-					.limit(50); // Limit to recent 50 messages
+					.range(offset, offset + limit - 1); // Use range for pagination
 
 				if (error) {
 					console.error("Error fetching chat history:", error);
@@ -251,7 +253,7 @@ const ChatBot: React.FC = () => {
 			content: trimmed,
 		};
 
-		const tempId = Date.now();
+		const tempId = crypto.randomUUID();
 		setMessages((prev) => [
 			...prev,
 			{
@@ -293,7 +295,7 @@ const ChatBot: React.FC = () => {
 			setMessages((prev) => [
 				...prev,
 				{
-					id: tempId + 1,
+					id: crypto.randomUUID(),
 					role: "assistant",
 					content: assistantReply,
 					created_at: new Date().toISOString(),

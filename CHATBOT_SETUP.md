@@ -2,88 +2,31 @@
 
 ## 概要
 
-このプロジェクトには ChatGPT ベースの AI チャットボット機能が組み込まれています。ユーザーは Information page の右下にあるチャットアイコンからアクセスできます。
+このプロジェクトには ChatGPT ベースの AI チャットボット機能が組み込まれています。管理者ユーザーは Information page の右下にあるチャットアイコンからアクセスできます。
 
 ## 必要な設定
 
-### 1. 環境変数の設定
+### 1. OpenAI API キーの設定
 
-`.env.local` ファイルに以下の環境変数を追加してください：
+Supabase Edge Functions 用に OpenAI API キーを設定してください：
 
-```env
-VITE_CHATBOT_ENDPOINT=https://your-api-gateway-url/chat
+```bash
+npx supabase secrets set OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-### 2. バックエンド API の準備
+### 2. Supabase Edge Function のデプロイ
 
-チャットボットが動作するには、OpenAI API を呼び出すバックエンドエンドポイントが必要です。
+チャットボットは Supabase Edge Functions を使用して OpenAI API を呼び出します：
 
-#### 必要なエンドポイント仕様
-
-- **URL**: `VITE_CHATBOT_ENDPOINT` で指定した URL
-- **Method**: POST
-- **Request Body**:
-  ```json
-  {
-  	"message": "ユーザーからのメッセージ"
-  }
-  ```
-- **Response Body**:
-  ```json
-  {
-  	"reply": "AIからの応答メッセージ"
-  }
-  ```
-
-#### AWS Lambda 関数の例
-
-```javascript
-exports.handler = async (event) => {
-	const { message } = JSON.parse(event.body);
-
-	// OpenAI APIの呼び出し
-	const response = await fetch("https://api.openai.com/v1/chat/completions", {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			model: "gpt-4o",
-			messages: [
-				{
-					role: "system",
-					content:
-						"あなたは親切で知識豊富なAIアシスタントです。日本語で回答してください。",
-				},
-				{
-					role: "user",
-					content: message,
-				},
-			],
-			max_tokens: 500,
-			temperature: 0.7,
-		}),
-	});
-
-	const data = await response.json();
-	const reply = data.choices[0].message.content;
-
-	return {
-		statusCode: 200,
-		headers: {
-			"Access-Control-Allow-Origin": "*",
-			"Access-Control-Allow-Headers": "Content-Type",
-			"Access-Control-Allow-Methods": "POST, OPTIONS",
-		},
-		body: JSON.stringify({
-			reply: reply,
-		}),
-	};
-};
+```bash
+npx supabase functions deploy chat
 ```
 
-### 3. Supabase マイグレーションの実行
+### 3. アクセス権限
+
+チャットボットは管理者ユーザーのみがアクセス可能です。管理者権限は profiles テーブルの role カラムで管理されています。
+
+### 4. Supabase マイグレーションの実行
 
 messages テーブルを作成するマイグレーションを実行してください：
 
@@ -124,18 +67,20 @@ CREATE TABLE public.messages (
 
 ## セキュリティ対策
 
-1. **API キーの保護**: バックエンドでのみ OpenAI API キーを使用
-2. **入力検証**: メッセージ長制限（500 文字）
-3. **RLS 有効**: Supabase で行レベルセキュリティ適用
-4. **CORS 設定**: 適切なオリジン制限
+1. **API キーの保護**: Supabase Edge Functions でのみ OpenAI API キーを使用
+2. **管理者制限**: 管理者ユーザーのみアクセス可能
+3. **入力検証**: メッセージ長制限（1000 文字）
+4. **RLS 有効**: Supabase で行レベルセキュリティ適用
+5. **認証統合**: Supabase 認証システムと連携
 
 ## トラブルシューティング
 
 ### よくある問題
 
-1. **チャットエンドポイントが設定されていません**
+1. **チャットボットが表示されない**
 
-   - `.env.local`に`VITE_CHAT_ENDPOINT`が設定されているか確認
+   - 管理者ユーザーでログインしているか確認
+   - profiles テーブルの role が "admin" に設定されているか確認
 
 2. **チャット履歴の取得に失敗しました**
 
@@ -143,9 +88,9 @@ CREATE TABLE public.messages (
    - RLS ポリシーが正しく設定されているか確認
 
 3. **チャットボットの応答に失敗しました**
-   - バックエンド API が正常に動作しているか確認
-   - OpenAI API キーが有効か確認
-   - CORS 設定が正しいか確認
+   - Supabase Edge Function が正常にデプロイされているか確認
+   - OpenAI API キーが正しく設定されているか確認: `npx supabase secrets list`
+   - ネットワークエラーがないか確認
 
 ## 今後の拡張可能性
 

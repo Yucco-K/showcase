@@ -32,7 +32,6 @@ import {
 } from "@tabler/icons-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import LazyBubbleScene from "../components/LazyBubbleScene";
 import { supabase } from "../lib/supabase";
 
 // スタイルコンポーネント
@@ -181,7 +180,18 @@ const Information: React.FC = () => {
 			}
 
 			if (data) {
-				setInformation(data);
+				const informationData = data as {
+					id?: string;
+					title: string;
+					content: string;
+					updated_at?: string;
+				};
+				setInformation({
+					id: informationData.id,
+					title: informationData.title || "Information",
+					content: informationData.content || "",
+					updated_at: informationData.updated_at,
+				});
 			}
 		} catch (error) {
 			console.error("Failed to fetch information:", error);
@@ -367,7 +377,6 @@ const Information: React.FC = () => {
 					position: "relative",
 				}}
 			>
-				<LazyBubbleScene />
 				<ContentContainer>
 					{isAdmin(user) && (
 						<EditButton onClick={handleEdit}>

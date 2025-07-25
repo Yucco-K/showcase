@@ -11,7 +11,7 @@
 `.env.local` ファイルに以下の環境変数を追加してください：
 
 ```env
-VITE_CHAT_ENDPOINT=https://your-api-gateway-url/chat
+VITE_CHATBOT_ENDPOINT=https://your-api-gateway-url/chat
 ```
 
 ### 2. バックエンド API の準備

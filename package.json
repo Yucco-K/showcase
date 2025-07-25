@@ -36,7 +36,7 @@
 		"@react-three/drei": "^10.5.0",
 		"@react-three/fiber": "^9.2.0",
 		"@stripe/stripe-js": "^7.4.0",
-		"@supabase/supabase-js": "^2.44.4",
+		"@supabase/supabase-js": "^2.52.1",
 		"@tabler/icons-react": "^3.34.1",
 		"@tiptap/extension-placeholder": "^3.0.7",
 		"@tiptap/pm": "^3.0.7",
@@ -47,6 +47,7 @@
 		"chart.js": "^4.5.0",
 		"framer-motion": "^12.23.3",
 		"gorsejs": "^0.4.8",
+		"node-fetch": "^2.7.0",
 		"react": "^19.1.0",
 		"react-chartjs-2": "^5.3.0",
 		"react-dom": "^19.1.0",
@@ -65,6 +66,7 @@
 		"@types/react-dom": "^19.1.6",
 		"@vitejs/plugin-react": "^4.6.0",
 		"dotenv": "^17.2.0",
+		"esbuild": "^0.25.8",
 		"eslint": "^9.31.0",
 		"eslint-plugin-react-hooks": "^5.2.0",
 		"eslint-plugin-react-refresh": "^0.4.20",
@@ -77,5 +79,21 @@
 		"typescript-eslint": "^8.35.1",
 		"vite": "^7.0.4",
 		"wait-on": "^8.0.3"
-	}
+	},
+	"description": "ドキュメント一式は以下の専用リポジトリで管理しています。",
+	"main": "index.js",
+	"directories": {
+		"test": "tests"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Yucco-K/showcase.git"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/Yucco-K/showcase/issues"
+	},
+	"homepage": "https://github.com/Yucco-K/showcase#readme"
 }

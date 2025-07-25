@@ -33,6 +33,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { supabase } from "../lib/supabase";
+import ChatBot from "../components/ChatBot";
 
 // スタイルコンポーネント
 const EditButton = styled.button`
@@ -1021,6 +1022,8 @@ const Information: React.FC = () => {
 					</Button>
 				</Group>
 			</Modal>
+
+			<ChatBot />
 		</>
 	);
 };

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, FormEvent } from "react";
+import React, { useState, useEffect, type FormEvent } from "react";
 import styled from "styled-components";
 import { supabase } from "../lib/supabase";
 import { useToast } from "../hooks/useToast";
+import { fetchChatReply } from "../api/chat";
 import {
 	IconSend,
 	IconRobot,
@@ -228,7 +229,7 @@ const ChatBot: React.FC = () => {
 					console.error("Error fetching chat history:", error);
 					showError("チャット履歴の取得に失敗しました");
 				} else {
-					setMessages(data || []);
+					setMessages((data || []) as ChatMessage[]);
 				}
 			} catch (error) {
 				console.error("Failed to fetch chat history:", error);
@@ -243,13 +244,6 @@ const ChatBot: React.FC = () => {
 		e.preventDefault();
 		const trimmed = input.trim();
 		if (!trimmed || loading) return;
-
-		// Check if chat endpoint is configured
-		const chatEndpoint = import.meta.env.VITE_CHAT_ENDPOINT;
-		if (!chatEndpoint) {
-			showError("チャットエンドポイントが設定されていません");
-			return;
-		}
 
 		// Append user's message to local state
 		const newUserMessage: Omit<ChatMessage, "id" | "created_at"> = {
@@ -280,22 +274,8 @@ const ChatBot: React.FC = () => {
 				console.error("Supabase insert error:", insertError);
 			}
 
-			// Send the message to your backend for processing
-			const response = await fetch(chatEndpoint, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ message: trimmed }),
-			});
-
-			if (!response.ok) {
-				throw new Error(`Server returned status ${response.status}`);
-			}
-
-			const data = await response.json();
-			const assistantReply: string =
-				data.reply || "申し訳ございませんが、応答を生成できませんでした。";
+			// Get AI response using the API client
+			const assistantReply = await fetchChatReply(trimmed);
 
 			// Save assistant's reply into Supabase
 			const { error: assistantInsertError } = await supabase

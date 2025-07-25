@@ -40,29 +40,49 @@ const EditButton = styled.button`
 	top: 20px;
 	right: 20px;
 	z-index: 1000;
-	background: linear-gradient(135deg, #3ea8ff, #0066cc);
-	color: white;
+	background: linear-gradient(135deg, #ffb366, #ffd4a3);
+	color: #8b4513;
 	border: none;
-	border-radius: 8px;
-	padding: 12px 16px;
-	font-weight: 600;
+	border-radius: 12px;
+	padding: 14px 20px;
+	font-weight: 700;
+	font-size: 16px;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-	transition: all 0.2s ease;
+	gap: 10px;
+	box-shadow: 0 8px 25px rgba(255, 179, 102, 0.3), 0 4px 12px rgba(0, 0, 0, 0.1),
+		inset 0 1px 0 rgba(255, 255, 255, 0.3);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	backdrop-filter: blur(8px);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	letter-spacing: 0.5px;
 
 	&:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+		background: linear-gradient(135deg, #ff9f4a, #ffcc80);
+		color: #5d2e0a;
+		transform: translateY(-3px) scale(1.02);
+		box-shadow: 0 12px 35px rgba(255, 179, 102, 0.4),
+			0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+	}
+
+	&:active {
+		transform: translateY(-1px) scale(1.01);
+		box-shadow: 0 6px 20px rgba(255, 179, 102, 0.3),
+			0 3px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+	}
+
+	svg {
+		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 	}
 
 	@media (max-width: 768px) {
 		top: 15px;
 		right: 15px;
-		padding: 10px 12px;
+		padding: 12px 16px;
 		font-size: 14px;
+		border-radius: 10px;
+		gap: 8px;
 	}
 `;
 
@@ -70,19 +90,19 @@ const ContentContainer = styled.div`
 	position: relative;
 	z-index: 2;
 	width: 100%;
-	color: #fff;
+	color: #2c1810;
 	text-align: left;
 	max-width: 800px;
 	margin: 0 auto;
 `;
 
 const MarkdownContent = styled.div`
-	color: rgba(255, 255, 255, 0.9);
+	color: #2c1810;
 	line-height: 1.6;
 	font-size: 1.1rem;
 	max-width: 800px;
 	margin: 0 auto;
-	padding: 2rem;
+	padding: calc(2rem + 40px) 2rem 2rem 2rem;
 	background: rgba(255, 255, 255, 0.1);
 	border-radius: 12px;
 	backdrop-filter: blur(20px);
@@ -90,14 +110,14 @@ const MarkdownContent = styled.div`
 	border: 1px solid rgba(255, 255, 255, 0.2);
 
 	@media (max-width: 768px) {
-		padding: 1.5rem 1rem;
+		padding: calc(1.5rem + 40px) 1rem 1.5rem 1rem;
 		font-size: 1rem;
 		margin: 0 1rem;
 		max-width: calc(100% - 2rem);
 	}
 
 	@media (max-width: 480px) {
-		padding: 1rem 0.75rem;
+		padding: calc(1rem + 40px) 0.75rem 1rem 0.75rem;
 		font-size: 0.95rem;
 		margin: 0 0.5rem;
 		max-width: calc(100% - 1rem);
@@ -143,6 +163,84 @@ const TextareaContainer = styled.div`
 	overflow: hidden;
 `;
 
+// スケルトンスタイル
+const SkeletonContainer = styled.div`
+	max-width: 800px;
+	margin: 0 auto;
+	padding: 2rem;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 12px;
+	backdrop-filter: blur(20px);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+
+	@media (max-width: 768px) {
+		padding: 1.5rem 1rem;
+		margin: 0 1rem;
+		max-width: calc(100% - 2rem);
+	}
+
+	@media (max-width: 480px) {
+		padding: 1rem 0.75rem;
+		margin: 0 0.5rem;
+		max-width: calc(100% - 1rem);
+	}
+`;
+
+const SkeletonLine = styled.div<{
+	$width?: string;
+	$height?: string;
+	$marginBottom?: string;
+}>`
+	background: linear-gradient(
+		90deg,
+		rgba(255, 255, 255, 0.1) 25%,
+		rgba(255, 255, 255, 0.2) 50%,
+		rgba(255, 255, 255, 0.1) 75%
+	);
+	background-size: 200% 100%;
+	animation: skeleton-loading 1.5s infinite;
+	border-radius: 4px;
+	width: ${({ $width }) => $width || "100%"};
+	height: ${({ $height }) => $height || "1rem"};
+	margin-bottom: ${({ $marginBottom }) => $marginBottom || "1rem"};
+
+	@keyframes skeleton-loading {
+		0% {
+			background-position: 200% 0;
+		}
+		100% {
+			background-position: -200% 0;
+		}
+	}
+`;
+
+const InformationSkeleton: React.FC = () => {
+	return (
+		<SkeletonContainer>
+			{/* タイトル */}
+			<SkeletonLine $width="60%" $height="2.2rem" $marginBottom="1.5rem" />
+
+			{/* セクション1 */}
+			<SkeletonLine $width="40%" $height="1.8rem" $marginBottom="1rem" />
+			<SkeletonLine $width="100%" $height="1rem" $marginBottom="0.5rem" />
+			<SkeletonLine $width="95%" $height="1rem" $marginBottom="0.5rem" />
+			<SkeletonLine $width="80%" $height="1rem" $marginBottom="1.5rem" />
+
+			{/* セクション2 */}
+			<SkeletonLine $width="45%" $height="1.8rem" $marginBottom="1rem" />
+			<SkeletonLine $width="100%" $height="1rem" $marginBottom="0.5rem" />
+			<SkeletonLine $width="90%" $height="1rem" $marginBottom="0.5rem" />
+			<SkeletonLine $width="85%" $height="1rem" $marginBottom="1.5rem" />
+
+			{/* サブセクション */}
+			<SkeletonLine $width="35%" $height="1.4rem" $marginBottom="0.8rem" />
+			<SkeletonLine $width="100%" $height="1rem" $marginBottom="0.5rem" />
+			<SkeletonLine $width="75%" $height="1rem" $marginBottom="0.5rem" />
+		</SkeletonContainer>
+	);
+};
+
 interface InformationData {
 	id?: string;
 	title: string;
@@ -155,6 +253,7 @@ const Information: React.FC = () => {
 	const { toast, showSuccess, showError, hideToast } = useToast();
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isInitialLoading, setIsInitialLoading] = useState(true);
 	const [information, setInformation] = useState<InformationData>({
 		title: "Information",
 		content:
@@ -165,10 +264,12 @@ const Information: React.FC = () => {
 		content: "",
 	});
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+	const modalScrollRef = useRef<number>(0);
 
 	// データ取得
 	const fetchInformation = useCallback(async () => {
 		try {
+			setIsInitialLoading(true);
 			const { data, error } = await supabase
 				.from("information")
 				.select("*")
@@ -195,6 +296,8 @@ const Information: React.FC = () => {
 			}
 		} catch (error) {
 			console.error("Failed to fetch information:", error);
+		} finally {
+			setIsInitialLoading(false);
 		}
 	}, []);
 
@@ -204,15 +307,15 @@ const Information: React.FC = () => {
 
 	const handleEdit = () => {
 		setEditingData({
-			title: information.title || "",
+			title: "",
 			content: information.content || "",
 		});
 		setIsModalOpen(true);
 	};
 
 	const handleSave = async () => {
-		if (!editingData.title.trim() || !editingData.content.trim()) {
-			showError("タイトルとコンテンツを入力してください");
+		if (!editingData.content.trim()) {
+			showError("コンテンツを入力してください");
 			return;
 		}
 
@@ -220,7 +323,7 @@ const Information: React.FC = () => {
 		try {
 			const { error } = await supabase.from("information").upsert({
 				id: information.id || "default",
-				title: editingData.title,
+				title: information.title || "Information",
 				content: editingData.content,
 				updated_at: new Date().toISOString(),
 			});
@@ -229,7 +332,6 @@ const Information: React.FC = () => {
 
 			setInformation({
 				...information,
-				title: editingData.title,
 				content: editingData.content,
 			});
 
@@ -256,6 +358,13 @@ const Information: React.FC = () => {
 			) as HTMLTextAreaElement);
 		if (!textarea) return;
 
+		// 現在のスクロール位置を保存
+		const scrollTop = textarea.scrollTop;
+		const modalElement = document.querySelector("[data-mantine-modal]");
+		if (modalElement) {
+			modalScrollRef.current = modalElement.scrollTop;
+		}
+
 		const start = textarea.selectionStart;
 		const end = textarea.selectionEnd;
 		const selectedText = editingData.content.substring(start, end);
@@ -270,12 +379,20 @@ const Information: React.FC = () => {
 
 		setEditingData((prev) => ({ ...prev, content: newContent }));
 
-		// カーソル位置を更新
+		// カーソル位置とスクロール位置を更新
 		setTimeout(() => {
 			textarea.focus();
 			const newCursorPos =
 				start + prefix.length + newText.length + suffix.length;
 			textarea.setSelectionRange(newCursorPos, newCursorPos);
+			// スクロール位置を復元
+			textarea.scrollTop = scrollTop;
+
+			// モーダルのスクロール位置も復元
+			const modalElement = document.querySelector("[data-mantine-modal]");
+			if (modalElement) {
+				modalElement.scrollTop = modalScrollRef.current;
+			}
 		}, 0);
 	};
 
@@ -378,207 +495,211 @@ const Information: React.FC = () => {
 				}}
 			>
 				<ContentContainer>
-					{isAdmin(user) && (
+					{isAdmin(user) && !isInitialLoading && (
 						<EditButton onClick={handleEdit}>
 							<IconEdit size={16} />
 							編集
 						</EditButton>
 					)}
-					<MarkdownContent>
-						<ReactMarkdown
-							remarkPlugins={[remarkGfm]}
-							components={{
-								h1: ({ children }) => (
-									<h1
-										style={{
-											color: "#6a4fb6",
-											fontSize: window.innerWidth < 768 ? "1.8rem" : "2.2rem",
-											fontWeight: 800,
-											textAlign: "center",
-											marginBottom: "1.2rem",
-											letterSpacing: "0.04em",
-										}}
-									>
-										{children}
-									</h1>
-								),
-								h2: ({ children }) => (
-									<h2
-										style={{
-											color: "#6a4fb6",
-											fontSize: window.innerWidth < 768 ? "1.5rem" : "1.8rem",
-											fontWeight: 700,
-											marginTop: "1.5rem",
-											marginBottom: "1rem",
-										}}
-									>
-										{children}
-									</h2>
-								),
-								h3: ({ children }) => (
-									<h3
-										style={{
-											color: "#6a4fb6",
-											fontSize: window.innerWidth < 768 ? "1.2rem" : "1.4rem",
-											fontWeight: 600,
-											marginTop: "1rem",
-											marginBottom: "0.5rem",
-										}}
-									>
-										{children}
-									</h3>
-								),
-								p: ({ children }) => (
-									<p style={{ marginBottom: "1rem", lineHeight: 1.6 }}>
-										{children}
-									</p>
-								),
-								ul: ({ children }) => (
-									<ul style={{ marginBottom: "1rem", paddingLeft: "2rem" }}>
-										{children}
-									</ul>
-								),
-								ol: ({ children }) => (
-									<ol style={{ marginBottom: "1rem", paddingLeft: "2rem" }}>
-										{children}
-									</ol>
-								),
-								li: ({ children }) => (
-									<li style={{ marginBottom: "0.5rem" }}>{children}</li>
-								),
-								blockquote: ({ children }) => (
-									<blockquote
-										style={{
-											borderLeft: "4px solid #6a4fb6",
-											paddingLeft: "1rem",
-											margin: "1rem 0",
-											fontStyle: "italic",
-										}}
-									>
-										{children}
-									</blockquote>
-								),
-								code: ({ children, className }) => {
-									const isInline = !className;
-									return isInline ? (
-										<code
+					{isInitialLoading ? (
+						<InformationSkeleton />
+					) : (
+						<MarkdownContent>
+							<ReactMarkdown
+								remarkPlugins={[remarkGfm]}
+								components={{
+									h1: ({ children }) => (
+										<h1
 											style={{
-												backgroundColor: "rgba(255, 255, 255, 0.1)",
-												padding: "0.2rem 0.4rem",
-												borderRadius: "4px",
-												fontFamily: "monospace",
+												color: "#6a4fb6",
+												fontSize: window.innerWidth < 768 ? "1.8rem" : "2.2rem",
+												fontWeight: 800,
+												textAlign: "center",
+												marginBottom: "1.2rem",
+												letterSpacing: "0.04em",
 											}}
 										>
 											{children}
-										</code>
-									) : (
-										<pre
+										</h1>
+									),
+									h2: ({ children }) => (
+										<h2
 											style={{
-												backgroundColor: "rgba(0, 0, 0, 0.3)",
-												padding: "1rem",
-												borderRadius: "8px",
-												overflowX: "auto",
-												margin: "1rem 0",
+												color: "#6a4fb6",
+												fontSize: window.innerWidth < 768 ? "1.5rem" : "1.8rem",
+												fontWeight: 700,
+												marginTop: "1.5rem",
+												marginBottom: "1rem",
 											}}
 										>
-											<code style={{ fontFamily: "monospace" }}>
+											{children}
+										</h2>
+									),
+									h3: ({ children }) => (
+										<h3
+											style={{
+												color: "#6a4fb6",
+												fontSize: window.innerWidth < 768 ? "1.2rem" : "1.4rem",
+												fontWeight: 600,
+												marginTop: "1rem",
+												marginBottom: "0.5rem",
+											}}
+										>
+											{children}
+										</h3>
+									),
+									p: ({ children }) => (
+										<p style={{ marginBottom: "1rem", lineHeight: 1.6 }}>
+											{children}
+										</p>
+									),
+									ul: ({ children }) => (
+										<ul style={{ marginBottom: "1rem", paddingLeft: "2rem" }}>
+											{children}
+										</ul>
+									),
+									ol: ({ children }) => (
+										<ol style={{ marginBottom: "1rem", paddingLeft: "2rem" }}>
+											{children}
+										</ol>
+									),
+									li: ({ children }) => (
+										<li style={{ marginBottom: "0.5rem" }}>{children}</li>
+									),
+									blockquote: ({ children }) => (
+										<blockquote
+											style={{
+												borderLeft: "4px solid #6a4fb6",
+												paddingLeft: "1rem",
+												margin: "1rem 0",
+												fontStyle: "italic",
+											}}
+										>
+											{children}
+										</blockquote>
+									),
+									code: ({ children, className }) => {
+										const isInline = !className;
+										return isInline ? (
+											<code
+												style={{
+													backgroundColor: "rgba(255, 255, 255, 0.1)",
+													padding: "0.2rem 0.4rem",
+													borderRadius: "4px",
+													fontFamily: "monospace",
+												}}
+											>
 												{children}
 											</code>
-										</pre>
-									);
-								},
-								strong: ({ children }) => (
-									<strong style={{ fontWeight: 700 }}>{children}</strong>
-								),
-								em: ({ children }) => (
-									<em style={{ fontStyle: "italic" }}>{children}</em>
-								),
-								a: ({ children, href }) => (
-									<a
-										href={href}
-										style={{
-											color: "#ffa366",
-											textDecoration: "none",
-											fontWeight: "600",
-											textShadow: "0 0 3px rgba(255, 255, 255, 0.8)",
-											backgroundColor: "rgba(255, 255, 255, 0.1)",
-											padding: "2px 4px",
-											borderRadius: "3px",
-											transition: "all 0.3s ease",
-										}}
-										onMouseEnter={(e) => {
-											e.currentTarget.style.color = "#ff6b35";
-											e.currentTarget.style.backgroundColor =
-												"rgba(255, 255, 255, 0.2)";
-										}}
-										onMouseLeave={(e) => {
-											e.currentTarget.style.color = "#ffa366";
-											e.currentTarget.style.backgroundColor =
-												"rgba(255, 255, 255, 0.1)";
-										}}
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										{children}
-									</a>
-								),
-								table: ({ children }) => (
-									<table
-										style={{
-											width: "100%",
-											borderCollapse: "collapse",
-											margin: "1rem 0",
-											border: "1px solid rgba(255, 255, 255, 0.2)",
-											fontSize: window.innerWidth < 768 ? "0.9rem" : "1rem",
-										}}
-									>
-										{children}
-									</table>
-								),
-								th: ({ children }) => (
-									<th
-										style={{
-											padding: "0.75rem",
-											border: "1px solid rgba(255, 255, 255, 0.2)",
-											backgroundColor: "rgba(255, 255, 255, 0.1)",
-											fontWeight: 600,
-											textAlign: "left",
-										}}
-									>
-										{children}
-									</th>
-								),
-								td: ({ children }) => (
-									<td
-										style={{
-											padding: "0.75rem",
-											border: "1px solid rgba(255, 255, 255, 0.2)",
-										}}
-									>
-										{children}
-									</td>
-								),
-								img: ({ src, alt }) => (
-									<img
-										src={src}
-										alt={alt}
-										style={{
-											maxWidth: "100%",
-											height: "auto",
-											borderRadius: "8px",
-											margin: "1rem 0",
-											boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-											display: "block",
-											marginLeft: "auto",
-											marginRight: "auto",
-										}}
-									/>
-								),
-							}}
-						>
-							{information.content}
-						</ReactMarkdown>
-					</MarkdownContent>
+										) : (
+											<pre
+												style={{
+													backgroundColor: "rgba(0, 0, 0, 0.3)",
+													padding: "1rem",
+													borderRadius: "8px",
+													overflowX: "auto",
+													margin: "1rem 0",
+												}}
+											>
+												<code style={{ fontFamily: "monospace" }}>
+													{children}
+												</code>
+											</pre>
+										);
+									},
+									strong: ({ children }) => (
+										<strong style={{ fontWeight: 700 }}>{children}</strong>
+									),
+									em: ({ children }) => (
+										<em style={{ fontStyle: "italic" }}>{children}</em>
+									),
+									a: ({ children, href }) => (
+										<a
+											href={href}
+											style={{
+												color: "#ffa366",
+												textDecoration: "none",
+												fontWeight: "600",
+												textShadow: "0 0 3px rgba(255, 255, 255, 0.8)",
+												backgroundColor: "rgba(255, 255, 255, 0.1)",
+												padding: "2px 4px",
+												borderRadius: "3px",
+												transition: "all 0.3s ease",
+											}}
+											onMouseEnter={(e) => {
+												e.currentTarget.style.color = "#ff6b35";
+												e.currentTarget.style.backgroundColor =
+													"rgba(255, 255, 255, 0.2)";
+											}}
+											onMouseLeave={(e) => {
+												e.currentTarget.style.color = "#ffa366";
+												e.currentTarget.style.backgroundColor =
+													"rgba(255, 255, 255, 0.1)";
+											}}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											{children}
+										</a>
+									),
+									table: ({ children }) => (
+										<table
+											style={{
+												width: "100%",
+												borderCollapse: "collapse",
+												margin: "1rem 0",
+												border: "1px solid rgba(255, 255, 255, 0.2)",
+												fontSize: window.innerWidth < 768 ? "0.9rem" : "1rem",
+											}}
+										>
+											{children}
+										</table>
+									),
+									th: ({ children }) => (
+										<th
+											style={{
+												padding: "0.75rem",
+												border: "1px solid rgba(255, 255, 255, 0.2)",
+												backgroundColor: "rgba(255, 255, 255, 0.1)",
+												fontWeight: 600,
+												textAlign: "left",
+											}}
+										>
+											{children}
+										</th>
+									),
+									td: ({ children }) => (
+										<td
+											style={{
+												padding: "0.75rem",
+												border: "1px solid rgba(255, 255, 255, 0.2)",
+											}}
+										>
+											{children}
+										</td>
+									),
+									img: ({ src, alt }) => (
+										<img
+											src={src}
+											alt={alt}
+											style={{
+												maxWidth: "100%",
+												height: "auto",
+												borderRadius: "8px",
+												margin: "1rem 0",
+												boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+												display: "block",
+												marginLeft: "auto",
+												marginRight: "auto",
+											}}
+										/>
+									),
+								}}
+							>
+								{information.content}
+							</ReactMarkdown>
+						</MarkdownContent>
+					)}
 				</ContentContainer>
 			</main>
 
@@ -596,19 +717,35 @@ const Information: React.FC = () => {
 					},
 				}}
 			>
-				<div style={{ marginBottom: "1rem" }}>
-					<TextInput
-						label="タイトル"
-						value={editingData.title}
-						onChange={(e) =>
-							setEditingData((prev) => ({ ...prev, title: e.target.value }))
-						}
-						placeholder="タイトルを入力"
-						required
-					/>
-				</div>
-
-				<Tabs defaultValue="edit" style={{ marginBottom: "1rem" }}>
+				<Tabs
+					defaultValue="edit"
+					style={{ marginBottom: "1rem" }}
+					styles={{
+						list: {
+							backgroundColor: "#f8f9fa",
+							borderRadius: "8px",
+							padding: "4px",
+						},
+						tab: {
+							backgroundColor: "transparent",
+							color: "#6c757d",
+							fontWeight: 600,
+							border: "none",
+							borderRadius: "6px",
+							padding: "12px 20px",
+							transition: "all 0.2s ease",
+							"&:hover": {
+								backgroundColor: "#e9ecef",
+								color: "#495057",
+							},
+							"&[data-active]": {
+								backgroundColor: "#d2691e",
+								color: "white",
+								boxShadow: "0 2px 8px rgba(210, 105, 30, 0.2)",
+							},
+						},
+					}}
+				>
 					<Tabs.List>
 						<Tabs.Tab value="edit" leftSection={<IconCode size={16} />}>
 							編集
@@ -627,7 +764,12 @@ const Information: React.FC = () => {
 											variant="light"
 											color="violet"
 											radius="sm"
-											onClick={button.action}
+											onClick={(e) => {
+												e.preventDefault();
+												e.stopPropagation();
+												button.action();
+											}}
+											type="button"
 										>
 											<button.icon size={16} />
 										</ActionIcon>
@@ -647,8 +789,8 @@ const Information: React.FC = () => {
 									}
 									placeholder="メモを書く"
 									required
-									minRows={window.innerWidth < 768 ? 25 : 35}
-									maxRows={window.innerWidth < 768 ? 40 : 50}
+									minRows={window.innerWidth < 768 ? 35 : 45}
+									maxRows={window.innerWidth < 768 ? 50 : 60}
 									styles={{
 										input: {
 											fontFamily: "monospace",
@@ -656,8 +798,8 @@ const Information: React.FC = () => {
 											lineHeight: 1.5,
 											minHeight:
 												window.innerWidth < 768
-													? "calc(100% + 150px)"
-													: "calc(100% + 200px)",
+													? "calc(100% + 300px)"
+													: "calc(100% + 400px)",
 											border: "none",
 											borderRadius: "0 0 8px 8px",
 										},
@@ -671,7 +813,11 @@ const Information: React.FC = () => {
 					</Tabs.Panel>
 
 					<Tabs.Panel value="preview" pt="xs">
-						<Paper withBorder p="md" style={{ minHeight: "400px" }}>
+						<Paper
+							withBorder
+							p="md"
+							style={{ minHeight: window.innerWidth < 768 ? "600px" : "800px" }}
+						>
 							<Box style={{ color: "#333" }}>
 								<ReactMarkdown
 									remarkPlugins={[remarkGfm]}

@@ -1,8 +1,75 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Color, Group, MeshPhysicalMaterial, MathUtils } from "three";
 import { OrbitControls, Environment } from "@react-three/drei";
-import { useRef, Suspense } from "react";
+import { useRef, Suspense, useState, useEffect } from "react";
 import Spinner from "./ui/Spinner";
+
+// モバイル判定
+const isMobile = () => {
+	return (
+		/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+			navigator.userAgent
+		) || window.innerWidth < 768
+	);
+};
+
+// 静的シャボン玉コンポーネント（モバイル用）
+function StaticBubbleScene() {
+	const bubbles = Array.from({ length: 25 }, (_, i) => {
+		const hue = (i * 0.137) % 1;
+		const size = 20 + Math.random() * 40;
+		const x = Math.random() * 100;
+		const y = Math.random() * 100;
+		const opacity = 0.1 + Math.random() * 0.3;
+
+		return {
+			id: i,
+			size,
+			x,
+			y,
+			opacity,
+			hue,
+		};
+	});
+
+	return (
+		<div
+			style={{
+				position: "fixed",
+				inset: 0,
+				zIndex: 0,
+				width: "100vw",
+				height: "100vh",
+				background:
+					"linear-gradient(135deg, #2b8dff 0%, #4facfe 50%, #00f2fe 100%)",
+				overflow: "hidden",
+			}}
+		>
+			{bubbles.map((bubble) => (
+				<div
+					key={bubble.id}
+					style={{
+						position: "absolute",
+						left: `${bubble.x}%`,
+						top: `${bubble.y}%`,
+						width: `${bubble.size}px`,
+						height: `${bubble.size}px`,
+						borderRadius: "50%",
+						background: `hsla(${bubble.hue * 360}, 85%, 75%, ${
+							bubble.opacity
+						})`,
+						border: `1px solid hsla(${bubble.hue * 360}, 85%, 85%, 0.3)`,
+						boxShadow: `
+							inset 0 0 ${bubble.size / 4}px hsla(0, 0%, 100%, 0.3),
+							0 0 ${bubble.size / 2}px hsla(${bubble.hue * 360}, 85%, 75%, 0.2)
+						`,
+						backdropFilter: "blur(1px)",
+					}}
+				/>
+			))}
+		</div>
+	);
+}
 
 function Bubble({ seed }: { seed: number }) {
 	const ref = useRef<Group>(null!);
@@ -125,6 +192,26 @@ function BubbleSceneContent() {
 }
 
 export default function BubbleScene() {
+	const [isMobileDevice, setIsMobileDevice] = useState(false);
+
+	useEffect(() => {
+		// クライアントサイドでのみモバイル判定を実行
+		setIsMobileDevice(isMobile());
+
+		const handleResize = () => {
+			setIsMobileDevice(isMobile());
+		};
+
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
+
+	// モバイルの場合は静的シャボン玉を表示
+	if (isMobileDevice) {
+		return <StaticBubbleScene />;
+	}
+
+	// PCの場合は動的シャボン玉を表示（従来通り）
 	return (
 		<Suspense
 			fallback={

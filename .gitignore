@@ -1,3 +1,6 @@
+# AWS Lambda チャットボット関連ファイル（バックアップ）
+backup/
+
 # Logs
 logs
 *.log

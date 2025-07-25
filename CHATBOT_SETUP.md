@@ -20,7 +20,7 @@ VITE_CHATBOT_ENDPOINT=https://your-api-gateway-url/chat
 
 #### 必要なエンドポイント仕様
 
-- **URL**: `VITE_CHAT_ENDPOINT` で指定した URL
+- **URL**: `VITE_CHATBOT_ENDPOINT` で指定した URL
 - **Method**: POST
 - **Request Body**:
   ```json

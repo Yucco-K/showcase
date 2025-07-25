@@ -78,7 +78,8 @@ class GorseClient {
 		const timeoutId = setTimeout(() => controller.abort(), timeout);
 
 		const isDev =
-			(typeof import.meta !== "undefined" && (import.meta as any).env?.DEV) ||
+			(typeof import.meta !== "undefined" &&
+				(import.meta as { env?: { DEV?: boolean } }).env?.DEV) ||
 			process.env.NODE_ENV === "development";
 		try {
 			// 開発モードのみ詳細ログ
@@ -156,7 +157,8 @@ class GorseClient {
 		delay: number = 1000
 	): Promise<unknown> {
 		const isDevRetry =
-			(typeof import.meta !== "undefined" && (import.meta as any).env?.DEV) ||
+			(typeof import.meta !== "undefined" &&
+				(import.meta as { env?: { DEV?: boolean } }).env?.DEV) ||
 			process.env.NODE_ENV === "development";
 		let lastError: Error | undefined;
 

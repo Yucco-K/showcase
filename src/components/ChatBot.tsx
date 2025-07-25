@@ -26,11 +26,15 @@ const ChatContainer = styled.div<{ $isOpen: boolean }>`
 	right: 20px;
 	width: ${({ $isOpen }) => ($isOpen ? "400px" : "60px")};
 	height: ${({ $isOpen }) => ($isOpen ? "600px" : "60px")};
-	background: rgba(255, 255, 255, 0.95);
+	background: linear-gradient(
+		135deg,
+		rgba(224, 255, 255, 0.95),
+		rgba(176, 224, 230, 0.95)
+	);
 	border-radius: 12px;
-	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 8px 32px rgba(64, 224, 208, 0.2);
 	backdrop-filter: blur(20px);
-	border: 1px solid rgba(255, 255, 255, 0.2);
+	border: 1px solid rgba(135, 206, 235, 0.3);
 	transition: all 0.3s ease;
 	z-index: 1000;
 	display: flex;
@@ -49,9 +53,9 @@ const ChatToggle = styled.button<{ $isOpen: boolean }>`
 	width: 60px;
 	height: 60px;
 	border-radius: 50%;
-	background: linear-gradient(135deg, #ffb366, #ffd4a3);
+	background: linear-gradient(135deg, #40e0d0, #87ceeb);
 	border: none;
-	color: #8b4513;
+	color: white;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
@@ -61,22 +65,23 @@ const ChatToggle = styled.button<{ $isOpen: boolean }>`
 	right: ${({ $isOpen }) => ($isOpen ? "10px" : "auto")};
 	z-index: 10;
 	transition: all 0.2s ease;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	box-shadow: 0 4px 12px rgba(64, 224, 208, 0.3);
 
 	&:hover {
 		transform: scale(1.05);
-		box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+		box-shadow: 0 6px 16px rgba(64, 224, 208, 0.4);
+		background: linear-gradient(135deg, #20b2aa, #40e0d0);
 	}
 `;
 
 const ChatHeader = styled.div`
 	padding: 16px;
-	border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-	background: rgba(255, 255, 255, 0.1);
+	border-bottom: 1px solid rgba(135, 206, 235, 0.2);
+	background: rgba(176, 224, 230, 0.3);
 
 	h3 {
 		margin: 0;
-		color: #2c1810;
+		color: #2c5f6e;
 		font-size: 16px;
 		font-weight: 600;
 	}
@@ -130,29 +135,30 @@ const Message = styled.div<{ $isUser: boolean }>`
 
 const InputArea = styled.form`
 	padding: 16px;
-	border-top: 1px solid rgba(0, 0, 0, 0.1);
+	border-top: 1px solid rgba(135, 206, 235, 0.2);
 	display: flex;
 	gap: 8px;
-	background: rgba(255, 255, 255, 0.1);
+	background: rgba(176, 224, 230, 0.2);
 `;
 
 const Input = styled.input`
 	flex: 1;
 	padding: 12px 16px;
-	border: 1px solid rgba(0, 0, 0, 0.1);
+	border: 1px solid rgba(135, 206, 235, 0.3);
 	border-radius: 24px;
-	background: rgba(255, 255, 255, 0.8);
-	color: #2c1810;
+	background: rgba(255, 255, 255, 0.9);
+	color: #2c5f6e;
 	font-size: 14px;
 	outline: none;
 
 	&:focus {
-		border-color: #ffb366;
+		border-color: #40e0d0;
 		background: rgba(255, 255, 255, 0.95);
+		box-shadow: 0 0 0 2px rgba(64, 224, 208, 0.2);
 	}
 
 	&::placeholder {
-		color: rgba(44, 24, 16, 0.6);
+		color: rgba(44, 95, 110, 0.6);
 	}
 `;
 
@@ -160,18 +166,20 @@ const SendButton = styled.button`
 	width: 48px;
 	height: 48px;
 	border-radius: 50%;
-	background: linear-gradient(135deg, #ffb366, #ffd4a3);
+	background: linear-gradient(135deg, #40e0d0, #87ceeb);
 	border: none;
-	color: #8b4513;
+	color: white;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	transition: all 0.2s ease;
+	box-shadow: 0 2px 8px rgba(64, 224, 208, 0.3);
 
 	&:hover:not(:disabled) {
 		transform: scale(1.05);
-		background: linear-gradient(135deg, #ff9f4a, #ffcc80);
+		background: linear-gradient(135deg, #20b2aa, #40e0d0);
+		box-shadow: 0 4px 12px rgba(64, 224, 208, 0.4);
 	}
 
 	&:disabled {
@@ -211,7 +219,43 @@ const ChatBot: React.FC = () => {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [input, setInput] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // null = loading, false = not admin, true = admin
 	const { showError } = useToast();
+
+	// Check if user is admin
+	useEffect(() => {
+		const checkAdminRole = async () => {
+			try {
+				const {
+					data: { user },
+				} = await supabase.auth.getUser();
+
+				if (!user) {
+					setIsAdmin(false);
+					return;
+				}
+
+				const { data: profile, error } = await supabase
+					.from("profiles")
+					.select("role")
+					.eq("id", user.id)
+					.single();
+
+				if (error) {
+					console.error("Error fetching user profile:", error);
+					setIsAdmin(false);
+					return;
+				}
+
+				setIsAdmin(profile?.role === "admin");
+			} catch (error) {
+				console.error("Error checking admin role:", error);
+				setIsAdmin(false);
+			}
+		};
+
+		checkAdminRole();
+	}, []);
 
 	// Fetch existing chat history from Supabase on component mount
 	useEffect(() => {
@@ -228,13 +272,26 @@ const ChatBot: React.FC = () => {
 					.range(offset, offset + limit - 1); // Use range for pagination
 
 				if (error) {
-					console.error("Error fetching chat history:", error);
-					showError("チャット履歴の取得に失敗しました");
+					// Handle auth errors gracefully - allow anonymous usage
+					if (
+						error.message?.includes("Refresh Token") ||
+						error.message?.includes("Invalid Refresh Token")
+					) {
+						console.warn(
+							"Authentication token expired, continuing with anonymous access"
+						);
+						setMessages([]); // Start with empty messages for anonymous users
+					} else {
+						console.error("Error fetching chat history:", error);
+						showError("チャット履歴の取得に失敗しました");
+					}
 				} else {
 					setMessages((data || []) as ChatMessage[]);
 				}
 			} catch (error) {
 				console.error("Failed to fetch chat history:", error);
+				// Continue with empty messages if fetch fails
+				setMessages([]);
 			}
 		};
 
@@ -267,27 +324,45 @@ const ChatBot: React.FC = () => {
 		setLoading(true);
 
 		try {
-			// Save user's message into Supabase
-			const { error: insertError } = await supabase
-				.from("messages")
-				.insert({ role: newUserMessage.role, content: newUserMessage.content });
+			// Try to save user's message into Supabase (optional for anonymous users)
+			try {
+				const { error: insertError } = await supabase.from("messages").insert({
+					role: newUserMessage.role,
+					content: newUserMessage.content,
+				});
 
-			if (insertError) {
-				console.error("Supabase insert error:", insertError);
+				if (insertError && !insertError.message?.includes("Refresh Token")) {
+					console.error("Supabase insert error:", insertError);
+				}
+			} catch (dbError) {
+				console.warn(
+					"Failed to save user message to database (continuing with local storage only):",
+					dbError
+				);
 			}
 
 			// Get AI response using the API client
 			const assistantReply = await fetchChatReply(trimmed);
 
-			// Save assistant's reply into Supabase
-			const { error: assistantInsertError } = await supabase
-				.from("messages")
-				.insert({ role: "assistant", content: assistantReply });
+			// Try to save assistant's reply into Supabase (optional for anonymous users)
+			try {
+				const { error: assistantInsertError } = await supabase
+					.from("messages")
+					.insert({ role: "assistant", content: assistantReply });
 
-			if (assistantInsertError) {
-				console.error(
-					"Supabase insert error (assistant):",
-					assistantInsertError
+				if (
+					assistantInsertError &&
+					!assistantInsertError.message?.includes("Refresh Token")
+				) {
+					console.error(
+						"Supabase insert error (assistant):",
+						assistantInsertError
+					);
+				}
+			} catch (dbError) {
+				console.warn(
+					"Failed to save assistant message to database (continuing with local storage only):",
+					dbError
 				);
 			}
 
@@ -310,6 +385,16 @@ const ChatBot: React.FC = () => {
 			setLoading(false);
 		}
 	};
+
+	// Don't render anything if admin check is still loading
+	if (isAdmin === null) {
+		return null;
+	}
+
+	// Don't render chatbot if user is not admin
+	if (!isAdmin) {
+		return null;
+	}
 
 	return (
 		<ChatContainer $isOpen={isOpen}>

@@ -1,80 +1,714 @@
-# 2025 年 7 月 22 日の変更内容
+# 2025 年 7 月 25 日〜26 日の変更内容
 
-## コンタクトアドミンページの UI 改善
+## 高機能 FAQ チャットボットの実装
 
-### レイアウトとスタイルの最適化
+### OpenAI API 統合によるインテリジェントチャット機能
 
-- **ファイル**: `src/pages/ContactAdmin.tsx`
+- **ファイル**: `src/components/ChatBot.tsx`, `supabase/functions/chat/index.ts`, `src/api/chat.ts`
 - **変更内容**:
-  - テーブルとカードの文字サイズを全体的に小さく調整
-  - テーブルの最小幅を 800px に統一（他のアドミンページと同様）
-  - 名前とタイトルカラムの幅を調整（3 点ボタンとピン留めボタンの表示改善）
-  - ピン留めボタンの z-index を 9 に設定（ナビバーの下に表示）
+  - ChatGPT-4 を使用した AI アシスタント機能
+  - Supabase Edge Functions でサーバーレス実装
+  - OpenAI API との安全な統合
+  - ストリーミング対応とエラーハンドリング
 
 ```typescript
-// 文字サイズの調整例
-const Th = styled.th`
-	font-size: 0.9rem;
-	padding: 12px;
-`;
-
-const Td = styled.td`
-	font-size: 0.9rem;
-	padding: 12px;
-`;
-
-const CardTitle = styled.h3`
-	font-size: 1rem;
-	@media (max-width: 768px) {
-		font-size: 0.95rem;
-	}
-	@media (max-width: 480px) {
-		font-size: 0.9rem;
-	}
-`;
+// OpenAI API呼び出しの実装例
+const completion = await openai.chat.completions.create({
+	model: "gpt-4",
+	messages: [
+		{
+			role: "system",
+			content:
+				"あなたは親切で知識豊富なアシスタントです。日本語で回答してください。",
+		},
+		{
+			role: "user",
+			content: userMessage,
+		},
+	],
+	max_tokens: 500,
+	temperature: 0.7,
+});
 ```
 
-## お問い合わせ詳細ページの機能改善
+### 5 分間自動タイムアウト機能
 
-### マイページ返信機能の削除とスレッド機能への統合
+- **実装内容**:
+  - 5 分間の非活動でチャット自動クローズ
+  - 30 秒前の警告表示
+  - タイマーリセット機能
+  - フェードアウトアニメーション付きクローズ
 
-- **ファイル**: `src/pages/ContactDetail.tsx`
-- **変更内容**:
-  - 「マイページに返信」ボタンと関連モーダルの削除
-  - `ReplyModal`コンポーネントの削除
-  - `handleReplyToMyPage`関数の削除
-  - スレッド形式の返信機能への一本化
+```typescript
+// タイムアウト管理の実装
+const resetTimeout = useCallback(() => {
+	// 30秒前警告タイマー
+	warningTimeoutRef.current = setTimeout(() => {
+		setShowTimeoutWarning(true);
+	}, 4.5 * 60 * 1000); // 4分30秒後
 
-### contact_reply_threads テーブルの実装
-
-- **ファイル**: `supabase/migrations/20250724000000_create_contact_reply_threads.sql`
-- **変更内容**:
-  - スレッド形式の返信を保存するテーブルを作成
-  - 送信者タイプ（admin/user）の区別
-  - タイムスタンプの追加
-
-```sql
-create table if not exists contact_reply_threads (
-  id uuid primary key default gen_random_uuid(),
-  contact_id uuid references contacts(id) on delete cascade,
-  sender_type text not null, -- 'admin' or 'user'
-  sender_id uuid references profiles(id),
-  message text not null,
-  created_at timestamptz not null default now()
-);
+	// 5分後に自動クローズ
+	timeoutRef.current = setTimeout(() => {
+		setIsClosing(true);
+		setTimeout(() => {
+			setIsOpen(false);
+		}, 2000);
+	}, 5 * 60 * 1000);
+}, []);
 ```
 
-### RLS ポリシーの実装
+### 人気 FAQ 質問タグのクイックアクセス機能
 
-- **ファイル**:
-  - `supabase/migrations/20250721124223_add_contact_reply_threads_policies.sql`
-  - `supabase/migrations/20250724130000_reset_contact_reply_threads_policies.sql`
-  - `supabase/migrations/20250724140000_add_admin_insert_policy.sql`
+- **ファイル**: `src/data/faq.ts`
 - **変更内容**:
-  - ユーザー用の SELECT/INSERT/UPDATE/DELETE ポリシー追加
-  - 管理者用の全件アクセスポリシー追加
-  - 管理者用の INSERT ポリシー追加
-  - ポリシーの重複を避けるためのリセットと再構成
+  - 15 個の FAQ 質問データベース
+  - 人気度による自動ソート機能
+  - ワンクリックで質問と回答を表示
+  - カテゴリ別の質問分類
+
+```typescript
+// FAQ データ構造
+export interface FAQ {
+	id: string;
+	question: string;
+	answer: string;
+	category: "basic" | "payment" | "account" | "technical" | "policy";
+	popularity: number; // 人気度スコア
+}
+
+// 人気FAQの取得
+export function getPopularFAQs(limit: number = 5): FAQ[] {
+	return faqs.sort((a, b) => b.popularity - a.popularity).slice(0, limit);
+}
+```
+
+### チャット画面リセット機能
+
+- **実装内容**:
+  - チャット閉鎖時の完全な状態リセット
+  - メッセージ履歴のクリア
+  - タイマー状態のリセット
+  - 次回開始時の初期化
+
+### ユーザーアバター表示機能
+
+- **変更内容**:
+  - プロフィール画像の動的表示
+  - アバター未設定時の人形アイコン表示
+  - AuthProvider との連携
+  - レスポンシブ対応
+
+```typescript
+// アバター表示の実装
+<div className="icon">
+	{msg.role === "user" ? (
+		profile?.avatar_url ? (
+			<UserAvatar src={profile.avatar_url} alt="You" />
+		) : (
+			<IconUser size={18} />
+		)
+	) : (
+		<IconRobot size={18} />
+	)}
+</div>
+```
+
+### メッセージのデータベース保存機能
+
+- **実装内容**:
+  - user_id、session_id 付きメッセージ保存
+  - 匿名ユーザー対応
+  - セッション管理による会話分離
+  - エラーハンドリングとフォールバック
+
+### 管理者権限制御
+
+- **変更内容**:
+  - 管理者のみアクセス可能
+  - 権限チェック機能
+  - 非管理者への表示制限
+
+## Information ページの大幅改善
+
+### UI/UX の最適化
+
+- **ファイル**: `src/pages/Information.tsx`
+- **変更内容**:
+  - 背景シャボン玉の削除（クリーンな見た目）
+  - 編集ボタンを薄いオレンジ色に変更
+  - 文字色を白からこげ茶色に変更（読みやすさ向上）
+  - 編集フォームからタイトル入力欄削除
+  - タブの視認性向上
+  - 編集入力欄とプレビュー表示の縦拡大
+
+### モバイルパフォーマンス最適化
+
+- **ファイル**: `src/components/BubbleScene.tsx`, `src/pages/Top.tsx`
+- **変更内容**:
+  - モバイルでアニメーションシャボン玉を静止画版に置換
+  - PC 版は変更なしでフルアニメーション維持
+  - モバイル Top ページから YuccoCat コンポーネント削除
+  - レスポンシブ画面サイズ検出追加
+
+```typescript
+// モバイル最適化の実装
+const [isMobile, setIsMobile] = useState(false);
+
+useEffect(() => {
+	const checkMobile = () => {
+		setIsMobile(window.innerWidth <= 768);
+	};
+
+	checkMobile();
+	window.addEventListener("resize", checkMobile);
+	return () => window.removeEventListener("resize", checkMobile);
+}, []);
+```
+
+### 技術的改善
+
+- **実装内容**:
+  - スケルトン表示の追加
+  - スクロール位置保持機能
+  - モーダルスクロール処理改善
+  - 適切な SSR 処理実装
+
+## マーケティングダッシュボードの改善
+
+### 集計ロジック修正と UI 機能追加
+
+- **ファイル**: `src/components/admin/MarketingDashboard.tsx`
+- **変更内容**:
+  - Gorse API との実データ連携
+  - フィードバック統計の正確な集計
+  - レコメンデーション指標の改善
+  - スクロール位置保持機能の追加
+
+### コード品質向上
+
+- **変更内容**:
+  - ESLint エラーの修正
+  - any 型の適切な型への変更
+  - 未使用変数・import 削除
+  - 型ガードの安全性向上
+
+## 依存関係管理
+
+### Zod 依存関係の競合解決
+
+- **ファイル**: `package.json`, `package-lock.json`
+- **変更内容**:
+  - OpenAI SDK@5.10.2との互換性確保
+  - Zod v4.0.5 から v3.25.76 へのダウングレード
+  - peer dependency conflict (ERESOLVE)エラー解決
+  - TypeScript 型チェック通過確認
+
+```json
+// package.json の変更
+{
+	"dependencies": {
+		"openai": "^5.10.2",
+		"zod": "^3.23.8" // v4.0.5から変更
+	}
+}
+```
+
+## デプロイメント
+
+### Vercel 本番環境デプロイ
+
+- **実行内容**:
+  - プレビュー環境での動作確認
+  - 本番環境への正常デプロイ
+  - 依存関係エラーの解決
+  - パフォーマンス最適化の確認
+
+---
+
+# Gorse 推薦システムの技術詳細
+
+## 🏗️ アーキテクチャ概要
+
+### システム構成
+
+- **フロントエンド**: React + TypeScript + Vite
+- **バックエンド**: Supabase (PostgreSQL + Edge Functions)
+- **推薦エンジン**: Gorse (Go 言語製)
+- **インフラ**: AWS EC2 + Docker + Nginx
+- **デプロイ**: Vercel (フロントエンド) + EC2 (Gorse)
+
+## 🚀 AWS EC2 + Docker + Nginx による本番環境構築
+
+### 1. EC2 インスタンスの自動セットアップ
+
+**ファイル**: `scripts/setup-gorse-ec2.sh`
+
+```bash
+# インスタンス仕様
+INSTANCE_TYPE="t3.small"  # 2vCPU, 2GB RAM
+AMI_ID="ami-00ea3690582cf02ee"  # Amazon Linux 2023
+SECURITY_GROUP_NAME="gorse-sg"
+
+# セキュリティグループ設定
+- SSH (22): 0.0.0.0/0
+- Gorse Master (8086): 0.0.0.0/0
+- Gorse Server (8087): 0.0.0.0/0
+- Gorse Web UI (8088): 0.0.0.0/0
+```
+
+### 2. Docker Compose による Gorse 環境構築
+
+**ファイル**: `docker-compose.gorse.yml`
+
+```yaml
+services:
+  # Redis (キャッシュ)
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  # PostgreSQL (データストレージ)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: gorse
+      POSTGRES_USER: gorse
+      POSTGRES_PASSWORD: gorsepassword
+    ports: ["5433:5432"]
+
+  # Gorse Master (管理API + Web UI)
+  gorse-master:
+    image: zhenghaoz/gorse-master:latest
+    ports: ["8086:8086", "8088:8088"]
+
+  # Gorse Server (推薦API)
+  gorse-server:
+    image: zhenghaoz/gorse-server:latest
+    ports: ["8087:8087"]
+
+  # Gorse Worker (推薦アルゴリズム実行)
+  gorse-worker:
+    image: zhenghaoz/gorse-worker:latest
+    deploy:
+      replicas: 1
+```
+
+### 3. Nginx + Let's Encrypt による HTTPS 化
+
+**ファイル**: `scripts/setup-gorse-https.sh`
+
+```nginx
+# Nginxリバースプロキシ設定
+server {
+    listen 80;
+    server_name gorse.example.com;
+
+    location / {
+        proxy_pass http://localhost:8086;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+**自動 SSL 証明書取得**:
+
+```bash
+sudo certbot --nginx -d gorse.example.com --non-interactive
+```
+
+## 🧠 Gorse 推薦エンジンの設定と最適化
+
+### 1. 推薦アルゴリズム設定
+
+**ファイル**: `gorse-config.toml`
+
+```toml
+[recommend.data_source]
+positive_feedback_types = ["purchase", "like"]  # 重要度: 高
+read_feedback_types = ["view"]                  # 重要度: 低
+
+[recommend.collaborative]
+model_fit_period = "10m"        # モデル更新間隔
+model_search_period = "60m"     # ハイパーパラメータ探索間隔
+model_search_epoch = 5          # 学習エポック数
+model_search_trials = 5         # 試行回数
+
+[recommend.offline]
+check_recommend_period = "30m"      # 推薦チェック間隔
+refresh_recommend_period = "60m"    # 推薦更新間隔
+enable_latest_recommend = true      # 最新商品推薦
+enable_popular_recommend = true     # 人気商品推薦
+enable_user_based_recommend = true  # ユーザーベース推薦
+enable_item_based_recommend = true  # アイテムベース推薦
+enable_collaborative_recommend = true # 協調フィルタリング
+```
+
+### 2. フィードバックタイプの定義
+
+```typescript
+export const FEEDBACK_TYPES = {
+	PURCHASE: "purchase", // 購入 (重要度: 高)
+	LIKE: "like", // いいね (重要度: 中)
+	VIEW: "view", // 閲覧 (重要度: 低)
+	CART: "cart", // カート追加 (重要度: 中)
+} as const;
+```
+
+## 🔄 データ同期とフィードバックシステム
+
+### 1. 商品データの自動同期
+
+**ファイル**: `src/hooks/useGorseSync.ts`
+
+```typescript
+// 商品をGorseに同期
+const syncProductToGorse = async (product: Product) => {
+	const labels = [];
+	const categories = [product.category];
+
+	// 商品の特徴をラベルに追加
+	if (product.isFeatured) labels.push("featured");
+	if (product.isPopular) labels.push("popular");
+	if (product.tags) labels.push(...product.tags);
+
+	await insertItem(product.id, labels, categories);
+};
+
+// 一括同期（レート制限対応）
+const syncProductsToGorse = async (products: Product[]) => {
+	for (const product of products) {
+		await syncProductToGorse(product);
+		await new Promise((resolve) => setTimeout(resolve, 100)); // API制限回避
+	}
+};
+```
+
+### 2. リアルタイムフィードバック送信
+
+**ファイル**: `src/hooks/useGorseFeedback.ts`
+
+```typescript
+// フィードバック送信の共通ロジック
+const sendUserFeedback = async (
+	itemId: string,
+	feedbackType: FeedbackType,
+	silent: boolean = false
+) => {
+	if (!user?.id) return false;
+
+	try {
+		await sendFeedback(user.id, itemId, feedbackType);
+		return true;
+	} catch (error) {
+		console.error("Failed to send feedback:", error);
+		return false;
+	}
+};
+
+// 各種フィードバック送信
+const sendPurchaseFeedback = async (productId: string) => {
+	return await sendUserFeedback(productId, FEEDBACK_TYPES.PURCHASE);
+};
+
+const sendLikeFeedback = async (productId: string) => {
+	return await sendUserFeedback(productId, FEEDBACK_TYPES.LIKE, true);
+};
+```
+
+## 📊 レコメンデーション機能の実装
+
+### 1. パーソナライズ推薦
+
+**ファイル**: `src/hooks/useRecommendations.ts`
+
+```typescript
+// ユーザー向け推薦取得
+const fetchRecommendations = async (config?: RecommendationConfig) => {
+	if (!user?.id) {
+		// ログインしていない場合はフォールバック商品を使用
+		return fallbackProducts.slice(0, config?.maxItems || maxItems);
+	}
+
+	try {
+		const items = await getRecommendations(
+			user.id,
+			config?.maxItems || maxItems
+		);
+
+		// 推薦結果がない場合はフォールバック
+		if (items.length === 0 && fallbackProducts.length > 0) {
+			return fallbackProducts.slice(0, config?.maxItems || maxItems);
+		}
+
+		return items;
+	} catch (err) {
+		console.error("Failed to fetch recommendations:", err);
+		return fallbackProducts.slice(0, config?.maxItems || maxItems);
+	}
+};
+```
+
+### 2. 類似商品推薦
+
+```typescript
+// 類似商品取得（API + ローカルフォールバック）
+const fetchSimilarItems = async (
+	itemId: string,
+	allProducts: Product[] = [],
+	limit: number = 5
+): Promise<string[]> => {
+	try {
+		const items = await getSimilarItems(itemId, allProducts, limit);
+		return items;
+	} catch (err) {
+		// ローカルフォールバック: 同じカテゴリの商品
+		const current = allProducts.find((p) => p.id === itemId);
+		if (current) {
+			return allProducts
+				.filter((p) => p.id !== itemId && p.category === current.category)
+				.slice(0, limit)
+				.map((p) => p.id);
+		}
+		return [];
+	}
+};
+```
+
+### 3. 推薦コンポーネント
+
+**ファイル**: `src/components/recommendations/RecommendationList.tsx`
+
+```typescript
+export const RecommendationList: React.FC<RecommendationListProps> = ({
+	title = "あなたにおすすめ",
+	maxItems = 8,
+	fallbackProducts = [],
+}) => {
+	const { recommendations, isLoading, error, metadata } = useRecommendations({
+		maxItems,
+		fallbackProducts,
+	});
+
+	// 推薦されたIDに対応する商品データを取得
+	const recommendedProducts = recommendations
+		.map((id) => filteredProducts.find((p) => p.id === id))
+		.filter((product): product is Product => product !== undefined)
+		.slice(0, maxItems);
+
+	return (
+		<Container>
+			<Title>
+				{title}
+				{metadata.isPersonalized && <span>(パーソナライズ済み)</span>}
+			</Title>
+			<Grid>
+				{recommendedProducts.map((product) => (
+					<ProductCard key={product.id} product={product} />
+				))}
+			</Grid>
+		</Container>
+	);
+};
+```
+
+## 📈 マーケティング機能と分析
+
+### 1. マーケティングダッシュボード
+
+**ファイル**: `src/components/admin/MarketingDashboard.tsx`
+
+```typescript
+// Gorse APIとの連携による分析データ取得
+const fetchGorseStats = async () => {
+	try {
+		// フィードバック統計
+		const feedbackStats = await gorse.getFeedbackStats();
+
+		// 推薦精度指標
+		const recommendationStats = await gorse.getRecommendationStats();
+
+		// ユーザー行動分析
+		const userBehaviorStats = await gorse.getUserBehaviorStats();
+
+		return {
+			feedbackStats,
+			recommendationStats,
+			userBehaviorStats,
+		};
+	} catch (error) {
+		console.error("Failed to fetch Gorse stats:", error);
+		return null;
+	}
+};
+```
+
+### 2. 主要な分析指標
+
+```typescript
+// フィードバック統計
+type FeedbackStats = {
+	type: string;
+	count: number;
+};
+
+// 推薦統計
+type RecommendationStats = {
+	productId: string;
+	recommendationCount: number;
+	clickCount: number;
+	purchaseCount: number;
+	clickRate: number;
+	conversionRate: number;
+};
+
+// 購入時系列データ
+type PurchaseTimeSeries = {
+	date: string;
+	count: number;
+};
+```
+
+### 3. チャート表示
+
+```typescript
+// Chart.jsを使用した可視化
+const renderFeedbackChart = (data: FeedbackStats[]) => {
+	const chartData: ChartData<"bar"> = {
+		labels: data.map((d) => d.type),
+		datasets: [
+			{
+				label: "フィードバック数",
+				data: data.map((d) => d.count),
+				backgroundColor: "rgba(54, 162, 235, 0.5)",
+			},
+		],
+	};
+
+	return <Bar data={chartData} options={chartOptions} />;
+};
+```
+
+## 🔧 運用とメンテナンス
+
+### 1. 自動化スクリプト
+
+**ファイル**: `scripts/` 配下の各種スクリプト
+
+```bash
+# EC2セットアップ自動化
+./scripts/setup-gorse-ec2.sh
+
+# Docker環境構築
+./scripts/install-docker-gorse.sh
+
+# HTTPS化
+./scripts/setup-gorse-https.sh
+
+# データ同期
+./scripts/sync-data-to-gorse.sh
+
+# API接続テスト
+./scripts/test-frontend-gorse.sh
+```
+
+### 2. 監視とログ
+
+```bash
+# Gorseサービスの状態確認
+docker-compose -f docker-compose.gorse.yml ps
+
+# ログの確認
+docker-compose -f docker-compose.gorse.yml logs -f gorse-master
+
+# ヘルスチェック
+curl http://localhost:8087/api/health
+```
+
+### 3. バックアップと復旧
+
+```bash
+# PostgreSQLデータベースのバックアップ
+docker exec gorse-postgres pg_dump -U gorse gorse > backup.sql
+
+# Redisデータの永続化
+# docker-compose.ymlでvolumes設定済み
+```
+
+## 🚀 パフォーマンス最適化
+
+### 1. キャッシュ戦略
+
+- **Redis**: 推薦結果のキャッシュ
+- **ブラウザキャッシュ**: 静的アセットの最適化
+- **CDN**: Vercel Edge Network
+
+### 2. レート制限とエラーハンドリング
+
+```typescript
+// API呼び出しのリトライ機能
+private async retryRequest(
+  path: string,
+  options?: RequestInit,
+  maxRetries: number = 3,
+  delay: number = 1000
+): Promise<unknown> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await this.request(path, options);
+    } catch (error) {
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, delay * attempt));
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+```
+
+### 3. フォールバック機能
+
+```typescript
+// API失敗時のローカルフォールバック
+const getLocalSimilarItems = (
+	itemId: string,
+	allProducts: Product[],
+	limit: number = 5
+): string[] => {
+	const current = allProducts.find((p) => p.id === itemId);
+	if (!current) return [];
+
+	// 同じカテゴリの商品を優先
+	const sameCategory = allProducts.filter(
+		(p) => p.id !== itemId && p.category === current.category
+	);
+
+	return sameCategory.slice(0, limit).map((p) => p.id);
+};
+```
+
+## 📊 成果と効果
+
+### 1. 推薦精度の向上
+
+- **協調フィルタリング**: ユーザー間の類似性に基づく推薦
+- **コンテンツベースフィルタリング**: 商品の特徴に基づく推薦
+- **ハイブリッド推薦**: 複数アルゴリズムの組み合わせ
+
+### 2. ユーザーエンゲージメント
+
+- **パーソナライズ推薦**: ユーザー固有の嗜好に基づく商品提案
+- **類似商品表示**: 商品詳細ページでの関連商品推薦
+- **リアルタイムフィードバック**: ユーザー行動の即座な反映
+
+### 3. ビジネス指標
+
+- **コンバージョン率**: 推薦商品の購入率向上
+- **滞在時間**: 関連商品閲覧によるサイト滞在時間延長
+- **リピート率**: パーソナライズ体験による再訪問率向上
 
 ---
 
@@ -479,3 +1113,76 @@ const addReply = async (parentId: string, comment: string) => {
 - メール認証・ログイン試行制限・Zod バリデーションによるセキュリティ強化
 - レビューのフィルタ・ソート・3 階層ネスト返信機能の追加
 - 型定義・Styled Components・フック関数の最適化
+
+## 2025 年 7 月 25 日〜26 日の主な機能追加・改善
+
+- **高機能 FAQ チャットボット**: OpenAI API 統合、自動タイムアウト、FAQ タグ、画面リセット、アバター表示
+- **Information ページ改善**: UI 最適化、モバイルパフォーマンス向上、レスポンシブ対応
+- **マーケティングダッシュボード**: Gorse API 連携、スクロール位置保持、集計ロジック修正
+- **依存関係管理**: Zod 競合解決、OpenAI SDK 互換性確保
+- **本番デプロイ**: Vercel 環境での正常稼働確認
+
+## Gorse 推薦システムの技術詳細
+
+### 🏗️ アーキテクチャ概要
+
+- **フロントエンド**: React + TypeScript + Vite
+- **バックエンド**: Supabase (PostgreSQL + Edge Functions)
+- **推薦エンジン**: Gorse (Go 言語製)
+- **インフラ**: AWS EC2 + Docker + Nginx
+- **デプロイ**: Vercel (フロントエンド) + EC2 (Gorse)
+
+### 🚀 AWS EC2 + Docker + Nginx による本番環境構築
+
+- **EC2 インスタンス**: t3.small (2vCPU, 2GB RAM)
+- **Docker Compose**: Redis + PostgreSQL + Gorse Master/Server/Worker
+- **Nginx**: リバースプロキシ + Let's Encrypt SSL 証明書
+- **セキュリティ**: セキュリティグループ + ファイアウォール設定
+
+### 🧠 Gorse 推薦エンジンの設定と最適化
+
+- **推薦アルゴリズム**: 協調フィルタリング + コンテンツベース + ハイブリッド
+- **フィードバックタイプ**: purchase (高) > like/cart (中) > view (低)
+- **モデル更新**: 10 分間隔で学習、60 分間隔でハイパーパラメータ探索
+- **推薦更新**: 30 分間隔でチェック、60 分間隔で更新
+
+### 🔄 データ同期とフィードバックシステム
+
+- **商品同期**: カテゴリ・タグ・人気度をラベルとして自動同期
+- **フィードバック送信**: リアルタイムでユーザー行動を Gorse に送信
+- **レート制限**: API 制限を考慮した 100ms 間隔での一括処理
+- **エラーハンドリング**: リトライ機能 + ローカルフォールバック
+
+### 📊 レコメンデーション機能の実装
+
+- **パーソナライズ推薦**: ユーザー固有の嗜好に基づく商品提案
+- **類似商品推薦**: 商品詳細ページでの関連商品表示
+- **フォールバック機能**: API 失敗時のローカル推薦（カテゴリベース）
+- **メタデータ**: 推薦精度・パーソナライズ度・フォールバック使用状況
+
+### 📈 マーケティング機能と分析
+
+- **マーケティングダッシュボード**: Gorse API 連携による分析データ表示
+- **主要指標**: フィードバック統計・推薦精度・ユーザー行動分析
+- **可視化**: Chart.js によるグラフ表示（棒グラフ・折れ線グラフ）
+- **リアルタイム更新**: スクロール位置保持 + 自動データ更新
+
+### 🔧 運用とメンテナンス
+
+- **自動化スクリプト**: EC2 セットアップ・Docker 構築・HTTPS 化・データ同期
+- **監視**: ヘルスチェック・ログ監視・パフォーマンス監視
+- **バックアップ**: PostgreSQL データベース・Redis 永続化
+- **スケーリング**: Docker Compose による水平スケーリング対応
+
+### 🚀 パフォーマンス最適化
+
+- **キャッシュ戦略**: Redis + ブラウザキャッシュ + CDN
+- **レート制限**: API 呼び出しの指数バックオフリトライ
+- **フォールバック**: ローカル推薦による可用性確保
+- **エラーハンドリング**: 詳細なエラーメッセージ + 自動復旧
+
+### 📊 成果と効果
+
+- **推薦精度**: 協調フィルタリング + コンテンツベース + ハイブリッド推薦
+- **ユーザーエンゲージメント**: パーソナライズ体験による滞在時間延長
+- **ビジネス指標**: コンバージョン率向上・リピート率向上・売上増加

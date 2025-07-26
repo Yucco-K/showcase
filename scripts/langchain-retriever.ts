@@ -3,6 +3,7 @@
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { ChatOpenAI } from "@langchain/openai";
 import { createClient } from "@supabase/supabase-js";
+import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 
 // 本番用設定
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -47,9 +48,9 @@ async function generateAnswer(query: string, contextDocs: string[]) {
 	try {
 		const context = contextDocs.join("\n---\n");
 		const systemPrompt = `あなたはPortfolio Showcaseの専門AIアシスタントです。以下のコンテキスト（商品・FAQ）だけを根拠に、ユーザーの質問に日本語で簡潔かつ正確に答えてください。\n\n【コンテキスト】\n${context}`;
-		const res = await llm.call([
-			{ role: "system", content: systemPrompt },
-			{ role: "user", content: query },
+		const res = await llm.invoke([
+			new SystemMessage(systemPrompt),
+			new HumanMessage(query),
 		]);
 		return res.content;
 	} catch (err) {

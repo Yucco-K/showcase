@@ -9,7 +9,6 @@
 	"tasks": {
 		"start": "deno run --allow-net --allow-read --allow-env scripts/langchain-test.ts"
 	},
-	"nodeModulesDir": "auto",
 	"lint": {
 		"exclude": [
 			"src/",

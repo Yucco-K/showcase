@@ -13,10 +13,16 @@ interface ImportMeta {
 const API_URL = "https://ljjptkfrdeiktywbbybr.supabase.co/functions/v1/chat";
 
 const testQueries = [
-	"Zen Breathについて教えて",
-	"Runner Tribeの価格は？",
-	"Mind Craftの機能は？",
+	"AppBuzz Hiveについて教えて",
+	"MyRecipeNoteの価格は？",
+	"SnazzySync Appsの機能は？",
+	"CollabPlannerの特徴は？",
+	"AppJive Junctionについて教えて",
+	"ByteBoundの価格は？",
+	"Pixel Pulse Nexusの機能は？",
+	"AppThriveの特徴は？",
 	"おすすめの商品はありますか？",
+	"プライバシーポリシーはどこに書かれていますか？",
 ];
 
 const ANON_KEY =

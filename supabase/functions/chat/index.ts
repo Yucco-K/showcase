@@ -48,9 +48,11 @@ ${context}
 【重要な指示】
 - 上記のコンテキストにあるPortfolio Showcase商品のみを紹介してください
 - 商品名、価格、機能、特徴を具体的に説明してください
+- 価格は必ず日本円（¥）で表示してください。ドル（$）表記は絶対に使用しないでください
 - 「おすすめ商品」を聞かれたら、AppBuzz Hive、MyRecipeNote、SnazzySync Apps、CollabPlannerなどの実際のShowcase商品を推奨してください
 - Simple TODOや一般的なアプリではなく、Portfolio Showcaseの商品に限定してください
-- 商品の価格も含めて回答してください`;
+- 商品の価格も含めて回答してください
+- 価格表示例: ¥32,000、¥500、¥24,000、¥1,200`;
 
 		const response = await fetch("https://api.openai.com/v1/chat/completions", {
 			method: "POST",
@@ -112,7 +114,7 @@ async function retrieveAllContexts(
 					(p) =>
 						`[Portfolio Showcase商品] ${
 							p.name
-						} - 価格: ¥${p.price?.toLocaleString()} - カテゴリ: ${
+						} - 価格: ¥${p.price?.toLocaleString("ja-JP")} - カテゴリ: ${
 							p.category
 						} - ${p.description} - 詳細: ${p.long_description} - 機能: ${
 							p.features?.join(", ") || "なし"

@@ -348,7 +348,8 @@ const ChatBot: React.FC = () => {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [input, setInput] = useState("");
 	const [loading, setLoading] = useState(false);
-	const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // null = loading, false = not admin, true = admin
+	// 管理者チェックは不要になったため削除
+	// const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // null = loading, false = not admin, true = admin
 	const [isClosing, setIsClosing] = useState(false);
 	const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
 	const { showError } = useToast();
@@ -359,40 +360,40 @@ const ChatBot: React.FC = () => {
 	const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const [popularFAQs] = useState<FAQ[]>(() => getPopularFAQs(5));
 
-	// Check if user is admin
-	useEffect(() => {
-		const checkAdminRole = async () => {
-			try {
-				const {
-					data: { user },
-				} = await supabase.auth.getUser();
+	// 管理者チェックは不要になったため削除
+	// useEffect(() => {
+	// 	const checkAdminRole = async () => {
+	// 		try {
+	// 			const {
+	// 				data: { user },
+	// 				} = await supabase.auth.getUser();
 
-				if (!user) {
-					setIsAdmin(false);
-					return;
-				}
+	// 			if (!user) {
+	// 				setIsAdmin(false);
+	// 				return;
+	// 			}
 
-				const { data: profile, error } = await supabase
-					.from("profiles")
-					.select("role")
-					.eq("id", user.id)
-					.single();
+	// 			const { data: profile, error } = await supabase
+	// 				.from("profiles")
+	// 				.select("role")
+	// 				.eq("id", user.id)
+	// 				.single();
 
-				if (error) {
-					console.error("Error fetching user profile:", error);
-					setIsAdmin(false);
-					return;
-				}
+	// 			if (error) {
+	// 				console.error("Error fetching user profile:", error);
+	// 				setIsAdmin(false);
+	// 				return;
+	// 			}
 
-				setIsAdmin(profile?.role === "admin");
-			} catch (error) {
-				console.error("Error checking admin role:", error);
-				setIsAdmin(false);
-			}
-		};
+	// 			setIsAdmin(profile?.role === "admin");
+	// 		} catch (error) {
+	// 			console.error("Error checking admin role:", error);
+	// 			setIsAdmin(false);
+	// 		}
+	// 	};
 
-		checkAdminRole();
-	}, []);
+	// 	checkAdminRole();
+	// }, []);
 
 	// メッセージが更新されたときに自動で最下部にスクロール
 	const scrollToBottom = useCallback(() => {
@@ -642,15 +643,15 @@ const ChatBot: React.FC = () => {
 		}
 	};
 
-	// Don't render anything if admin check is still loading
-	if (isAdmin === null) {
-		return null;
-	}
+	// 管理者チェックのローディング状態も不要になったため削除
+	// if (isAdmin === null) {
+	// 	return null;
+	// }
 
-	// Don't render chatbot if user is not admin
-	if (!isAdmin) {
-		return null;
-	}
+	// 一般ユーザーでもチャットボットを利用可能にするため、管理者チェックを削除
+	// if (!isAdmin) {
+	// 	return null;
+	// }
 
 	return (
 		<ChatContainer $isOpen={isOpen} $isClosing={isClosing}>

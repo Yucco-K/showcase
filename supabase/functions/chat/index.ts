@@ -124,7 +124,7 @@ serve(async (req: Request) => {
 
 		// OpenAI APIリクエストの構築
 		const openaiRequest: OpenAIRequest = {
-			model: "gpt-4o-mini", // コスト効率の良いモデルを使用
+			model: "gpt-4.1-nano", // GPT-4.1 nanoモデルを使用
 			messages: [
 				{
 					role: "system",

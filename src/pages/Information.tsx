@@ -5,7 +5,6 @@ import { useToast } from "../hooks/useToast";
 import { Toast } from "../components/ui/Toast";
 import {
 	Modal,
-	TextInput,
 	Button,
 	Group,
 	Tabs,

@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2.39.7";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // 環境変数の取得と検証
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -6,65 +6,57 @@ const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// 外部アプリ推奨を防ぐ制御
-const FORBIDDEN_APPS = [
-	"todoist",
-	"trello",
-	"notion",
-	"microsoft to do",
-	"microsoft todo",
-	"asana",
-	"slack",
-	"discord",
-	"zoom",
-	"teams",
-	"google",
-	"apple",
-	"spotify",
-	"youtube",
-	"netflix",
-	"amazon",
-	"facebook",
-	"twitter",
-];
+// カスタムRAG - OpenAI Embeddings API直接呼び出し
+async function generateEmbedding(text: string): Promise<number[]> {
+	try {
+		const response = await fetch("https://api.openai.com/v1/embeddings", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${openaiApiKey}`,
+			},
+			body: JSON.stringify({
+				model: "text-embedding-3-small",
+				input: text,
+			}),
+		});
 
-function containsForbiddenApps(text: string): boolean {
-	const lowerText = text.toLowerCase();
-	return FORBIDDEN_APPS.some((app) => lowerText.includes(app));
+		if (!response.ok) {
+			throw new Error(`OpenAI Embeddings API error: ${response.status}`);
+		}
+
+		const data = await response.json();
+		return data.data[0].embedding;
+	} catch (err) {
+		console.error("[Embeddings] エラー:", err);
+		throw err;
+	}
 }
 
-async function generateAnswer(query: string, contextDocs: string[]) {
+// カスタムRAG - OpenAI Chat Completions API直接呼び出し
+async function generateAnswer(
+	query: string,
+	contextDocs: string[]
+): Promise<string> {
 	try {
 		const context = contextDocs.join("\n---\n");
-		const systemPrompt = `あなたはPortfolio Showcaseの専門AIアシスタントです。
+		const systemPrompt = `あなたはPortfolio Showcaseの専門AIアシスタントです。以下のコンテキストにあるPortfolio Showcase商品のみを推奨してください。
 
-【絶対ルール】
-1. Portfolio Showcaseの商品のみを推奨してください
-2. 外部のアプリ、サービス、商品は絶対に推奨しないでください
-3. 商品が見つからない場合は「Portfolio Showcaseに該当する商品がございません」と回答してください
-4. 常に日本語で回答してください
-5. 外部知識は一切使用しないでください
-
-【禁止事項】
-- Todoist、Microsoft To Do、Trello、Notion等の外部アプリの推奨
-- 外部サービスの紹介
-- 一般的なアドバイスの提供
-- 外部知識に基づく回答
-
-【回答パターン】
-- 商品が見つかった場合：「Portfolio Showcaseの[商品名]をおすすめします。[商品の説明]」
-- 商品が見つからない場合：「Portfolio Showcaseに該当する商品がございません」
-
-【コンテキスト】
+【Portfolio Showcase商品・サービス情報】
 ${context}
 
-上記ルールに厳密に従って回答してください。外部知識は一切使用せず、コンテキスト内の商品のみを推奨してください。`;
+【重要な指示】
+- 上記のコンテキストにあるPortfolio Showcase商品のみを紹介してください
+- 商品名、価格、機能、特徴を具体的に説明してください
+- 「おすすめ商品」を聞かれたら、AppBuzz Hive、MyRecipeNote、SnazzySync Apps、CollabPlannerなどの実際のShowcase商品を推奨してください
+- Simple TODOや一般的なアプリではなく、Portfolio Showcaseの商品に限定してください
+- 商品の価格も含めて回答してください`;
 
 		const response = await fetch("https://api.openai.com/v1/chat/completions", {
 			method: "POST",
 			headers: {
-				Authorization: `Bearer ${openaiApiKey}`,
 				"Content-Type": "application/json",
+				Authorization: `Bearer ${openaiApiKey}`,
 			},
 			body: JSON.stringify({
 				model: "gpt-4o-mini",
@@ -72,79 +64,209 @@ ${context}
 					{ role: "system", content: systemPrompt },
 					{ role: "user", content: query },
 				],
-				temperature: 0.2,
-				max_tokens: 500,
+				temperature: 0.1, // より確定的な回答のため低く設定
+				max_tokens: 600, // より詳細な回答のため増加
 			}),
 		});
 
-		const data = await response.json();
-		let answer =
-			data.choices[0]?.message?.content ||
-			"申し訳ありません。現在回答できません。";
-
-		// 外部アプリ推奨チェック
-		if (containsForbiddenApps(answer)) {
-			answer = "Portfolio Showcaseに該当する商品がございません。";
+		if (!response.ok) {
+			throw new Error(`OpenAI Chat API error: ${response.status}`);
 		}
 
-		return answer;
+		const data = await response.json();
+		return data.choices[0].message.content;
 	} catch (err) {
-		console.error("[QAChain] 回答生成エラー:", err);
+		console.error("[ChatCompletion] エラー:", err);
 		return "申し訳ありません。現在回答できません。";
 	}
 }
 
-// 商品＋FAQ・ガイド・規約 横断検索RAG
-async function retrieveAllContexts(query: string, k: number = 3) {
+// カスタムRAG - 商品＋FAQ・ガイド・規約 横断検索
+async function retrieveAllContexts(
+	query: string,
+	k: number = 5
+): Promise<string[]> {
 	try {
-		// 簡易的なキーワード検索（埋め込みの代わり）
-		const { data: productData, error: productError } = await supabase
-			.from("products")
-			.select("name, description, long_description, features")
-			.or(
-				`name.ilike.%${query}%,description.ilike.%${query}%,long_description.ilike.%${query}%`
-			)
-			.limit(k);
+		console.log(`[Retriever] クエリ: ${query}`);
 
-		if (productError) throw productError;
+		// おすすめ商品やShowcase商品を聞かれた場合の特別処理
+		if (
+			query.includes("おすすめ") ||
+			query.includes("商品") ||
+			query.includes("アプリ") ||
+			query.includes("showcase")
+		) {
+			console.log(
+				"[Retriever] おすすめ商品クエリを検出 - 直接商品データを取得"
+			);
+			const { data: recommendedProducts } = await supabase
+				.from("products")
+				.select(
+					"name, price, category, description, long_description, features"
+				)
+				.or("recommended.eq.true,popular.eq.true")
+				.limit(8);
 
-		const productDocs = (productData || []).map(
-			(product) =>
-				`商品名: ${product.name}\n説明: ${product.description}\n詳細: ${product.long_description}\n機能: ${product.features}`
+			if (recommendedProducts && recommendedProducts.length > 0) {
+				const productInfo = recommendedProducts.map(
+					(p) =>
+						`[Portfolio Showcase商品] ${
+							p.name
+						} - 価格: ¥${p.price?.toLocaleString()} - カテゴリ: ${
+							p.category
+						} - ${p.description} - 詳細: ${p.long_description} - 機能: ${
+							p.features?.join(", ") || "なし"
+						}`
+				);
+				console.log(`[Retriever] おすすめ商品: ${productInfo.length}件取得`);
+				return productInfo;
+			}
+		}
+
+		const embedding = await generateEmbedding(query);
+
+		// 商品（product_embeddings）- より多くのコンテキストを取得
+		const { data: productData, error: productError } = await supabase.rpc(
+			"match_products",
+			{
+				query_embedding: embedding,
+				match_threshold: 0.05, // さらに閾値を下げて検索精度向上
+				match_count: k,
+			}
+		);
+		if (productError) {
+			console.error("[Product Search] エラー:", productError);
+		}
+		const productDocs = (
+			(productData as { content: string; similarity: number }[] | null) || []
+		).map(
+			(row) =>
+				`[Portfolio Showcase商品情報] ${
+					row.content
+				} (類似度: ${row.similarity?.toFixed(3)})`
 		);
 
-		return productDocs;
+		// FAQ・ガイド・規約（doc_embeddings）
+		const { data: docData, error: docError } = await supabase.rpc(
+			"match_docs",
+			{
+				query_embedding: embedding,
+				match_threshold: 0.05, // さらに閾値を下げて検索精度向上
+				match_count: k,
+				doc_type: null,
+			}
+		);
+		if (docError) {
+			console.error("[Doc Search] エラー:", docError);
+		}
+		const docDocs = (
+			(docData as
+				| { type: string; title: string; content: string; similarity: number }[]
+				| null) || []
+		).map(
+			(row) =>
+				`[${row.type}] ${row.title}\n${
+					row.content
+				} (類似度: ${row.similarity?.toFixed(3)})`
+		);
+
+		const allDocs = [...productDocs, ...docDocs];
+		console.log(
+			`[Retriever] 取得: 商品${productDocs.length}件, ドキュメント${docDocs.length}件, 合計${allDocs.length}件`
+		);
+
+		// コンテキストが少ない場合のフォールバック
+		if (allDocs.length === 0) {
+			console.log("[Retriever] フォールバック: 全商品情報を取得");
+			const { data: allProducts } = await supabase
+				.from("products")
+				.select("name, price, description, long_description, features")
+				.limit(10);
+
+			if (allProducts && allProducts.length > 0) {
+				return allProducts.map(
+					(p) =>
+						`[Portfolio Showcase商品] ${
+							p.name
+						} - 価格: ¥${p.price?.toLocaleString()} - ${
+							p.description
+						} - 機能: ${p.features?.join(", ") || "なし"}`
+				);
+			}
+		}
+
+		return allDocs;
 	} catch (err) {
-		console.error("[Retriever] 検索エラー:", err);
+		console.error("[Retriever] 横断検索エラー:", err);
 		return [];
 	}
 }
 
-export default async (req, res) => {
+Deno.serve(async (req) => {
+	// CORS設定
+	const corsHeaders = {
+		"Access-Control-Allow-Origin": "*",
+		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization",
+		"Access-Control-Max-Age": "86400",
+	};
+
+	// CORSプリフライトリクエスト対応
+	if (req.method === "OPTIONS") {
+		return new Response(null, {
+			status: 200,
+			headers: corsHeaders,
+		});
+	}
+
 	try {
-		const { message } = req.body;
-		if (!message) {
-			res.status(400).json({ error: "質問が指定されていません。" });
-			return;
+		// リクエストボディからパラメータを取得
+		const body = await req.json();
+		const { query, message } = body;
+		const userQuery = query || message;
+
+		if (!userQuery) {
+			return new Response(
+				JSON.stringify({ error: "質問が指定されていません。" }),
+				{
+					status: 400,
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+				}
+			);
 		}
 
-		// 商品検索
-		const docs = await retrieveAllContexts(message, 3);
+		console.log(`[API] ユーザークエリ: ${userQuery}`);
+
+		// 商品＋FAQ・ガイド・規約 横断検索
+		const docs = await retrieveAllContexts(userQuery, 5);
 		if (docs.length === 0) {
-			res.status(200).json({
-				reply: "Portfolio Showcaseに該当する商品がございません。",
-				success: true,
-			});
-			return;
+			return new Response(
+				JSON.stringify({
+					reply:
+						"申し訳ありません。該当する商品・情報が見つかりませんでした。Portfolio Showcaseの商品については、具体的な商品名をお聞かせください。",
+				}),
+				{
+					status: 200,
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+				}
+			);
 		}
 
-		const answer = await generateAnswer(message, docs);
-		res.status(200).json({
-			reply: answer,
-			success: true,
+		console.log(`[API] 取得コンテキスト: ${docs.length}件`);
+		const answer = await generateAnswer(userQuery, docs);
+
+		return new Response(JSON.stringify({ reply: answer }), {
+			status: 200,
+			headers: { ...corsHeaders, "Content-Type": "application/json" },
 		});
 	} catch (err) {
 		console.error("[API] エラー:", err);
-		res.status(500).json({ error: "システムエラーが発生しました。" });
+		return new Response(
+			JSON.stringify({ error: "システムエラーが発生しました。" }),
+			{
+				status: 500,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			}
+		);
 	}
-};
+});

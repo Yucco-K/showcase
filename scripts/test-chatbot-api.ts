@@ -13,14 +13,14 @@ interface ImportMeta {
 const API_URL = "https://ljjptkfrdeiktywbbybr.supabase.co/functions/v1/chat";
 
 const testQueries = [
-	"おすすめのタスク管理アプリは？",
-	"健康管理に役立つサービスは？",
-	"料理レシピを整理したい",
-	"音楽プレイリストを作りたい",
+	"Zen Breathについて教えて",
+	"Runner Tribeの価格は？",
+	"Mind Craftの機能は？",
+	"おすすめの商品はありますか？",
 ];
 
 const ANON_KEY =
-	"[REDACTED_SUPABASE_ANON_KEY_2]";
+	"[REDACTED_SUPABASE_ANON_KEY]";
 
 async function testChatbotAPI() {
 	for (const query of testQueries) {

@@ -1,0 +1,28 @@
+{
+	"imports": {
+		"@langchain/core": "npm:@langchain/core@0.1.29",
+		"@langchain/openai": "npm:@langchain/openai@0.0.10",
+		"@langchain/community": "npm:@langchain/community@0.0.29",
+		"openai": "npm:openai@4.28.4",
+		"@supabase/supabase-js": "npm:@supabase/supabase-js@2.39.7"
+	},
+	"tasks": {
+		"start": "deno run --allow-net --allow-read --allow-env scripts/langchain-test.ts"
+	},
+	"lint": {
+		"exclude": [
+			"src/",
+			"scripts/",
+			"api/",
+			"playwright.config.ts"
+		],
+		"rules": {
+			"exclude": [
+				"no-process-global",
+				"no-window",
+				"no-window-prefix",
+				"no-explicit-any"
+			]
+		}
+	}
+}

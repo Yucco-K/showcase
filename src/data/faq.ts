@@ -12,7 +12,7 @@ export const FAQ_DATA: FAQ[] = [
 		id: "0",
 		question: "おすすめ商品はありますか？",
 		answer:
-			"Portfolio Showcaseでは、AppBuzz Hive（¥32,000）、MyRecipeNote（¥500）、SnazzySync Apps（¥24,000）、CollabPlanner（¥1,200）などの優秀な商品を提供しています。詳細はチャットボットでお聞きください。",
+			"Portfolio Showcaseでは、AppBuzz Hive（¥32,000）、MyRecipeNote（¥500）、SnazzySync Apps（¥24,000）、CollabPlanner（¥1,200）などの人気商品を提供しています。詳細はチャットボットでお聞きください。",
 		category: "general",
 		tags: ["おすすめ", "商品", "紹介"],
 		popularity: 1,
@@ -88,6 +88,15 @@ export const FAQ_DATA: FAQ[] = [
 		category: "general",
 		tags: ["推奨", "レコメンド", "仕組み"],
 		popularity: 9,
+	},
+	{
+		id: "9",
+		question: "プライバシーポリシーはどこに書かれていますか？",
+		answer:
+			"プライバシーポリシーは、画面下部のフッターや「利用規約・プライバシーポリシー」ページに記載されています。内容についてご質問があればチャットボットでもお答えします。",
+		category: "general",
+		tags: ["プライバシー", "ポリシー", "規約"],
+		popularity: 2,
 	},
 ];
 

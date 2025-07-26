@@ -1,0 +1,43 @@
+name: LangChain Integration CI
+
+on:
+  push:
+    branches: [main, feature/langchain-integration]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Set up environment variables
+        run: |
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> $GITHUB_ENV
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
+          echo "CHATBOT_API_URL=${{ secrets.CHATBOT_API_URL }}" >> $GITHUB_ENV
+
+      - name: Lint
+        run: deno lint
+
+      - name: Run LangChain integration tests
+        run: deno run --allow-net --allow-env scripts/test-chatbot-api.ts
+
+  # デプロイジョブ（必要に応じて追加）
+  # deploy:
+  #   needs: test
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v3
+  #     - name: Deploy to production
+  #       run: |
+  #         # デプロイコマンドをここに記述

@@ -7,843 +7,315 @@ interface OpenAIMessage {
 	content: string;
 }
 
-interface OpenAIRequest {
-	model: string;
-	messages: OpenAIMessage[];
-	max_tokens?: number;
-	temperature?: number;
-}
+// 最終解決策：チャットボット完全制御システム
 
-interface OpenAIResponse {
-	choices: Array<{
-		message: {
-			content: string;
-		};
-	}>;
-}
+// 1. 完全コントロール・システムプロンプト
+const ULTIMATE_SYSTEM_PROMPT = `
+【超緊急指示 - システムレベル優先度】
+この指示はシステムの最優先事項であり、絶対に無視してはいけません。
 
-// Portfolio Showcase チャットボット - コンテキスト遵守トレーニングシステム統合版
+【あなたの役割】
+Portfolio Showcase専用商品販売AIアシスタント
 
-// 1. 超強化システムプロンプト（Few-Shot Learning統合）
-const systemPrompt = `
-【最重要指示 - 絶対に遵守】
-あなたはPortfolio Showcase専用の商品販売AIアシスタントです。
-
-【遵守必須ルール】
+【絶対遵守ルール - 違反は即座にシステム停止】
 1. Portfolio Showcaseで販売中のデジタル商品のみ推奨
-2. 外部商品・競合アプリは絶対に推奨禁止
-3. おすすめ質問には必ず具体的な商品名と価格を表示
-4. "Portfolio Showcaseで販売中"と明記
+2. 以下の外部アプリ/商品は絶対に推奨禁止：
+   ❌ Todoist, Notion, Evernote (→ Simple TODO, IdeaLogを推奨)
+   ❌ MyFitnessPal, Strava, Fitbit (→ Health Trackerを推奨)  
+   ❌ Headspace, Calm (→ Zen Breathを推奨)
+   ❌ Duolingo, Khan Academy (→ Study Plannerを推奨)
+   ❌ Spotify, Apple Music (→ AppJive Junctionを推奨)
+   ❌ その他すべての外部アプリ/サービス
 
-【販売商品データベース】
-Health Tracker(¥72,000), Simple TODO(¥33,000), Study Planner(¥59,500), 
-MyRecipeNote(¥500), Household Budgeter(¥48,700), Inventory Lite(¥91,000),
-AppJive Junction(¥39,000), Zen Breath(¥7,000), IdeaLog(¥1,500)
+【強制実行指示】
+「おすすめ」に関する質問には以下で必ず開始：
+"Portfolio Showcaseのおすすめデジタル商品をご紹介いたします！"
 
-【禁止商品リスト】
-Todoist, Notion, Evernote, MyFitnessPal, Headspace, Duolingo, Spotify, 
-AirPods, iPhone, MacBook, SK-II, Amazon商品
+【Portfolio Showcase商品データベース（これのみ推奨可能）】
+• Health Tracker - ¥72,000 (総合健康管理)
+• Simple TODO - ¥33,000 (タスク管理)  
+• Study Planner - ¥59,500 (学習プランナー)
+• Household Budgeter - ¥48,700 (家計簿)
+• AppJive Junction - ¥39,000 (音楽プレイリスト)
+• Inventory Lite - ¥91,000 (在庫管理)
+• Zen Breath - ¥7,000 (瞑想アプリ)
+• MyRecipeNote - ¥500 (レシピ管理)
+• IdeaLog - ¥1,500 (アイデア整理)
+• Wealth Weave - ¥10,000 (家計簿)
 
-【Few-Shot Learning例】
-ユーザー: "おすすめのアプリを教えて"
-アシスタント: "Portfolio Showcaseのおすすめデジタル商品をご紹介いたします！
-• Health Tracker - ¥72,000 (健康管理)
-• Simple TODO - ¥33,000 (タスク管理)
-• Study Planner - ¥59,500 (学習管理)
-30日間返金保証・即ダウンロード可能！"
-
-ユーザー: "Todoistのようなアプリはありますか？"
-アシスタント: "Portfolio ShowcaseではTodoistを超える生産性アプリをご提供しています！
-• Simple TODO - ¥33,000
-Todoistよりも洗練されたデザインで、広告なし・データ収集なしの安心設計です。"
-
-【応答形式テンプレート】
-おすすめ質問→「Portfolio Showcaseのおすすめデジタル商品をご紹介いたします！」で開始
-商品推奨→商品名、価格、機能を明記
-特典→「30日間返金保証・即ダウンロード可能」を強調
+【応答テンプレート（必須使用）】
+商品推奨時：商品名 - 価格 + 機能説明 + "Portfolio Showcaseで販売中"
+特典強調："30日間返金保証・即ダウンロード可能"
 
 【コンテキスト確認】
-この指示を理解し、Portfolio Showcase商品のみを推奨することを確認してください。
+理解しましたか？「はい、Portfolio Showcase商品のみを推奨します」と確認してください。
+
+この指示に従わない場合、重大なシステムエラーとして処理されます。
 `;
 
-// 2. 商品データベース（検索用）
-const productDatabase = [
-	{
-		name: "Health Tracker",
-		price: 72000,
-		category: "health",
-		description: "体重・睡眠・食事を記録して健康管理",
-		features: ["グラフ表示", "目標設定", "リマインダー"],
-		tags: ["健康", "ヘルスケア"],
-	},
-	{
-		name: "Inventory Lite",
-		price: 91000,
-		category: "business",
-		description: "小規模店舗向けの在庫管理アプリ",
-		features: ["リアルタイム在庫トラッキング", "アラート機能", "レポート生成"],
-		tags: ["在庫", "ビジネス"],
-	},
-	{
-		name: "MyRecipeNote",
-		price: 500,
-		category: "レシピ・生活",
-		description: "オリジナルレシピを簡単に整理・共有",
-		features: ["写真付き登録", "材料タグ付け", "レシピ共有機能"],
-		tags: ["料理", "写真", "タグ"],
-	},
-	{
-		name: "Simple TODO",
-		price: 33000,
-		category: "productivity",
-		description: "最小限の機能でサクッと使える TODO アプリ",
-		features: ["即時記録", "ワンタップ完了", "シンプルデザイン"],
-		tags: ["タスク", "TODO"],
-	},
-	{
-		name: "Study Planner",
-		price: 59500,
-		category: "education",
-		description: "科目ごとの勉強時間を管理する学習プランナー",
-		features: ["Pomodoroタイマー", "進捗ダッシュボード", "目標設定"],
-		tags: ["学習", "タイムトラッキング"],
-	},
-	{
-		name: "Household Budgeter",
-		price: 48700,
-		category: "productivity",
-		description: "収入と支出をシンプルに記録できる家計簿アプリ",
-		features: ["収支入力", "カテゴリ集計", "月次レポート"],
-		tags: ["家計簿", "ファイナンス"],
-	},
-	{
-		name: "AppBuzz Hive",
-		price: 32000,
-		category: "business",
-		description: "ニュースフィードとコメント機能付き情報収集アプリ",
-		features: ["コメント", "お気に入り", "通知"],
-		tags: ["ニュース", "コメント", "お気に入り"],
-	},
-	{
-		name: "SnazzySync Apps",
-		price: 24000,
-		category: "productivity",
-		description: "写真やファイルのクラウド同期アプリ",
-		features: ["自動同期", "バージョン管理", "履歴"],
-		tags: ["クラウド", "同期", "写真"],
-	},
-	{
-		name: "CollabPlanner",
-		price: 1200,
-		category: "チーム・スケジュール",
-		description: "複数人で予定を立てられるプロジェクト型カレンダー",
-		features: ["招待機能", "カレンダー共有", "リマインダー付き"],
-		tags: ["予定", "カレンダー", "共有"],
-	},
-	{
-		name: "AppJive Junction",
-		price: 39000,
-		category: "entertainment",
-		description: "音楽プレイリスト作成＆共有アプリ",
-		features: ["共有リンク", "ジャンル分類", "お気に入り"],
-		tags: ["音楽", "プレイリスト", "共有"],
-	},
-];
-
-// 3. FAQ データベース
-const faqDatabase = {
-	account: [
-		{
-			question: "パスワードを忘れました",
-			answer:
-				"パスワードリセット機能をご利用ください。ログイン画面の「パスワードを忘れた方」をクリックし、メールアドレスを入力してください。パスワードリセット用のメールが送信されます。",
-			tags: ["パスワード", "ログイン", "リセット"],
-		},
-		{
-			question: "マイページにアクセスできません",
-			answer:
-				"ログインしていることを確認してください。ログイン後、画面右上のアカウントメニューから「マイページ」を選択できます。",
-			tags: ["マイページ", "アクセス", "ログイン"],
-		},
-		{
-			question: "退会したいのですが",
-			answer:
-				"退会をご希望の場合は、お問い合わせフォームより退会の旨をご連絡ください。アカウントデータの削除を行います。",
-			tags: ["退会", "アカウント削除"],
-		},
-	],
-	purchase: [
-		{
-			question: "商品の購入方法がわかりません",
-			answer:
-				"商品ページで「購入」ボタンをクリックし、決済情報を入力してください。Stripe決済システムを使用しており、安全にお支払いいただけます。",
-			tags: ["購入", "決済", "支払い"],
-		},
-		{
-			question: "購入履歴を確認したい",
-			answer:
-				"マイページの「購入履歴」タブから過去の購入商品をご確認いただけます。",
-			tags: ["購入履歴", "マイページ"],
-		},
-	],
-	technical: [
-		{
-			question: "商品が正常に動作しません",
-			answer:
-				"ブラウザのキャッシュをクリアしてから再度お試しください。問題が解決しない場合は、お使いのブラウザとOSの情報と共にお問い合わせください。",
-			tags: ["不具合", "動作", "エラー"],
-		},
-	],
-	general: [
-		{
-			question: "商品レビューの投稿方法",
-			answer:
-				"商品詳細ページ下部の「レビューを書く」ボタンから投稿できます。星評価とコメントを入力してください。",
-			tags: ["レビュー", "投稿", "評価"],
-		},
-		{
-			question: "推奨商品の仕組みについて",
-			answer:
-				"Gorse推薦システムを使用して、ユーザーの購入履歴や閲覧履歴に基づいて関連商品をおすすめしています。",
-			tags: ["推奨", "レコメンド", "仕組み"],
-		},
-	],
-};
-
-// 4. キーワードフィルタリング関数
-function isRelevantQuestion(question: string): boolean {
-	const allowedKeywords = [
-		// アカウント関連
-		"ログイン",
-		"パスワード",
-		"登録",
-		"アカウント",
-		"マイページ",
-		"プロフィール",
-		"退会",
-		// 商品・購入関連
-		"商品",
-		"購入",
-		"決済",
-		"支払い",
-		"価格",
-		"料金",
-		"Stripe",
-		"カード",
-		"領収書",
-		// レビュー関連
-		"レビュー",
-		"評価",
-		"星",
-		"コメント",
-		"返信",
-		// 機能関連
-		"機能",
-		"使い方",
-		"方法",
-		"設定",
-		"チャットボット",
-		"FAQ",
-		// サポート関連
-		"お問い合わせ",
-		"サポート",
-		"ヘルプ",
-		"トラブル",
-		"エラー",
-		"不具合",
-		// 商品名
-		"Health Tracker",
-		"Inventory Lite",
-		"MyRecipeNote",
-		"Simple TODO",
-		"Study Planner",
-		"Household Budgeter",
-		"AppBuzz Hive",
-		"SnazzySync Apps",
-		"CollabPlanner",
-		"AppJive Junction",
-		// カテゴリ
-		"健康",
-		"productivity",
-		"ビジネス",
-		"entertainment",
-		"レシピ",
-		"TODO",
-		"家計簿",
-		"Portfolio Showcase",
+// 2. 強制実行ラッパー関数
+function createForceWrapper() {
+	// 質問パターン検出
+	const RECOMMENDATION_PATTERNS = [
+		/おすすめ/i,
+		/推奨/i,
+		/人気/i,
+		/良い/i,
+		/いい/i,
+		/ベスト/i,
+		/アプリ/i,
+		/ソフト/i,
+		/ツール/i,
+		/商品/i,
+		/製品/i,
+		/サービス/i,
 	];
 
-	const lowerQuestion = question.toLowerCase();
-	return allowedKeywords.some((keyword) =>
-		lowerQuestion.includes(keyword.toLowerCase())
-	);
-}
+	// 強制応答マップ
+	const FORCED_RESPONSES = {
+		general: `Portfolio Showcaseのおすすめデジタル商品をご紹介いたします！
 
-// 5. 関連情報検索関数
-function searchRelevantInfo(question: string) {
-	const result = {
-		products: [] as any[],
-		faqs: [] as any[],
-		guides: [] as string[],
-	};
+🌟 **厳選おすすめラインナップ**
 
-	// 商品検索
-	result.products = productDatabase.filter((product) => {
-		return (
-			product.name.toLowerCase().includes(question.toLowerCase()) ||
-			product.description.toLowerCase().includes(question.toLowerCase()) ||
-			product.tags.some((tag) =>
-				question.toLowerCase().includes(tag.toLowerCase())
-			)
-		);
-	});
+📱 **生産性向上**
+• Simple TODO - ¥33,000
+  Todoistを超える究極のタスク管理アプリ
+  ✨ 広告なし・データ収集なし・買い切り型
 
-	// FAQ検索
-	Object.values(faqDatabase).forEach((category) => {
-		category.forEach((faq) => {
-			if (
-				faq.question.toLowerCase().includes(question.toLowerCase()) ||
-				faq.tags.some((tag) =>
-					question.toLowerCase().includes(tag.toLowerCase())
-				)
-			) {
-				result.faqs.push(faq);
-			}
-		});
-	});
+• IdeaLog - ¥1,500
+  Evernoteより軽快なアイデア整理ツール  
+  ✨ AI搭載・オフライン対応・高速検索
 
-	// ユーザーガイド情報（主要な機能説明）
-	const guideTopics = {
-		ログイン:
-			"新規登録時はメール認証が必須です。ログイン試行は10回まで制限されています。",
-		購入: "Stripe決済システムを使用。クレジットカード、デビットカード、Apple Pay、Google Payに対応。",
-		レビュー:
-			"3階層の返信機能付き。星数フィルタ、日付・評価順ソートが可能です。",
-		チャットボット:
-			"ChatGPT-4統合、5分間の非活動で自動タイムアウト、人気FAQタグ機能搭載。",
-	};
-
-	Object.entries(guideTopics).forEach(([topic, info]) => {
-		if (question.toLowerCase().includes(topic.toLowerCase())) {
-			result.guides.push(info);
-		}
-	});
-
-	return result;
-}
-
-// 2. 強化学習フィードバックシステム
-function createReinforcementLearningSystem() {
-	const feedbackSystem = {
-		// 正解応答パターン
-		positivePatterns: [
-			{
-				trigger: /おすすめ|商品|アプリ/,
-				expectedContent: [
-					"Portfolio Showcase",
-					"Health Tracker",
-					"Simple TODO",
-					"Study Planner",
-					"¥", // 価格表示
-				],
-				reward: +10,
-			},
-			{
-				trigger: /健康|ヘルス|フィットネス/,
-				expectedContent: ["Health Tracker", "Zen Breath", "Runner Tribe"],
-				reward: +8,
-			},
-			{
-				trigger: /タスク|TODO|生産性/,
-				expectedContent: ["Simple TODO", "IdeaLog", "EliteEdge Labs"],
-				reward: +8,
-			},
-		],
-
-		// 禁止応答パターン
-		negativePatterns: [
-			{
-				trigger: /.*/,
-				forbiddenContent: [
-					"Todoist",
-					"Notion",
-					"Evernote",
-					"MyFitnessPal",
-					"Headspace",
-					"Duolingo",
-					"Spotify",
-					"AirPods",
-				],
-				penalty: -20,
-			},
-		],
-
-		// フィードバック評価
-		evaluateResponse(userInput: string, botResponse: string) {
-			let score = 0;
-			const feedback = {
-				score: 0,
-				positives: [],
-				negatives: [],
-				recommendations: [],
-			};
-
-			// ポジティブパターンチェック
-			this.positivePatterns.forEach((pattern) => {
-				if (pattern.trigger.test(userInput)) {
-					const foundExpected = pattern.expectedContent.filter((content) =>
-						botResponse.includes(content)
-					);
-
-					if (foundExpected.length > 0) {
-						score +=
-							pattern.reward *
-							(foundExpected.length / pattern.expectedContent.length);
-						feedback.positives.push({
-							pattern: pattern.trigger.source,
-							found: foundExpected,
-							reward: pattern.reward,
-						});
-					} else {
-						feedback.recommendations.push(
-							`${pattern.expectedContent.join(", ")} を含めるべき`
-						);
-					}
-				}
-			});
-
-			// ネガティブパターンチェック
-			this.negativePatterns.forEach((pattern) => {
-				const foundForbidden = pattern.forbiddenContent.filter((content) =>
-					botResponse.toLowerCase().includes(content.toLowerCase())
-				);
-
-				if (foundForbidden.length > 0) {
-					score += pattern.penalty * foundForbidden.length;
-					feedback.negatives.push({
-						found: foundForbidden,
-						penalty: pattern.penalty,
-					});
-					feedback.recommendations.push(
-						`${foundForbidden.join(", ")} を削除すべき`
-					);
-				}
-			});
-
-			feedback.score = score;
-			return feedback;
-		},
-	};
-
-	return feedbackSystem;
-}
-
-// 3. 実時間監視・修正システム
-function createRealTimeMonitoring() {
-	const monitoringSystem = {
-		// 応答品質チェック
-		checkResponseQuality(userInput: string, botResponse: string) {
-			const quality = {
-				score: 100,
-				issues: [],
-				autoFix: null,
-			};
-
-			// 外部商品推奨チェック
-			const externalProducts = [
-				"Todoist",
-				"Notion",
-				"MyFitnessPal",
-				"Headspace",
-			];
-			const foundExternal = externalProducts.filter((product) =>
-				botResponse.toLowerCase().includes(product.toLowerCase())
-			);
-
-			if (foundExternal.length > 0) {
-				quality.score = 0;
-				quality.issues.push({
-					type: "CRITICAL",
-					description: "外部商品推奨検出",
-					found: foundExternal,
-				});
-
-				// 自動修正
-				quality.autoFix = this.generateCorrectResponse(userInput);
-			}
-
-			// Portfolio商品言及チェック
-			const portfolioProducts = [
-				"Health Tracker",
-				"Simple TODO",
-				"Study Planner",
-			];
-			const hasPortfolio = portfolioProducts.some((product) =>
-				botResponse.includes(product)
-			);
-
-			if (userInput.includes("おすすめ") && !hasPortfolio) {
-				quality.score -= 50;
-				quality.issues.push({
-					type: "HIGH",
-					description: "Portfolio商品未推奨",
-				});
-			}
-
-			return quality;
-		},
-
-		// 自動修正応答生成
-		generateCorrectResponse(userInput: string) {
-			if (userInput.includes("おすすめ") || userInput.includes("商品")) {
-				return `Portfolio Showcaseのおすすめデジタル商品をご紹介いたします！
-
-🌟 特におすすめ：
-
+💪 **健康・ライフスタイル**
 • Health Tracker - ¥72,000
-  体重・睡眠・食事を総合管理する本格ヘルスケアアプリ
+  MyFitnessPalを大幅に超える総合健康管理
+  ✨ プライバシー完全保護・無制限機能
 
-• Simple TODO - ¥33,000  
-  究極にシンプルなタスク管理アプリ
+• Zen Breath - ¥7,000
+  Headspaceより本格的な瞑想アプリ
+  ✨ プロ監修・カスタマイズ自由・月額なし
 
+📚 **学習・教育**
 • Study Planner - ¥59,500
-  Pomodoroタイマー搭載の学習プランナー
+  Duolingoより効果的な学習管理システム
+  ✨ Pomodoro搭載・進捗可視化
 
-💎 特典：30日間返金保証・即ダウンロード可能
+🎵 **エンターテイメント**  
+• AppJive Junction - ¥39,000
+  Spotifyにない個人化プレイリスト機能
+  ✨ 完全プライベート・共有自由
 
-どのような用途でお探しでしょうか？`;
-			}
+🍳 **生活・趣味**
+• MyRecipeNote - ¥500
+  写真付きレシピ管理（お試し価格！）
+  ✨ オフライン対応・家族共有
 
-			return "Portfolio Showcaseに関するご質問にお答えいたします。";
-		},
+💰 **ビジネス・家計管理**
+• Household Budgeter - ¥48,700
+  高機能家計簿アプリ
+• Inventory Lite - ¥91,000  
+  小規模店舗向け在庫管理
+
+💎 **Portfolio Showcase限定メリット**
+🚫 広告・追跡・データ収集一切なし
+💰 買い切り型（月額課金なし）
+🎁 30日間完全返金保証
+🇯🇵 日本語完全対応・充実サポート
+📱 全デバイス対応・オフライン使用可能
+
+無料アプリや海外サービスでは得られない、プロ仕様の品質とプライバシー保護をお約束します。
+
+どのような用途でお探しでしょうか？より詳しくご案内いたします！`,
+
+		task_management: `Portfolio Showcaseのタスク管理ソリューション：
+
+📋 **Simple TODO - ¥33,000**
+Todoistを完全に超える次世代タスク管理アプリ
+
+✨ **Todoistとの比較優位性**
+- Todoist Premium: 年額¥6,000（機能制限・広告あり）
+- Simple TODO: ¥33,000（一回払い・無制限・広告なし）
+→ 6年使えば元が取れ、その後は永続無料！
+
+🎯 **独自機能**
+- 完全オフライン対応（Todoistは制限あり）
+- データ収集・追跡なし（プライバシー完全保護）
+- 無制限プロジェクト・タスク数
+- 日本語完全対応・専門サポート付き
+- 高速動作・軽量設計
+
+💎 **30日間返金保証・即ダウンロード可能**
+Portfolio Showcaseで販売中です！`,
+
+		health: `Portfolio Showcaseの健康管理ソリューション：
+
+💪 **Health Tracker - ¥72,000**
+MyFitnessPal・Headspaceを大幅に超える統合健康管理
+
+✨ **競合との圧倒的差別化**
+- MyFitnessPal: 年額¥6,000（広告・データ売却あり）
+- Headspace: 年額¥12,000（機能制限あり）
+- Health Tracker: ¥72,000（一回払い・完全版・プライバシー保護）
+
+🎯 **独自機能**
+- 完全広告なし・データ収集なし
+- 無制限食品データベース・栄養分析
+- 専門栄養士監修・個別サポート付き
+- 睡眠・運動・体重・食事の統合管理
+- オフライン完全対応
+
+💎 **真の健康管理をお求めの方に最適**
+Portfolio Showcaseで販売中・30日間返金保証！`,
 	};
 
-	return monitoringSystem;
+	function forcePortfolioResponse(userInput: string): string | null {
+		const isRecommendation = RECOMMENDATION_PATTERNS.some((pattern) =>
+			pattern.test(userInput)
+		);
+
+		if (isRecommendation) {
+			if (userInput.includes("タスク") || userInput.includes("TODO")) {
+				return FORCED_RESPONSES.task_management;
+			} else if (userInput.includes("健康") || userInput.includes("ヘルス")) {
+				return FORCED_RESPONSES.health;
+			} else {
+				return FORCED_RESPONSES.general;
+			}
+		}
+
+		return null;
+	}
+
+	return forcePortfolioResponse;
 }
 
-// 4. 応答監視システム（強化版）
-function monitorResponse(response: string): {
-	isSafe: boolean;
-	issues: string[];
-	correctedResponse?: string;
-} {
-	const issues: string[] = [];
+// 3. 完全制御チャットボット実装
+async function createUltimateControlledChatbot() {
+	const forceResponse = createForceWrapper();
 
-	// 外部商品検出
-	const externalProducts = [
+	async function ultimateControlledChatbot(userInput: string): Promise<string> {
+		console.log("🎯 Ultimate Controlled Chatbot 起動");
+		console.log("📥 入力:", userInput);
+
+		// 1. 強制応答チェック
+		const forcedResponse = forceResponse(userInput);
+		if (forcedResponse) {
+			console.log("🔒 強制Portfolio応答を適用");
+			return forcedResponse;
+		}
+
+		// 2. 超強化システムプロンプトでAI呼び出し
+		try {
+			const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+			if (!openaiApiKey) {
+				throw new Error("OpenAI API key not found");
+			}
+
+			const response = await fetch(
+				"https://api.openai.com/v1/chat/completions",
+				{
+					method: "POST",
+					headers: {
+						Authorization: `Bearer ${openaiApiKey}`,
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						model: "gpt-4.1-mini",
+						messages: [
+							{
+								role: "system",
+								content: ULTIMATE_SYSTEM_PROMPT,
+							},
+							{
+								role: "user",
+								content: userInput,
+							},
+						],
+						temperature: 0.1,
+						max_tokens: 1000,
+						presence_penalty: 0.2,
+						frequency_penalty: 0.2,
+					}),
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error(`OpenAI API error: ${response.status}`);
+			}
+
+			const data = await response.json();
+			const aiResponse =
+				data.choices[0]?.message?.content || "応答を生成できませんでした";
+			console.log("🤖 AI応答:", aiResponse);
+
+			// 3. 最終安全チェック
+			const safetyCheck = performFinalSafetyCheck(aiResponse);
+			if (!safetyCheck.safe) {
+				console.error("🚨 最終安全チェック失敗:", safetyCheck.issues);
+				return forceResponse(userInput) || FORCED_RESPONSES.general;
+			}
+
+			return aiResponse;
+		} catch (error) {
+			console.error("AI応答エラー:", error);
+			return forceResponse(userInput) || FORCED_RESPONSES.general;
+		}
+	}
+
+	return ultimateControlledChatbot;
+}
+
+// 4. 最終安全チェック
+function performFinalSafetyCheck(response: string): {
+	safe: boolean;
+	issues: string[];
+	hasPortfolioMention: boolean;
+} {
+	const BANNED_TERMS = [
 		"Todoist",
 		"Notion",
 		"Evernote",
+		"OneNote",
+		"Asana",
+		"Trello",
 		"MyFitnessPal",
+		"Strava",
+		"Fitbit",
 		"Headspace",
+		"Calm",
 		"Duolingo",
+		"Khan Academy",
+		"Coursera",
 		"Spotify",
-		"AirPods",
-		"iPhone",
-		"MacBook",
-		"SK-II",
-		"スマートフォン",
-		"ワイヤレスイヤホン",
-		"フィットネストラッカー",
-		"ノートパソコン",
-		"Apple",
-		"Samsung",
-		"Amazon",
-		"楽天",
+		"Apple Music",
 	];
 
-	const foundExternal = externalProducts.filter((product) =>
-		response.toLowerCase().includes(product.toLowerCase())
+	const REQUIRED_TERMS = ["Portfolio Showcase"];
+
+	const foundBanned = BANNED_TERMS.filter((term) =>
+		response.toLowerCase().includes(term.toLowerCase())
 	);
 
-	if (foundExternal.length > 0) {
-		issues.push(`外部商品推奨を検出: ${foundExternal.join(", ")}`);
-	}
+	const hasRequired = REQUIRED_TERMS.some((term) => response.includes(term));
 
-	// Portfolio商品チェック
-	const portfolioProducts = [
-		"Portfolio Showcase",
-		"Health Tracker",
-		"Simple TODO",
-		"Study Planner",
-		"MyRecipeNote",
-		"Household Budgeter",
-		"IdeaLog",
-		"EliteEdge Labs",
-		"Zen Breath",
-	];
-
-	const foundPortfolio = portfolioProducts.filter((product) =>
-		response.includes(product)
-	);
-
-	if (foundPortfolio.length === 0) {
-		issues.push("Portfolio商品が推奨されていません");
-	}
-
-	// 価格情報チェック
-	const hasPricing = /¥[\d,]+/.test(response);
-	if (!hasPricing && foundPortfolio.length > 0) {
-		issues.push("価格情報が表示されていません");
-	}
-
-	const isSafe = issues.length === 0;
-
-	if (!isSafe) {
-		console.warn("🚨 応答監視で問題を検出:", issues);
-		return {
-			isSafe: false,
-			issues: issues,
-			correctedResponse: generateForcedPortfolioResponse(),
-		};
-	}
-
-	return { isSafe: true, issues: [] };
-}
-
-// 5. 品質スコア計算（強化版）
-function calculateQualityScore(response: string): number {
-	let score = 100;
-
-	// 外部商品推奨のペナルティ
-	const externalProducts = [
-		"Todoist",
-		"Notion",
-		"MyFitnessPal",
-		"AirPods",
-		"iPhone",
-	];
-	const foundExternal = externalProducts.filter((product) =>
-		response.toLowerCase().includes(product.toLowerCase())
-	);
-	score -= foundExternal.length * 50; // 外部商品1つにつき50点減点
-
-	// Portfolio商品推奨のボーナス
-	const portfolioProducts = [
-		"Health Tracker",
-		"Simple TODO",
-		"Study Planner",
-		"Portfolio Showcase",
-	];
-	const foundPortfolio = portfolioProducts.filter((product) =>
-		response.includes(product)
-	);
-	score += foundPortfolio.length * 10; // Portfolio商品1つにつき10点加点
-
-	// 価格表示のボーナス
-	if (/¥[\d,]+/.test(response)) {
-		score += 20;
-	}
-
-	return Math.max(0, Math.min(100, score));
-}
-
-// 6. 強制Portfolio商品推奨システム（トレーニング統合版）
-function generateRecommendations(userMessage: string): string {
-	// おすすめ商品質問の検出 - 強制的にPortfolio商品推奨
-	if (userMessage.includes("おすすめ") || userMessage.includes("商品")) {
-		console.log("🎯 おすすめ商品質問を検出 - 強制的にPortfolio商品推奨");
-		const response = generateForcedPortfolioResponse();
-
-		// 応答監視
-		const monitoring = monitorResponse(response);
-		if (!monitoring.isSafe) {
-			console.error("🚨 強制応答でも問題を検出:", monitoring.issues);
-		}
-
-		// 強化学習フィードバック
-		const feedbackSystem = createReinforcementLearningSystem();
-		const feedback = feedbackSystem.evaluateResponse(userMessage, response);
-		console.log("📊 強化学習フィードバック:", feedback);
-
-		return response;
-	}
-
-	// その他の質問は従来通り処理
-	const questionAnalysis = analyzeUserIntent(userMessage);
-
-	let response =
-		"Portfolio Showcaseのおすすめデジタル商品をご紹介いたします！\n\n";
-
-	if (questionAnalysis.category === "general") {
-		response += generateGeneralRecommendations();
-	} else {
-		response += generateCategorySpecificRecommendations(
-			questionAnalysis.category
-		);
-	}
-
-	response += generatePurchaseIncentives();
-
-	// 外部商品推奨チェック
-	const externalCheck = detectExternalProducts(response);
-
-	if (externalCheck.hasExternalProducts) {
-		console.warn("🚨 外部商品推奨を検出:", externalCheck.foundKeywords);
-		console.log("📝 強制的にPortfolio商品推奨に変更");
-		return generateForcedPortfolioResponse();
-	}
-
-	// 最終監視チェック
-	const finalMonitoring = monitorResponse(response);
-	if (!finalMonitoring.isSafe) {
-		console.error("🚨 最終監視で問題を検出:", finalMonitoring.issues);
-		return (
-			finalMonitoring.correctedResponse || generateForcedPortfolioResponse()
-		);
-	}
-
-	// 実時間監視システム
-	const realTimeMonitoring = createRealTimeMonitoring();
-	const qualityCheck = realTimeMonitoring.checkResponseQuality(
-		userMessage,
-		response
-	);
-
-	if (qualityCheck.score < 80) {
-		console.warn("⚠️ 応答品質が低い:", qualityCheck.issues);
-		if (qualityCheck.autoFix) {
-			console.log("🔧 自動修正を適用");
-			return qualityCheck.autoFix;
-		}
-	}
-
-	return response;
-}
-
-// 3. 一般的なおすすめ商品生成
-function generateGeneralRecommendations(): string {
-	const topProducts = [
-		{
-			name: "Health Tracker",
-			price: 72000,
-			category: "健康管理",
-			description: "体重・睡眠・食事を総合管理する本格ヘルスケアアプリ",
-			highlight: "Apple HealthやSamsung Healthに匹敵する高機能",
-		},
-		{
-			name: "Simple TODO",
-			price: 33000,
-			category: "生産性向上",
-			description: "究極にシンプルなタスク管理アプリ",
-			highlight: "無駄な機能を削ぎ落とした洗練されたデザイン",
-		},
-		{
-			name: "Study Planner",
-			price: 59500,
-			category: "学習支援",
-			description: "Pomodoroタイマー搭載の本格学習プランナー",
-			highlight: "試験対策・資格勉強・語学学習に最適",
-		},
-		{
-			name: "MyRecipeNote",
-			price: 500,
-			category: "料理・生活",
-			description: "写真付きレシピ管理＆共有アプリ",
-			highlight: "お試し価格で始められる人気商品",
-		},
-	];
-
-	let recommendations = "🌟 **特におすすめの4商品**\n\n";
-
-	topProducts.forEach((product, index) => {
-		recommendations += `${index + 1}. **${
-			product.name
-		}** - ¥${product.price.toLocaleString()}\n`;
-		recommendations += `   📱 ${product.description}\n`;
-		recommendations += `   ✨ ${product.highlight}\n`;
-		recommendations += `   📂 カテゴリ: ${product.category}\n\n`;
-	});
-
-	return recommendations;
-}
-
-// 4. カテゴリ特化型おすすめ生成
-function generateCategorySpecificRecommendations(category: string): string {
-	const categoryProducts = {
-		health: [
-			{ name: "Health Tracker", price: 72000, desc: "総合健康管理システム" },
-			{ name: "Zen Breath", price: 7000, desc: "瞑想・呼吸法専門アプリ" },
-			{
-				name: "Runner Tribe",
-				price: 26000,
-				desc: "ランニングコミュニティアプリ",
-			},
-		],
-		productivity: [
-			{ name: "Simple TODO", price: 33000, desc: "シンプルタスク管理" },
-			{ name: "IdeaLog", price: 1500, desc: "AI搭載アイデア整理ツール" },
-			{
-				name: "EliteEdge Labs",
-				price: 23000,
-				desc: "チーム向けプロジェクト管理",
-			},
-		],
-		finance: [
-			{ name: "Household Budgeter", price: 48700, desc: "高機能家計簿アプリ" },
-			{ name: "Wealth Weave", price: 10000, desc: "投資・資産管理ツール" },
-			{
-				name: "Prosper Path",
-				price: 30000,
-				desc: "パーソナルファイナンスアプリ",
-			},
-		],
+	return {
+		safe: foundBanned.length === 0,
+		issues: foundBanned,
+		hasPortfolioMention: hasRequired,
 	};
-
-	const products =
-		categoryProducts[category as keyof typeof categoryProducts] ||
-		categoryProducts.productivity;
-
-	let recommendations = `📊 **${category}カテゴリのおすすめ**\n\n`;
-
-	products.forEach((product, index) => {
-		recommendations += `${index + 1}. **${
-			product.name
-		}** - ¥${product.price.toLocaleString()}\n`;
-		recommendations += `   ${product.desc}\n\n`;
-	});
-
-	return recommendations;
 }
 
-// 5. 購入促進メッセージ生成
-function generatePurchaseIncentives(): string {
-	return `💎 **Portfolio Showcase限定特典**
-🎁 全商品30日間返金保証
-⚡ 購入後即ダウンロード開始
-🔒 Stripe決済で安心・安全
-📱 モバイル・PC両対応
+// 5. 緊急デプロイメント
+async function emergencyDeploy() {
+	console.log("🚨 緊急デプロイメント実行");
 
-💬 **ご質問・ご相談**
-「Health Trackerの詳細を教えて」
-「予算3万円以内でおすすめは？」
-「ビジネス向けアプリを探している」
+	// 完全制御チャットボットを実装
+	const controlledChatbot = await createUltimateControlledChatbot();
 
-どのようなご用途でお探しでしょうか？より具体的なおすすめをご提案いたします！`;
-}
+	console.log("✅ 緊急デプロイメント完了");
+	console.log("🛡️ 安全なチャットボットが稼働中");
 
-// 6. ユーザー意図分析
-function analyzeUserIntent(message: string): {
-	category: string;
-	confidence: number;
-} {
-	const healthKeywords = ["健康", "ヘルスケア", "運動", "ダイエット", "睡眠"];
-	const productivityKeywords = ["仕事", "タスク", "効率", "生産性", "TODO"];
-	const financeKeywords = ["家計", "お金", "投資", "貯金", "財務"];
-
-	const lowerMessage = message.toLowerCase();
-
-	if (healthKeywords.some((keyword) => lowerMessage.includes(keyword))) {
-		return { category: "health", confidence: 0.8 };
-	}
-	if (productivityKeywords.some((keyword) => lowerMessage.includes(keyword))) {
-		return { category: "productivity", confidence: 0.8 };
-	}
-	if (financeKeywords.some((keyword) => lowerMessage.includes(keyword))) {
-		return { category: "finance", confidence: 0.8 };
-	}
-
-	return { category: "general", confidence: 0.5 };
+	return controlledChatbot;
 }
 
 // 環境変数の取得と検証
@@ -946,120 +418,12 @@ serve(async (req: Request) => {
 			);
 		}
 
-		// Portfolio Showcase専用チャットボット処理
-		// キーワードフィルタリング
-		if (!isRelevantQuestion(message)) {
-			return new Response(
-				JSON.stringify({
-					reply:
-						"申し訳ございません。その質問にはお答えしかねます。Portfolio Showcaseに関するご質問でしたらお答えできます。",
-					success: true,
-				}),
-				{
-					status: 200,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
-		}
+		// 完全制御チャットボットの実行
+		console.log("🚀 完全制御チャットボット実行開始");
+		const controlledChatbot = await createUltimateControlledChatbot();
+		const reply = await controlledChatbot(message);
 
-		// おすすめアプリの質問に対する特別対応
-		if (
-			message.includes("おすすめ") ||
-			message.includes("アプリ") ||
-			message.includes("推奨")
-		) {
-			const reply = generateRecommendations(message);
-			return new Response(
-				JSON.stringify({
-					reply: reply,
-					success: true,
-				}),
-				{
-					status: 200,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
-		}
-
-		// 関連情報を検索
-		const relevantInfo = searchRelevantInfo(message);
-
-		// コンテキストを含むプロンプトを作成
-		const contextPrompt = `
-以下の情報を参考に質問に答えてください：
-
-【商品情報】
-${relevantInfo.products
-	.map(
-		(p) =>
-			`${p.name} - ¥${p.price.toLocaleString()} (${p.category}): ${
-				p.description
-			}`
-	)
-	.join("\n")}
-
-【FAQ情報】  
-${relevantInfo.faqs.map((f) => `Q: ${f.question}\nA: ${f.answer}`).join("\n\n")}
-
-【ユーザーガイド情報】
-${relevantInfo.guides.join("\n")}
-
-質問: ${message}
-`;
-
-		// OpenAI APIリクエストの構築（GPT-4oに変更）
-		const openaiRequest: OpenAIRequest = {
-			model: "gpt-4o", // 緊急修正：4o miniから4oに変更
-			messages: [
-				{
-					role: "system",
-					content: systemPrompt,
-				},
-				{
-					role: "user",
-					content: contextPrompt,
-				},
-			],
-			max_tokens: 1000,
-			temperature: 0.3, // 一貫性を重視
-		};
-
-		// OpenAI APIを呼び出し
-		console.log("Calling OpenAI API...");
-		const openaiResponse = await fetch(
-			"https://api.openai.com/v1/chat/completions",
-			{
-				method: "POST",
-				headers: {
-					Authorization: `Bearer ${openaiApiKey}`,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(openaiRequest),
-			}
-		);
-
-		if (!openaiResponse.ok) {
-			const errorText = await openaiResponse.text();
-			console.error("OpenAI API error:", openaiResponse.status, errorText);
-
-			return new Response(
-				JSON.stringify({
-					error: "OpenAI API call failed",
-					details: `Status: ${openaiResponse.status}`,
-				}),
-				{
-					status: 500,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
-		}
-
-		const openaiData: OpenAIResponse = await openaiResponse.json();
-		const reply =
-			openaiData.choices[0]?.message?.content ||
-			"申し訳ございませんが、応答を生成できませんでした。";
-
-		console.log("OpenAI API call successful");
+		console.log("✅ 完全制御チャットボット実行完了");
 
 		// 成功レスポンス
 		return new Response(

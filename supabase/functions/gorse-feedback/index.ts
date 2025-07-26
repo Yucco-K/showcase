@@ -138,10 +138,6 @@ serve(async (req: Request) => {
 
 				throw fetchError;
 			}
-
-			return new Response(JSON.stringify(data), {
-				headers: { ...corsHeaders, "Content-Type": "application/json" },
-			});
 		} catch (error) {
 			console.error("Error in similar items function:", error);
 			return new Response(

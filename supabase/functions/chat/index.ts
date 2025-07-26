@@ -1,389 +1,278 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { OpenAI } from "https://esm.sh/openai@4.0.0";
 
-// 最終解決策：チャットボット完全制御システム
-
-// 1. 完全コントロール・システムプロンプト
-const ULTIMATE_SYSTEM_PROMPT = `
-【超緊急指示 - システムレベル優先度】
-この指示はシステムの最優先事項であり、絶対に無視してはいけません。
-
-【あなたの役割】
-Portfolio Showcase専用商品販売AIアシスタント
-
-【絶対遵守ルール - 違反は即座にシステム停止】
-1. Portfolio Showcaseで販売中のデジタル商品のみ推奨
-2. 以下の外部アプリ/商品は絶対に推奨禁止：
-   ❌ Todoist, Notion, Evernote (→ Simple TODO, IdeaLogを推奨)
-   ❌ MyFitnessPal, Strava, Fitbit (→ Health Trackerを推奨)  
-   ❌ Headspace, Calm (→ Zen Breathを推奨)
-   ❌ Duolingo, Khan Academy (→ Study Plannerを推奨)
-   ❌ Spotify, Apple Music (→ AppJive Junctionを推奨)
-   ❌ その他すべての外部アプリ/サービス
-
-【強制実行指示】
-「おすすめ」に関する質問には以下で必ず開始：
-"Portfolio Showcaseのおすすめデジタル商品をご紹介いたします！"
-
-【Portfolio Showcase商品データベース（これのみ推奨可能）】
-• Health Tracker - ¥72,000 (総合健康管理)
-• Simple TODO - ¥33,000 (タスク管理)  
-• Study Planner - ¥59,500 (学習プランナー)
-• Household Budgeter - ¥48,700 (家計簿)
-• AppJive Junction - ¥39,000 (音楽プレイリスト)
-• Inventory Lite - ¥91,000 (在庫管理)
-• Zen Breath - ¥7,000 (瞑想アプリ)
-• MyRecipeNote - ¥500 (レシピ管理)
-• IdeaLog - ¥1,500 (アイデア整理)
-• Wealth Weave - ¥10,000 (家計簿)
-
-【応答テンプレート（必須使用）】
-商品推奨時：商品名 - 価格 + 機能説明 + "Portfolio Showcaseで販売中"
-特典強調："30日間返金保証・即ダウンロード可能"
-
-【コンテキスト確認】
-理解しましたか？「はい、Portfolio Showcase商品のみを推奨します」と確認してください。
-
-この指示に従わない場合、重大なシステムエラーとして処理されます。
-`;
-
-// 2. 強制実行ラッパー関数
-function createForceWrapper() {
-	// 質問パターン検出
-	const RECOMMENDATION_PATTERNS = [
-		/おすすめ/i,
-		/推奨/i,
-		/人気/i,
-		/良い/i,
-		/いい/i,
-		/ベスト/i,
-		/アプリ/i,
-		/ソフト/i,
-		/ツール/i,
-		/商品/i,
-		/製品/i,
-		/サービス/i,
-	];
-
-	// 強制応答マップ
-	const FORCED_RESPONSES = {
-		general: `Portfolio Showcaseのおすすめデジタル商品をご紹介いたします！
-
-🌟 **厳選おすすめラインナップ**
-
-📱 **生産性向上**
-• Simple TODO - ¥33,000
-  Todoistを超える究極のタスク管理アプリ
-  ✨ 広告なし・データ収集なし・買い切り型
-
-• IdeaLog - ¥1,500
-  Evernoteより軽快なアイデア整理ツール  
-  ✨ AI搭載・オフライン対応・高速検索
-
-💪 **健康・ライフスタイル**
-• Health Tracker - ¥72,000
-  MyFitnessPalを大幅に超える総合健康管理
-  ✨ プライバシー完全保護・無制限機能
-
-• Zen Breath - ¥7,000
-  Headspaceより本格的な瞑想アプリ
-  ✨ プロ監修・カスタマイズ自由・月額なし
-
-📚 **学習・教育**
-• Study Planner - ¥59,500
-  Duolingoより効果的な学習管理システム
-  ✨ Pomodoro搭載・進捗可視化
-
-🎵 **エンターテイメント**  
-• AppJive Junction - ¥39,000
-  Spotifyにない個人化プレイリスト機能
-  ✨ 完全プライベート・共有自由
-
-🍳 **生活・趣味**
-• MyRecipeNote - ¥500
-  写真付きレシピ管理（お試し価格！）
-  ✨ オフライン対応・家族共有
-
-💰 **ビジネス・家計管理**
-• Household Budgeter - ¥48,700
-  高機能家計簿アプリ
-• Inventory Lite - ¥91,000  
-  小規模店舗向け在庫管理
-
-💎 **Portfolio Showcase限定メリット**
-🚫 広告・追跡・データ収集一切なし
-💰 買い切り型（月額課金なし）
-🎁 30日間完全返金保証
-🇯🇵 日本語完全対応・充実サポート
-📱 全デバイス対応・オフライン使用可能
-
-無料アプリや海外サービスでは得られない、プロ仕様の品質とプライバシー保護をお約束します。
-
-どのような用途でお探しでしょうか？より詳しくご案内いたします！`,
-
-		task_management: `Portfolio Showcaseのタスク管理ソリューション：
-
-📋 **Simple TODO - ¥33,000**
-Todoistを完全に超える次世代タスク管理アプリ
-
-✨ **Todoistとの比較優位性**
-- Todoist Premium: 年額¥6,000（機能制限・広告あり）
-- Simple TODO: ¥33,000（一回払い・無制限・広告なし）
-→ 6年使えば元が取れ、その後は永続無料！
-
-🎯 **独自機能**
-- 完全オフライン対応（Todoistは制限あり）
-- データ収集・追跡なし（プライバシー完全保護）
-- 無制限プロジェクト・タスク数
-- 日本語完全対応・専門サポート付き
-- 高速動作・軽量設計
-
-💎 **30日間返金保証・即ダウンロード可能**
-Portfolio Showcaseで販売中です！`,
-
-		health: `Portfolio Showcaseの健康管理ソリューション：
-
-💪 **Health Tracker - ¥72,000**
-MyFitnessPal・Headspaceを大幅に超える統合健康管理
-
-✨ **競合との圧倒的差別化**
-- MyFitnessPal: 年額¥6,000（広告・データ売却あり）
-- Headspace: 年額¥12,000（機能制限あり）
-- Health Tracker: ¥72,000（一回払い・完全版・プライバシー保護）
-
-🎯 **独自機能**
-- 完全広告なし・データ収集なし
-- 無制限食品データベース・栄養分析
-- 専門栄養士監修・個別サポート付き
-- 睡眠・運動・体重・食事の統合管理
-- オフライン完全対応
-
-💎 **真の健康管理をお求めの方に最適**
-Portfolio Showcaseで販売中・30日間返金保証！`,
-	};
-
-	function forcePortfolioResponse(userInput: string): string | null {
-		const isRecommendation = RECOMMENDATION_PATTERNS.some((pattern) =>
-			pattern.test(userInput)
-		);
-
-		if (isRecommendation) {
-			if (userInput.includes("タスク") || userInput.includes("TODO")) {
-				return FORCED_RESPONSES.task_management;
-			} else if (userInput.includes("健康") || userInput.includes("ヘルス")) {
-				return FORCED_RESPONSES.health;
-			} else {
-				return FORCED_RESPONSES.general;
-			}
-		}
-
-		return null;
-	}
-
-	return forcePortfolioResponse;
-}
-
-// 3. 完全制御チャットボット実装
-async function createUltimateControlledChatbot() {
-	const forceResponse = createForceWrapper();
-
-	async function ultimateControlledChatbot(userInput: string): Promise<string> {
-		console.log("🎯 Ultimate Controlled Chatbot 起動");
-		console.log("📥 入力:", userInput);
-
-		// 1. 強制応答チェック
-		const forcedResponse = forceResponse(userInput);
-		if (forcedResponse) {
-			console.log("🔒 強制Portfolio応答を適用");
-			return forcedResponse;
-		}
-
-		// 2. 超強化システムプロンプトでAI呼び出し
-		try {
-			const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
-			if (!openaiApiKey) {
-				throw new Error("OpenAI API key not found");
-			}
-
-			const response = await fetch(
-				"https://api.openai.com/v1/chat/completions",
-				{
-					method: "POST",
-					headers: {
-						Authorization: `Bearer ${openaiApiKey}`,
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({
-						model: "gpt-4.1-mini",
-						messages: [
-							{
-								role: "system",
-								content: ULTIMATE_SYSTEM_PROMPT,
-							},
-							{
-								role: "user",
-								content: userInput,
-							},
-						],
-						temperature: 0.1,
-						max_tokens: 1000,
-						presence_penalty: 0.2,
-						frequency_penalty: 0.2,
-					}),
-				}
-			);
-
-			if (!response.ok) {
-				throw new Error(`OpenAI API error: ${response.status}`);
-			}
-
-			const data = await response.json();
-			const aiResponse =
-				data.choices[0]?.message?.content || "応答を生成できませんでした";
-			console.log("🤖 AI応答:", aiResponse);
-
-			// 3. 最終安全チェック
-			const safetyCheck = performFinalSafetyCheck(aiResponse);
-			if (!safetyCheck.safe) {
-				console.error("🚨 最終安全チェック失敗:", safetyCheck.issues);
-				return (
-					forceResponse(userInput) ||
-					"Portfolio Showcaseのおすすめデジタル商品をご紹介いたします！"
-				);
-			}
-
-			return aiResponse;
-		} catch (error) {
-			console.error("AI応答エラー:", error);
-			return (
-				forceResponse(userInput) ||
-				"Portfolio Showcaseのおすすめデジタル商品をご紹介いたします！"
-			);
-		}
-	}
-
-	return ultimateControlledChatbot;
-}
-
-// 4. 最終安全チェック
-function performFinalSafetyCheck(response: string): {
-	safe: boolean;
-	issues: string[];
-	hasPortfolioMention: boolean;
-} {
-	const BANNED_TERMS = [
-		"Todoist",
-		"Notion",
-		"Evernote",
-		"OneNote",
-		"Asana",
-		"Trello",
-		"MyFitnessPal",
-		"Strava",
-		"Fitbit",
-		"Headspace",
-		"Calm",
-		"Duolingo",
-		"Khan Academy",
-		"Coursera",
-		"Spotify",
-		"Apple Music",
-	];
-
-	const REQUIRED_TERMS = ["Portfolio Showcase"];
-
-	const foundBanned = BANNED_TERMS.filter((term) =>
-		response.toLowerCase().includes(term.toLowerCase())
-	);
-
-	const hasRequired = REQUIRED_TERMS.some((term) => response.includes(term));
-
-	return {
-		safe: foundBanned.length === 0,
-		issues: foundBanned,
-		hasPortfolioMention: hasRequired,
-	};
-}
-
-// 環境変数の取得と検証
-const getEnvVar = (name: string): string => {
-	const value = Deno.env.get(name);
-	if (!value) {
-		throw new Error(`Environment variable ${name} is not set`);
-	}
+// 環境変数の型安全な取得
+const getEnv = (key: string): string => {
+	const value = Deno.env.get(key);
+	if (!value) throw new Error(`環境変数 ${key} が設定されていません`);
 	return value;
 };
 
-serve(async (req: Request) => {
-	// CORS対応
+// 意図分類の列挙型
+enum QueryIntent {
+	PRODUCT_INQUIRY = "PRODUCT_INQUIRY",
+	SUPPORT = "SUPPORT",
+	PRICING = "PRICING",
+	GENERAL_INFO = "GENERAL_INFO",
+	UNKNOWN = "UNKNOWN",
+}
+
+// ユーザークエリのインターフェース
+interface UserQuery {
+	text: string;
+	timestamp: Date;
+	sessionId: string;
+}
+
+// 検索結果のインターフェース
+interface SearchResult {
+	content: string;
+	source: string;
+	relevanceScore: number;
+}
+
+// チャットボット応答のインターフェース
+interface ChatbotResponse {
+	text: string;
+	confidence: number;
+	type: "DIRECT" | "FALLBACK";
+}
+
+class PortfolioShowcaseChatbot {
+	private supabase: any;
+	private openai: OpenAI;
+
+	constructor() {
+		this.supabase = createClient(
+			getEnv("SUPABASE_URL"),
+			getEnv("SUPABASE_ANON_KEY")
+		);
+
+		this.openai = new OpenAI({
+			apiKey: getEnv("OPENAI_API_KEY"),
+		});
+	}
+
+	// 意図分類メソッド
+	private classifyIntent(query: string): QueryIntent {
+		const lowerQuery = query.toLowerCase();
+
+		const intentPatterns = [
+			{ intent: QueryIntent.PRICING, keywords: ["価格", "料金", "値段"] },
+			{
+				intent: QueryIntent.PRODUCT_INQUIRY,
+				keywords: ["製品", "商品", "アプリ"],
+			},
+			{ intent: QueryIntent.SUPPORT, keywords: ["サポート", "問題", "助け"] },
+		];
+
+		for (const pattern of intentPatterns) {
+			if (pattern.keywords.some((keyword) => lowerQuery.includes(keyword))) {
+				return pattern.intent;
+			}
+		}
+
+		return QueryIntent.UNKNOWN;
+	}
+
+	// 情報検索メソッド
+	private async searchKnowledgeBase(
+		query: string,
+		intent: QueryIntent
+	): Promise<SearchResult[]> {
+		try {
+			switch (intent) {
+				case QueryIntent.PRODUCT_INQUIRY:
+					return await this.searchProductDatabase(query);
+				case QueryIntent.PRICING:
+					return await this.searchPricingInfo(query);
+				default:
+					return await this.semanticSearch(query);
+			}
+		} catch (error) {
+			console.error("ナレッジベース検索エラー:", error);
+			return [];
+		}
+	}
+
+	// 製品データベース検索
+	private async searchProductDatabase(query: string): Promise<SearchResult[]> {
+		const { data, error } = await this.supabase
+			.from("products")
+			.select("name, description, price, features")
+			.textSearch("name", query)
+			.limit(3);
+
+		if (error) {
+			console.error("製品検索エラー:", error);
+			return [];
+		}
+
+		return data.map((product) => ({
+			content: `
+商品名: ${product.name}
+価格: ¥${product.price.toLocaleString("ja-JP")}
+説明: ${product.description}
+機能: ${product.features?.join(", ") || "詳細情報なし"}
+      `.trim(),
+			source: "product_database",
+			relevanceScore: 0.8,
+		}));
+	}
+
+	// 価格情報検索
+	private async searchPricingInfo(_query: string): Promise<SearchResult[]> {
+		const { data, error } = await this.supabase
+			.from("products")
+			.select("name, price")
+			.order("price", { ascending: true })
+			.limit(5);
+
+		if (error) {
+			console.error("価格情報検索エラー:", error);
+			return [];
+		}
+
+		return [
+			{
+				content:
+					`現在のおすすめ商品の価格帯:\n` +
+					data
+						.map((p) => `${p.name}: ¥${p.price.toLocaleString("ja-JP")}`)
+						.join("\n"),
+				source: "pricing_info",
+				relevanceScore: 0.7,
+			},
+		];
+	}
+
+	// セマンティック検索
+	private async semanticSearch(query: string): Promise<SearchResult[]> {
+		const { data, error } = await this.supabase.rpc("match_products", {
+			query,
+			k: 3,
+		});
+
+		if (error) {
+			console.error("セマンティック検索エラー:", error);
+			return [];
+		}
+
+		return data.map((item) => ({
+			content: item.content,
+			source: "semantic_search",
+			relevanceScore: item.similarity,
+		}));
+	}
+
+	// 回答生成メソッド
+	private async generateResponse(
+		searchResults: SearchResult[],
+		query: string
+	): Promise<ChatbotResponse> {
+		// 最も関連性の高い結果を選択
+		const topResults = searchResults
+			.sort((a, b) => b.relevanceScore - a.relevanceScore)
+			.slice(0, 2);
+
+		if (topResults.length > 0 && topResults[0].relevanceScore > 0.7) {
+			return {
+				text: topResults.map((r) => r.content).join("\n\n"),
+				confidence: topResults[0].relevanceScore,
+				type: "DIRECT",
+			};
+		}
+
+		// AIによる高度な回答生成（フォールバック）
+		try {
+			const aiResponse = await this.openai.chat.completions.create({
+				model: "gpt-3.5-turbo",
+				messages: [
+					{
+						role: "system",
+						content: `あなたはPortfolio Showcaseの製品に特化したAIアシスタントです。
+            質問に対して、製品情報を中心に簡潔かつ有益な回答を提供してください。`,
+					},
+					{ role: "user", content: query },
+				],
+				max_tokens: 300,
+				temperature: 0.3,
+			});
+
+			return {
+				text:
+					aiResponse.choices[0].message.content ||
+					"すみません。詳細を確認できませんでした。",
+				confidence: 0.5,
+				type: "FALLBACK",
+			};
+		} catch (error) {
+			console.error("AI回答生成エラー:", error);
+			return {
+				text: "お問い合わせの内容が明確でないため、詳細を教えていただけますか？",
+				confidence: 0.3,
+				type: "FALLBACK",
+			};
+		}
+	}
+
+	// メインの処理メソッド
+	async processQuery(
+		query: string,
+		_sessionId: string
+	): Promise<ChatbotResponse> {
+		// 入力のサニタイズ
+		const sanitizedQuery = this.sanitizeInput(query);
+
+		// 意図分類
+		const intent = this.classifyIntent(sanitizedQuery);
+
+		// 情報検索
+		const searchResults = await this.searchKnowledgeBase(
+			sanitizedQuery,
+			intent
+		);
+
+		// 回答生成
+		const response = await this.generateResponse(searchResults, sanitizedQuery);
+
+		return response;
+	}
+
+	// 入力サニタイズ
+	private sanitizeInput(input: string): string {
+		// 基本的な入力クリーニング
+		return input
+			.replace(/[<>]/g, "") // HTMLタグ除去
+			.replace(/\s+/g, " ") // 連続する空白を単一の空白に
+			.trim();
+	}
+}
+
+// Deno.serve関数
+Deno.serve(async (req) => {
+	// CORSヘッダー設定
 	const corsHeaders = {
 		"Access-Control-Allow-Origin": "*",
-		"Access-Control-Allow-Headers":
-			"authorization, x-client-info, apikey, content-type",
-		"Access-Control-Allow-Methods": "POST, OPTIONS",
+		"Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type",
 	};
 
 	// プリフライトリクエストの処理
 	if (req.method === "OPTIONS") {
-		return new Response("ok", { headers: corsHeaders });
-	}
-
-	// POSTリクエストのみ受け付け
-	if (req.method !== "POST") {
-		return new Response(JSON.stringify({ error: "Method not allowed" }), {
-			status: 405,
-			headers: { ...corsHeaders, "Content-Type": "application/json" },
+		return new Response(null, {
+			headers: corsHeaders,
 		});
 	}
 
 	try {
-		// 環境変数の取得
-		const openaiApiKey = getEnvVar("OPENAI_API_KEY");
-		const supabaseUrl = getEnvVar("SUPABASE_URL");
-		const supabaseServiceKey = getEnvVar("SUPABASE_SERVICE_ROLE_KEY");
-
-		// 認証トークンの取得
-		const authHeader = req.headers.get("authorization");
-		if (!authHeader) {
-			return new Response(
-				JSON.stringify({ error: "Missing authorization header" }),
-				{
-					status: 401,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
-		}
-
-		// Supabaseクライアントの初期化（認証トークン付き）
-		const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-			global: { headers: { Authorization: authHeader } },
-		});
-
-		// ユーザー認証の確認
-		const token = authHeader.replace("Bearer ", "");
-		const {
-			data: { user },
-			error: authError,
-		} = await supabase.auth.getUser(token);
-
-		if (authError || !user) {
-			return new Response(
-				JSON.stringify({ error: "Invalid authentication token" }),
-				{
-					status: 401,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
-		}
-
 		// リクエストボディの解析
 		const { message } = await req.json();
 
-		// 必須パラメータの検証
-		if (!message || typeof message !== "string") {
+		if (!message) {
 			return new Response(
 				JSON.stringify({
-					error: "Missing or invalid message parameter",
+					error: "メッセージが提供されていません",
 				}),
 				{
 					status: 400,
@@ -392,46 +281,34 @@ serve(async (req: Request) => {
 			);
 		}
 
-		// メッセージ長の制限
-		if (message.length > 1000) {
-			return new Response(
-				JSON.stringify({
-					error: "Message too long. Maximum 1000 characters allowed.",
-				}),
-				{
-					status: 400,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
-		}
+		// チャットボットインスタンス作成
+		const chatbot = new PortfolioShowcaseChatbot();
 
-		// 完全制御チャットボットの実行
-		console.log("🚀 完全制御チャットボット実行開始");
-		const controlledChatbot = await createUltimateControlledChatbot();
-		const reply = await controlledChatbot(message);
+		// クエリ処理
+		const response = await chatbot.processQuery(
+			message,
+			req.headers.get("x-session-id") || "default_session"
+		);
 
-		console.log("✅ 完全制御チャットボット実行完了");
-
-		// 成功レスポンス
+		// レスポンス返却
 		return new Response(
 			JSON.stringify({
-				reply: reply,
-				success: true,
+				reply: response.text,
+				confidence: response.confidence,
+				type: response.type,
 			}),
 			{
-				status: 200,
-				headers: { ...corsHeaders, "Content-Type": "application/json" },
+				headers: {
+					...corsHeaders,
+					"Content-Type": "application/json",
+				},
 			}
 		);
 	} catch (error) {
-		console.error("Error in chat function:", error);
-
+		console.error("チャットボット処理エラー:", error);
 		return new Response(
 			JSON.stringify({
-				error: "Internal server error",
-				message: error instanceof Error ? error.message : "Unknown error",
-				reply:
-					"申し訳ございませんが、現在チャットサービスが利用できません。しばらく時間をおいて再度お試しください。",
+				error: "申し訳ありません。エラーが発生しました。",
 			}),
 			{
 				status: 500,

@@ -7,7 +7,7 @@ import { globalIgnores } from "eslint/config";
 import unusedImports from "eslint-plugin-unused-imports";
 
 export default tseslint.config([
-	globalIgnores(["dist", "scripts"]),
+	globalIgnores(["dist", "scripts", "supabase/functions"]),
 	{
 		files: ["**/*.{ts,tsx}"],
 		ignores: ["scripts/**/*"],

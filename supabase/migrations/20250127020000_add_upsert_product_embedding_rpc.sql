@@ -34,9 +34,11 @@ GRANT EXECUTE ON FUNCTION public.upsert_product_embedding(UUID, TEXT, vector) TO
 -- RLSポリシーを更新
 ALTER TABLE public.product_embeddings ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Allow public insert for product embeddings" ON public.product_embeddings;
+DROP POLICY IF EXISTS "Allow public insert for product_embeddings" ON public.product_embeddings;
 DROP POLICY IF EXISTS "Allow authenticated users to update their own embeddings" ON public.product_embeddings;
 
-CREATE POLICY "Allow public upsert product embeddings" ON public.product_embeddings
-    FOR ALL USING (true)
-    WITH CHECK (true); 
+CREATE POLICY "Allow authenticated upsert product embeddings" ON public.product_embeddings
+    FOR ALL
+    TO authenticated
+    USING (auth.uid() IS NOT NULL)
+    WITH CHECK (auth.uid() IS NOT NULL);

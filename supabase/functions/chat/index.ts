@@ -1,12 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// OpenAI APIのレスポンス型定義
-interface OpenAIMessage {
-	role: "system" | "user" | "assistant";
-	content: string;
-}
-
 // 最終解決策：チャットボット完全制御システム
 
 // 1. 完全コントロール・システムプロンプト
@@ -252,13 +246,19 @@ async function createUltimateControlledChatbot() {
 			const safetyCheck = performFinalSafetyCheck(aiResponse);
 			if (!safetyCheck.safe) {
 				console.error("🚨 最終安全チェック失敗:", safetyCheck.issues);
-				return forceResponse(userInput) || FORCED_RESPONSES.general;
+				return (
+					forceResponse(userInput) ||
+					"Portfolio Showcaseのおすすめデジタル商品をご紹介いたします！"
+				);
 			}
 
 			return aiResponse;
 		} catch (error) {
 			console.error("AI応答エラー:", error);
-			return forceResponse(userInput) || FORCED_RESPONSES.general;
+			return (
+				forceResponse(userInput) ||
+				"Portfolio Showcaseのおすすめデジタル商品をご紹介いたします！"
+			);
 		}
 	}
 
@@ -303,19 +303,6 @@ function performFinalSafetyCheck(response: string): {
 		issues: foundBanned,
 		hasPortfolioMention: hasRequired,
 	};
-}
-
-// 5. 緊急デプロイメント
-async function emergencyDeploy() {
-	console.log("🚨 緊急デプロイメント実行");
-
-	// 完全制御チャットボットを実装
-	const controlledChatbot = await createUltimateControlledChatbot();
-
-	console.log("✅ 緊急デプロイメント完了");
-	console.log("🛡️ 安全なチャットボットが稼働中");
-
-	return controlledChatbot;
 }
 
 // 環境変数の取得と検証

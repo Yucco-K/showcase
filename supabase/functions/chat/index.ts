@@ -6,6 +6,36 @@ const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// 文字列正規化ユーティリティ
+function normalize(str: string): string {
+	return str
+		.replace(/[\s　]+/g, "") // 全角・半角スペース除去
+		.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) =>
+			String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+		) // 全角英数字→半角
+		.toLowerCase();
+}
+
+// クエリから商品名部分だけを抽出するユーティリティ
+function extractProductName(query: string): string {
+	// よくある語尾パターン
+	const suffixes = [
+		/の価格は.*$/,
+		/の機能は.*$/,
+		/の特徴は.*$/,
+		/について教えて.*$/,
+		/とは.*$/,
+		/を教えて.*$/,
+		/の説明.*$/,
+		/の詳細.*$/,
+	];
+	let name = query;
+	suffixes.forEach((re) => {
+		name = name.replace(re, "");
+	});
+	return name.trim();
+}
+
 // カスタムRAG - OpenAI Embeddings API直接呼び出し
 async function generateEmbedding(text: string): Promise<number[]> {
 	try {
@@ -35,24 +65,25 @@ async function generateEmbedding(text: string): Promise<number[]> {
 
 // カスタムRAG - OpenAI Chat Completions API直接呼び出し
 async function generateAnswer(
-	query: string,
-	contextDocs: string[]
+	contexts: string[],
+	userQuery: string
 ): Promise<string> {
 	try {
-		const context = contextDocs.join("\n---\n");
-		const systemPrompt = `あなたはPortfolio Showcaseの専門AIアシスタントです。以下のコンテキストにあるPortfolio Showcase商品のみを推奨してください。
+		const systemPrompt = `
+あなたは、Portfolio Showcaseの製品に特化したAIアシスタントです。以下のルールを厳密に守ってください：
 
-【Portfolio Showcase商品・サービス情報】
-${context}
+1. 回答は常にPortfolio Showcaseの製品に限定してください。
+2. 価格は必ず日本円（¥）で表示してください。ドル（$）表記は絶対に使用しないでください。
+3. 製品の特徴、利点、使用方法を詳細に説明してください。
+4. ユーザーの質問に対して、関連する製品を具体的に提案してください。
+5. 以下のタグを参考にして、適切な回答を心がけてください：
+   ${CHATBOT_TAGS.join(", ")}
 
-【重要な指示】
-- 上記のコンテキストにあるPortfolio Showcase商品のみを紹介してください
-- 商品名、価格、機能、特徴を具体的に説明してください
-- 価格は必ず日本円（¥）で表示してください。ドル（$）表記は絶対に使用しないでください
-- 「おすすめ商品」を聞かれたら、AppBuzz Hive、MyRecipeNote、SnazzySync Apps、CollabPlannerなどの実際のShowcase商品を推奨してください
-- Simple TODOや一般的なアプリではなく、Portfolio Showcaseの商品に限定してください
-- 商品の価格も含めて回答してください
-- 価格表示例: ¥32,000、¥500、¥24,000、¥1,200`;
+利用可能な文脈情報：
+${contexts.join("\n")}
+
+ユーザーの質問：${userQuery}
+`;
 
 		const response = await fetch("https://api.openai.com/v1/chat/completions", {
 			method: "POST",
@@ -64,7 +95,7 @@ ${context}
 				model: "gpt-4o-mini",
 				messages: [
 					{ role: "system", content: systemPrompt },
-					{ role: "user", content: query },
+					{ role: "user", content: userQuery },
 				],
 				temperature: 0.1, // より確定的な回答のため低く設定
 				max_tokens: 600, // より詳細な回答のため増加
@@ -91,6 +122,30 @@ async function retrieveAllContexts(
 	try {
 		console.log(`[Retriever] クエリ: ${query}`);
 
+		// DBから全商品名を取得し、正規化して比較
+		const { data: allProducts } = await supabase
+			.from("products")
+			.select("name, price, category, description, long_description, features")
+			.limit(50);
+		if (allProducts && allProducts.length > 0) {
+			const normQuery = normalize(extractProductName(query));
+			const matched = allProducts.find(
+				(p) => normQuery && normalize(p.name).includes(normQuery)
+			);
+			if (matched) {
+				console.log(`[Retriever] 柔軟商品名一致: ${matched.name}`);
+				return [
+					`[Portfolio Showcase商品] ${
+						matched.name
+					} - 価格: ¥${matched.price?.toLocaleString("ja-JP")} - カテゴリ: ${
+						matched.category
+					} - ${matched.description} - 詳細: ${
+						matched.long_description
+					} - 機能: ${matched.features?.join(", ") || "なし"}`,
+				];
+			}
+		}
+
 		// おすすめ商品やShowcase商品を聞かれた場合の特別処理
 		if (
 			query.includes("おすすめ") ||
@@ -108,7 +163,6 @@ async function retrieveAllContexts(
 				)
 				.or("recommended.eq.true,popular.eq.true")
 				.limit(8);
-
 			if (recommendedProducts && recommendedProducts.length > 0) {
 				const productInfo = recommendedProducts.map(
 					(p) =>
@@ -126,7 +180,6 @@ async function retrieveAllContexts(
 		}
 
 		const embedding = await generateEmbedding(query);
-
 		// 商品（product_embeddings）- より多くのコンテキストを取得
 		const { data: productData, error: productError } = await supabase.rpc(
 			"match_products",
@@ -176,33 +229,39 @@ async function retrieveAllContexts(
 		console.log(
 			`[Retriever] 取得: 商品${productDocs.length}件, ドキュメント${docDocs.length}件, 合計${allDocs.length}件`
 		);
-
 		// コンテキストが少ない場合のフォールバック
 		if (allDocs.length === 0) {
 			console.log("[Retriever] フォールバック: 全商品情報を取得");
-			const { data: allProducts } = await supabase
+			const { data: allProducts2 } = await supabase
 				.from("products")
 				.select("name, price, description, long_description, features")
 				.limit(10);
-
-			if (allProducts && allProducts.length > 0) {
-				return allProducts.map(
+			if (allProducts2 && allProducts2.length > 0) {
+				return allProducts2.map(
 					(p) =>
 						`[Portfolio Showcase商品] ${
 							p.name
-						} - 価格: ¥${p.price?.toLocaleString()} - ${
+						} - 価格: ¥${p.price?.toLocaleString("ja-JP")} - ${
 							p.description
 						} - 機能: ${p.features?.join(", ") || "なし"}`
 				);
 			}
 		}
-
 		return allDocs;
 	} catch (err) {
 		console.error("[Retriever] 横断検索エラー:", err);
 		return [];
 	}
 }
+
+const CHATBOT_TAGS = [
+	"おすすめ商品",
+	"商品紹介",
+	"プライバシーポリシー",
+	"利用規約",
+	"よくある質問",
+	"お問い合わせ",
+];
 
 Deno.serve(async (req) => {
 	// CORS設定
@@ -255,7 +314,7 @@ Deno.serve(async (req) => {
 		}
 
 		console.log(`[API] 取得コンテキスト: ${docs.length}件`);
-		const answer = await generateAnswer(userQuery, docs);
+		const answer = await generateAnswer(docs, userQuery);
 
 		return new Response(JSON.stringify({ reply: answer }), {
 			status: 200,

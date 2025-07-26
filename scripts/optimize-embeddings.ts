@@ -12,7 +12,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const EMBEDDING_MODELS = [
 	"text-embedding-3-small",
 	"text-embedding-ada-002",
-	"text-embedding-3-large",
+	// "text-embedding-3-large", // Uncomment for testing or benchmarking purposes
 ];
 
 /**

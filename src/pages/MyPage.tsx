@@ -16,6 +16,7 @@ interface Profile {
 	full_name: string | null;
 	avatar_url: string | null;
 	biography: string | null;
+	role?: string | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -1545,7 +1546,8 @@ export const MyPage: React.FC = () => {
 		<Container>
 			<Title>✨ My Page</Title>
 
-			{purchasedProducts.length > 0 && (
+			{/* 購入したアプリ - 管理者には非表示 */}
+			{profile?.role !== "admin" && purchasedProducts.length > 0 && (
 				<Section style={{ marginBottom: 32 }}>
 					<SectionTitle>購入したアプリ</SectionTitle>
 					<div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
@@ -1768,154 +1770,165 @@ export const MyPage: React.FC = () => {
 				</Form>
 			</Section>
 
-			{/* いいねしたアプリ */}
-			<Section style={{ marginTop: "64px", marginBottom: "64px" }}>
-				<SectionTitle>❤️ いいねしたアプリ</SectionTitle>
-				{likedProducts.length > 0 ? (
-					<ProductGrid>
-						{likedProducts.map((product) => (
-							<ProductCard
-								key={product.id}
-								onClick={() => navigate(`/products/${product.id}`)}
-							>
-								<ProductName>{product.name}</ProductName>
-								<ProductDescription>{product.description}</ProductDescription>
-								<ProductPrice>¥{product.price.toLocaleString()}</ProductPrice>
-							</ProductCard>
-						))}
-					</ProductGrid>
-				) : (
-					<EmptyMessage>まだいいねしたアプリはありません</EmptyMessage>
-				)}
-			</Section>
+			{/* いいねしたアプリ - 管理者には非表示 */}
+			{profile?.role !== "admin" && (
+				<Section style={{ marginTop: "64px", marginBottom: "64px" }}>
+					<SectionTitle>❤️ いいねしたアプリ</SectionTitle>
+					{likedProducts.length > 0 ? (
+						<ProductGrid>
+							{likedProducts.map((product) => (
+								<ProductCard
+									key={product.id}
+									onClick={() => navigate(`/products/${product.id}`)}
+								>
+									<ProductName>{product.name}</ProductName>
+									<ProductDescription>{product.description}</ProductDescription>
+									<ProductPrice>¥{product.price.toLocaleString()}</ProductPrice>
+								</ProductCard>
+							))}
+						</ProductGrid>
+					) : (
+						<EmptyMessage>まだいいねしたアプリはありません</EmptyMessage>
+					)}
+				</Section>
+			)}
 
-			{/* お問い合わせやりとり履歴 */}
-			<Section style={{ marginTop: 64, marginBottom: 64 }}>
-				<SectionTitle>📨 お問い合わせやりとり履歴</SectionTitle>
-				{threadLoading ? (
-					<LoadingMessage>履歴を読み込み中...</LoadingMessage>
-				) : threadError ? (
-					<ErrorMessage>{threadError}</ErrorMessage>
-				) : contacts.length === 0 ? (
-					<EmptyMessage>お問い合わせ履歴はありません</EmptyMessage>
-				) : (
-					contacts.map((c) => (
-						<ThreadAccordion key={c.id}>
-							<ThreadAccordionHeader $isOpen={accordionStates[c.id] || false}>
-								<ThreadAccordionButton
-									$isOpen={accordionStates[c.id] || false}
-									onClick={() =>
-										setAccordionStates((prev) => ({
-											...prev,
-											[c.id]: !prev[c.id],
-										}))
-									}
-								>
-									<AccordionIcon $isOpen={accordionStates[c.id] || false}>
-										▼
-									</AccordionIcon>
-								</ThreadAccordionButton>
-								<ThreadAccordionTitle>
-									{accordionStates[c.id] ? (
-										<>
-											<div>{c.title || "お問い合わせ"}</div>
-											<div
-												style={{
-													fontSize: "0.9rem",
-													color: "#718096",
-													marginTop: "4px",
-												}}
-											>
-												{new Date(c.created_at).toLocaleString("ja-JP")}
-											</div>
-										</>
-									) : (
-										`お問合せNo：${c.id}`
-									)}
-								</ThreadAccordionTitle>
-							</ThreadAccordionHeader>
-							<ThreadAccordionContent $isOpen={accordionStates[c.id] || false}>
-								{/* 件数表示を最上部に移動 */}
-								<div
-									style={{
-										color: "#667eea",
-										fontWeight: 600,
-										marginBottom: 6,
-										marginTop: 0,
-										fontSize: "0.98rem",
-									}}
-								>
-									全{threadsMap[c.id]?.length || 0}件
-								</div>
-								<ThreadItemRow style={{ marginBottom: 8 }}>
-									{getAvatar("user")}
-									<div
-										style={{
-											color: "#4a5568",
-											wordBreak: "break-word",
-											overflowWrap: "anywhere",
-										}}
-									>
-										{c.message}
-									</div>
-								</ThreadItemRow>
-								<ThreadList>
-									{/* やりとりが0件でも何も表示しない */}
-									{[...(threadsMap[c.id] || [])]
-										.sort(
-											(a, b) =>
-												new Date(a.created_at).getTime() -
-												new Date(b.created_at).getTime()
-										)
-										.map((t) => (
-											<ThreadItem key={t.id} $isUser={t.sender_type === "user"}>
-												<ThreadItemRow>
-													{getAvatar(t.sender_type as "user" | "admin")}
-													<div style={{ flex: 1 }}>
-														{t.message}
-														<ThreadMeta>
-															{t.sender_type === "admin"
-																? `管理者 ${
-																		adminProfiles[t.sender_id!]?.full_name || ""
-																  }`.trim()
-																: "あなた"}
-															・{new Date(t.created_at).toLocaleString("ja-JP")}
-														</ThreadMeta>
-													</div>
-												</ThreadItemRow>
-											</ThreadItem>
-										))}
-								</ThreadList>
-								<ThreadForm onSubmit={(e) => handleSendThread(c.id, e)}>
-									<ThreadTextarea
-										value={threadMessages[c.id] || ""}
-										onChange={(e) =>
-											setThreadMessages((prev) => ({
+			{/* お問い合わせやりとり履歴 - 管理者には非表示 */}
+			{profile?.role !== "admin" && (
+				<Section style={{ marginTop: 64, marginBottom: 64 }}>
+					<SectionTitle>📨 お問い合わせやりとり履歴</SectionTitle>
+					{threadLoading ? (
+						<LoadingMessage>履歴を読み込み中...</LoadingMessage>
+					) : threadError ? (
+						<ErrorMessage>{threadError}</ErrorMessage>
+					) : contacts.length === 0 ? (
+						<EmptyMessage>お問い合わせ履歴はありません</EmptyMessage>
+					) : (
+						contacts.map((c) => (
+							<ThreadAccordion key={c.id}>
+								<ThreadAccordionHeader $isOpen={accordionStates[c.id] || false}>
+									<ThreadAccordionButton
+										$isOpen={accordionStates[c.id] || false}
+										onClick={() =>
+											setAccordionStates((prev) => ({
 												...prev,
-												[c.id]: e.target.value,
+												[c.id]: !prev[c.id],
 											}))
 										}
-										placeholder="返信内容を入力"
-										required
-										rows={2}
-										disabled={threadSending[c.id]}
-										style={{ margin: "16px 0" }}
-									/>
-									<Button
-										type="submit"
-										$variant="primary"
-										disabled={
-											threadSending[c.id] || !threadMessages[c.id]?.trim()
-										}
 									>
-										{threadSending[c.id] ? "送信中..." : "送信"}
-									</Button>
-								</ThreadForm>
-							</ThreadAccordionContent>
-						</ThreadAccordion>
-					))
-				)}
-			</Section>
+										<AccordionIcon $isOpen={accordionStates[c.id] || false}>
+											▼
+										</AccordionIcon>
+									</ThreadAccordionButton>
+									<ThreadAccordionTitle>
+										{accordionStates[c.id] ? (
+											<>
+												<div>{c.title || "お問い合わせ"}</div>
+												<div
+													style={{
+														fontSize: "0.9rem",
+														color: "#718096",
+														marginTop: "4px",
+													}}
+												>
+													{new Date(c.created_at).toLocaleString("ja-JP")}
+												</div>
+											</>
+										) : (
+											`お問合せNo：${c.id}`
+										)}
+									</ThreadAccordionTitle>
+								</ThreadAccordionHeader>
+								<ThreadAccordionContent
+									$isOpen={accordionStates[c.id] || false}
+								>
+									{/* 件数表示を最上部に移動 */}
+									<div
+										style={{
+											color: "#667eea",
+											fontWeight: 600,
+											marginBottom: 6,
+											marginTop: 0,
+											fontSize: "0.98rem",
+										}}
+									>
+										全{threadsMap[c.id]?.length || 0}件
+									</div>
+									<ThreadItemRow style={{ marginBottom: 8 }}>
+										{getAvatar("user")}
+										<div
+											style={{
+												color: "#4a5568",
+												wordBreak: "break-word",
+												overflowWrap: "anywhere",
+											}}
+										>
+											{c.message}
+										</div>
+									</ThreadItemRow>
+									<ThreadList>
+										{/* やりとりが0件でも何も表示しない */}
+										{[...(threadsMap[c.id] || [])]
+											.sort(
+												(a, b) =>
+													new Date(a.created_at).getTime() -
+													new Date(b.created_at).getTime()
+											)
+											.map((t) => (
+												<ThreadItem
+													key={t.id}
+													$isUser={t.sender_type === "user"}
+												>
+													<ThreadItemRow>
+														{getAvatar(t.sender_type as "user" | "admin")}
+														<div style={{ flex: 1 }}>
+															{t.message}
+															<ThreadMeta>
+																{t.sender_type === "admin"
+																	? `管理者 ${
+																			adminProfiles[t.sender_id!]?.full_name ||
+																			""
+																	  }`.trim()
+																	: "あなた"}
+																・
+																{new Date(t.created_at).toLocaleString("ja-JP")}
+															</ThreadMeta>
+														</div>
+													</ThreadItemRow>
+												</ThreadItem>
+											))}
+									</ThreadList>
+									<ThreadForm onSubmit={(e) => handleSendThread(c.id, e)}>
+										<ThreadTextarea
+											value={threadMessages[c.id] || ""}
+											onChange={(e) =>
+												setThreadMessages((prev) => ({
+													...prev,
+													[c.id]: e.target.value,
+												}))
+											}
+											placeholder="返信内容を入力"
+											required
+											rows={2}
+											disabled={threadSending[c.id]}
+											style={{ margin: "16px 0" }}
+										/>
+										<Button
+											type="submit"
+											$variant="primary"
+											disabled={
+												threadSending[c.id] || !threadMessages[c.id]?.trim()
+											}
+										>
+											{threadSending[c.id] ? "送信中..." : "送信"}
+										</Button>
+									</ThreadForm>
+								</ThreadAccordionContent>
+							</ThreadAccordion>
+						))
+					)}
+				</Section>
+			)}
 
 			<Toast
 				message={toast.message}

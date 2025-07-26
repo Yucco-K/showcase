@@ -6,6 +6,7 @@ import React, {
 	type FormEvent,
 } from "react";
 import styled from "styled-components";
+import ReactMarkdown from "react-markdown";
 import { supabase } from "../lib/supabase";
 import { useToast } from "../hooks/useToast";
 import { useAuth } from "../contexts/AuthProvider";
@@ -188,6 +189,60 @@ const Message = styled.div<{ $isUser: boolean }>`
 		word-wrap: break-word;
 		line-height: 1.4;
 		font-size: 14px;
+
+		/* マークダウンスタイル */
+		p {
+			margin: 0 0 8px 0;
+			&:last-child {
+				margin-bottom: 0;
+			}
+		}
+
+		code {
+			background: rgba(0, 0, 0, 0.1);
+			padding: 2px 4px;
+			border-radius: 4px;
+			font-family: "Courier New", monospace;
+			font-size: 12px;
+		}
+
+		pre {
+			background: rgba(0, 0, 0, 0.1);
+			padding: 8px;
+			border-radius: 6px;
+			overflow-x: auto;
+			margin: 8px 0;
+
+			code {
+				background: none;
+				padding: 0;
+			}
+		}
+
+		ul,
+		ol {
+			margin: 8px 0;
+			padding-left: 20px;
+		}
+
+		li {
+			margin: 4px 0;
+		}
+
+		strong {
+			font-weight: 600;
+		}
+
+		em {
+			font-style: italic;
+		}
+
+		blockquote {
+			border-left: 3px solid rgba(0, 0, 0, 0.2);
+			padding-left: 12px;
+			margin: 8px 0;
+			font-style: italic;
+		}
 	}
 `;
 
@@ -704,7 +759,13 @@ const ChatBot: React.FC = () => {
 										<IconRobot size={18} />
 									)}
 								</div>
-								<div className={`content message-content`}>{msg.content}</div>
+								<div className={`content message-content`}>
+									{msg.role === "assistant" ? (
+										<ReactMarkdown>{msg.content}</ReactMarkdown>
+									) : (
+										msg.content
+									)}
+								</div>
 							</Message>
 						))}
 

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
+import { OpenAIEmbeddings, ChatOpenAI } from "@langchain/openai";
 
 // 最終解決策：チャットボット完全制御システム
 
@@ -314,129 +315,75 @@ const getEnvVar = (name: string): string => {
 	return value;
 };
 
-serve(async (req: Request) => {
-	// CORS対応
-	const corsHeaders = {
-		"Access-Control-Allow-Origin": "*",
-		"Access-Control-Allow-Headers":
-			"authorization, x-client-info, apikey, content-type",
-		"Access-Control-Allow-Methods": "POST, OPTIONS",
-	};
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
+const openaiApiKey = process.env.OPENAI_API_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-	// プリフライトリクエストの処理
-	if (req.method === "OPTIONS") {
-		return new Response("ok", { headers: corsHeaders });
-	}
-
-	// POSTリクエストのみ受け付け
-	if (req.method !== "POST") {
-		return new Response(JSON.stringify({ error: "Method not allowed" }), {
-			status: 405,
-			headers: { ...corsHeaders, "Content-Type": "application/json" },
-		});
-	}
-
-	try {
-		// 環境変数の取得
-		const openaiApiKey = getEnvVar("OPENAI_API_KEY");
-		const supabaseUrl = getEnvVar("SUPABASE_URL");
-		const supabaseServiceKey = getEnvVar("SUPABASE_SERVICE_ROLE_KEY");
-
-		// 認証トークンの取得
-		const authHeader = req.headers.get("authorization");
-		if (!authHeader) {
-			return new Response(
-				JSON.stringify({ error: "Missing authorization header" }),
-				{
-					status: 401,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
-		}
-
-		// Supabaseクライアントの初期化（認証トークン付き）
-		const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-			global: { headers: { Authorization: authHeader } },
-		});
-
-		// ユーザー認証の確認
-		const token = authHeader.replace("Bearer ", "");
-		const {
-			data: { user },
-			error: authError,
-		} = await supabase.auth.getUser(token);
-
-		if (authError || !user) {
-			return new Response(
-				JSON.stringify({ error: "Invalid authentication token" }),
-				{
-					status: 401,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
-		}
-
-		// リクエストボディの解析
-		const { message } = await req.json();
-
-		// 必須パラメータの検証
-		if (!message || typeof message !== "string") {
-			return new Response(
-				JSON.stringify({
-					error: "Missing or invalid message parameter",
-				}),
-				{
-					status: 400,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
-		}
-
-		// メッセージ長の制限
-		if (message.length > 1000) {
-			return new Response(
-				JSON.stringify({
-					error: "Message too long. Maximum 1000 characters allowed.",
-				}),
-				{
-					status: 400,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
-		}
-
-		// 完全制御チャットボットの実行
-		console.log("🚀 完全制御チャットボット実行開始");
-		const controlledChatbot = await createUltimateControlledChatbot();
-		const reply = await controlledChatbot(message);
-
-		console.log("✅ 完全制御チャットボット実行完了");
-
-		// 成功レスポンス
-		return new Response(
-			JSON.stringify({
-				reply: reply,
-				success: true,
-			}),
-			{
-				status: 200,
-				headers: { ...corsHeaders, "Content-Type": "application/json" },
-			}
-		);
-	} catch (error) {
-		console.error("Error in chat function:", error);
-
-		return new Response(
-			JSON.stringify({
-				error: "Internal server error",
-				message: error instanceof Error ? error.message : "Unknown error",
-				reply:
-					"申し訳ございませんが、現在チャットサービスが利用できません。しばらく時間をおいて再度お試しください。",
-			}),
-			{
-				status: 500,
-				headers: { ...corsHeaders, "Content-Type": "application/json" },
-			}
-		);
-	}
+const embeddings = new OpenAIEmbeddings({
+	apiKey: openaiApiKey,
+	model: "text-embedding-3-small",
 });
+
+const llm = new ChatOpenAI({
+	openAIApiKey: openaiApiKey,
+	modelName: "gpt-4.0-turbo",
+	temperature: 0.2,
+});
+
+async function retrieveDocuments(query: string, k: number = 3) {
+	try {
+		const embedding = await embeddings.embedQuery(query);
+		const { data, error } = await supabase.rpc("match_products", {
+			query_embedding: embedding,
+			match_threshold: 0.2,
+			match_count: k,
+		});
+		if (error) throw error;
+		return (data || []).map((row: any) => row.content);
+	} catch (err) {
+		console.error("[Retriever] 検索エラー:", err);
+		return [];
+	}
+}
+
+async function generateAnswer(query: string, contextDocs: string[]) {
+	try {
+		const context = contextDocs.join("\n---\n");
+		const systemPrompt = `あなたはPortfolio Showcaseの専門AIアシスタントです。以下のコンテキスト（商品・FAQ）だけを根拠に、ユーザーの質問に日本語で簡潔かつ正確に答えてください。\n\n【コンテキスト】\n${context}`;
+		const res = await llm.call([
+			["system", systemPrompt],
+			["user", query],
+		]);
+		return res.content;
+	} catch (err) {
+		console.error("[QAChain] 回答生成エラー:", err);
+		return "申し訳ありません。現在回答できません。";
+	}
+}
+
+export default async (req, res) => {
+	try {
+		const { query } = req.body;
+		if (!query) {
+			res.status(400).json({ error: "質問が指定されていません。" });
+			return;
+		}
+		// RAGで回答生成
+		const docs = await retrieveDocuments(query, 3);
+		if (docs.length === 0) {
+			res
+				.status(200)
+				.json({
+					answer:
+						"申し訳ありません。該当する商品・情報が見つかりませんでした。",
+				});
+			return;
+		}
+		const answer = await generateAnswer(query, docs);
+		res.status(200).json({ answer });
+	} catch (err) {
+		console.error("[API] エラー:", err);
+		res.status(500).json({ error: "システムエラーが発生しました。" });
+	}
+};

@@ -348,8 +348,7 @@ const ChatBot: React.FC = () => {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [input, setInput] = useState("");
 	const [loading, setLoading] = useState(false);
-	// 管理者チェックは不要になったため削除
-	// const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // null = loading, false = not admin, true = admin
+	const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); // null = loading, false = not authenticated, true = authenticated
 	const [isClosing, setIsClosing] = useState(false);
 	const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
 	const { showError } = useToast();
@@ -360,40 +359,23 @@ const ChatBot: React.FC = () => {
 	const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const [popularFAQs] = useState<FAQ[]>(() => getPopularFAQs(5));
 
-	// 管理者チェックは不要になったため削除
-	// useEffect(() => {
-	// 	const checkAdminRole = async () => {
-	// 		try {
-	// 			const {
-	// 				data: { user },
-	// 				} = await supabase.auth.getUser();
+	// 認証状態をチェック
+	useEffect(() => {
+		const checkAuthStatus = async () => {
+			try {
+				const {
+					data: { user },
+				} = await supabase.auth.getUser();
 
-	// 			if (!user) {
-	// 				setIsAdmin(false);
-	// 				return;
-	// 			}
+				setIsAuthenticated(!!user);
+			} catch (error) {
+				console.error("Error checking auth status:", error);
+				setIsAuthenticated(false);
+			}
+		};
 
-	// 			const { data: profile, error } = await supabase
-	// 				.from("profiles")
-	// 				.select("role")
-	// 				.eq("id", user.id)
-	// 				.single();
-
-	// 			if (error) {
-	// 				console.error("Error fetching user profile:", error);
-	// 				setIsAdmin(false);
-	// 				return;
-	// 			}
-
-	// 			setIsAdmin(profile?.role === "admin");
-	// 		} catch (error) {
-	// 			console.error("Error checking admin role:", error);
-	// 			setIsAdmin(false);
-	// 		}
-	// 	};
-
-	// 	checkAdminRole();
-	// }, []);
+		checkAuthStatus();
+	}, []);
 
 	// メッセージが更新されたときに自動で最下部にスクロール
 	const scrollToBottom = useCallback(() => {
@@ -643,15 +625,15 @@ const ChatBot: React.FC = () => {
 		}
 	};
 
-	// 管理者チェックのローディング状態も不要になったため削除
-	// if (isAdmin === null) {
-	// 	return null;
-	// }
+	// 認証チェックのローディング状態
+	if (isAuthenticated === null) {
+		return null;
+	}
 
-	// 一般ユーザーでもチャットボットを利用可能にするため、管理者チェックを削除
-	// if (!isAdmin) {
-	// 	return null;
-	// }
+	// 未認証ユーザーにはチャットボットを表示しない
+	if (!isAuthenticated) {
+		return null;
+	}
 
 	return (
 		<ChatContainer $isOpen={isOpen} $isClosing={isClosing}>

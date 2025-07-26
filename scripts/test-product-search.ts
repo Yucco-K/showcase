@@ -133,7 +133,7 @@ async function main() {
 
 			// 類似商品を検索
 			console.log(`  🔍 類似商品を検索中...`);
-			const results = await searchSimilarProducts(embedding, 0.6, 3);
+			const results = await searchSimilarProducts(embedding, 0.3, 3);
 
 			if (results.length === 0) {
 				console.log(`  ❌ 類似商品が見つかりませんでした`);

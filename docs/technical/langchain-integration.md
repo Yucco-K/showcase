@@ -73,25 +73,26 @@ Portfolio Showcase チャットボットへの LangChain 統合による RAG（R
    - ✅ RLS ポリシー設定
 
 3. **埋め込み生成システム**
+
    - ✅ 商品データ埋め込み生成スクリプト作成
    - ✅ OpenAI Embeddings API 統合
    - ✅ 商品検索機能テストスクリプト作成
 
+4. **商品・FAQ データのベクトル化**
+   - ✅ 商品データの埋め込み生成実行
+   - ✅ 5 件の商品データをベクトル化
+   - ✅ ベクトル検索の精度テスト
+   - ✅ 類似度閾値 0.3 で検索成功
+
 ### 🔄 進行中タスク
 
-4. **商品・FAQ データのベクトル化**
-   - 🔄 商品データの埋め込み生成実行
-   - 🔄 FAQ データの準備とベクトル化
-   - 🔄 ベクトル検索の精度テスト
+5. **LangChain Retriever/QA チェーンの PoC 実装**
+   - 🔄 LangChain.js の Deno 環境での動作確認
+   - 🔄 埋め込み生成システム構築
+   - 🔄 ベクトル検索機能実装
+   - 🔄 商品情報検索の精度テスト
 
 ### 📋 未着手タスク
-
-5. **LangChain Retriever/QA チェーンの PoC 実装**
-
-   - 📋 LangChain.js の Deno 環境での動作確認
-   - 📋 埋め込み生成システム構築
-   - 📋 ベクトル検索機能実装
-   - 📋 商品情報検索の精度テスト
 
 6. **チャットボット API への LangChain 統合**
 
@@ -108,22 +109,24 @@ Portfolio Showcase チャットボットへの LangChain 統合による RAG（R
 
 ### 即座に実行可能なタスク
 
-1. **商品埋め込みデータの生成実行**
+1. **残り商品データの埋め込み生成**
 
    ```bash
-   # 環境変数設定後
+   # 全30件の商品データをベクトル化
    deno run --allow-net --allow-env scripts/generate-product-embeddings.ts
    ```
 
-2. **Supabase マイグレーション実行**
+2. **LangChain.js の Deno 環境での動作確認**
 
-   ```bash
-   supabase db push
+   ```typescript
+   // Deno対応版の確認
+   // 依存関係の解決
    ```
 
-3. **商品検索機能のテスト実行**
-   ```bash
-   deno run --allow-net --allow-env scripts/test-product-search.ts
+3. **チャットボット API への統合**
+   ```typescript
+   // 既存チャットボットとの統合
+   // 完全制御システムとの連携
    ```
 
 ## 作成されたファイル
@@ -131,6 +134,7 @@ Portfolio Showcase チャットボットへの LangChain 統合による RAG（R
 ### マイグレーション
 
 - `supabase/migrations/20250127000000_create_product_embeddings_table.sql`
+- `supabase/migrations/20250127010000_fix_product_embeddings_rls.sql`
 
 ### スクリプト
 
@@ -141,6 +145,22 @@ Portfolio Showcase チャットボットへの LangChain 統合による RAG（R
 
 - `docs/products/products_database.md` - 商品データベース
 - `docs/technical/langchain-integration.md` - 統合技術ドキュメント
+
+## テスト結果
+
+### 商品検索機能テスト結果
+
+- ✅ "タスク管理アプリが欲しい" → Simple TODO (類似度: 55.7%)
+- ✅ "健康管理のためのアプリを探している" → IdeaLog (類似度: 38.3%)
+- ❌ "料理のレシピを管理したい" → 類似商品なし
+- ❌ "アイデアを整理するツールが欲しい" → 類似商品なし
+- ❌ "音楽プレイリストを作りたい" → 類似商品なし
+
+### 改善点
+
+- 全 30 件の商品データをベクトル化する必要
+- 類似度閾値の調整
+- より多くのテストクエリでの検証
 
 ## 注意事項
 

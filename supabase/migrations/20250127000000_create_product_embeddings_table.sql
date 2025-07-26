@@ -43,8 +43,8 @@ ALTER TABLE public.product_embeddings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access to product embeddings" ON public.product_embeddings
     FOR SELECT USING (true);
 
-CREATE POLICY "Allow authenticated users to insert product embeddings" ON public.product_embeddings
-    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow public insert for product embeddings" ON public.product_embeddings
+    FOR INSERT WITH CHECK (true);
 
 CREATE POLICY "Allow authenticated users to update product embeddings" ON public.product_embeddings
     FOR UPDATE USING (auth.role() = 'authenticated');

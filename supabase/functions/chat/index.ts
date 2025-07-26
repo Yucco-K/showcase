@@ -121,7 +121,7 @@ class PortfolioShowcaseChatbot {
 	}
 
 	// 価格情報検索
-	private async searchPricingInfo(query: string): Promise<SearchResult[]> {
+	private async searchPricingInfo(_query: string): Promise<SearchResult[]> {
 		const { data, error } = await this.supabase
 			.from("products")
 			.select("name, price")
@@ -219,7 +219,7 @@ class PortfolioShowcaseChatbot {
 	// メインの処理メソッド
 	async processQuery(
 		query: string,
-		sessionId: string
+		_sessionId: string
 	): Promise<ChatbotResponse> {
 		// 入力のサニタイズ
 		const sanitizedQuery = this.sanitizeInput(query);

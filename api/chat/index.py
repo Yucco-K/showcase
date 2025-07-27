@@ -134,10 +134,6 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     rpc_response = chatbot.supabase_client.rpc("match_docs", {"query_embedding": query_embedding, "match_threshold": 0.05, "match_count": 5}).execute()
     logger.info("  - 6.2 rpc_match_docs_executed")
 
-    if rpc_response.error:
-        logger.error(f"  ❌ 6.3 rpc_error: {rpc_response.error.message}")
-        raise Exception(f"Supabase RPCエラー: {rpc_response.error.message}")
-
     semantic_context = "\n---\n".join([doc["content"] for doc in rpc_response.data])
     logger.info(f"  - 6.4 semantic_context_created: found {len(rpc_response.data)} documents")
     

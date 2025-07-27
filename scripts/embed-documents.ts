@@ -31,8 +31,7 @@ function splitMarkdown(
 		// Q&A単位で分割
 		const qaBlocks = text.split(/\n---+\n/);
 		for (const block of qaBlocks) {
-			const qMatch = block.match(/\*\*Q[:：](.*?)\*\*/s);
-			const aMatch = block.match(/\*\*A[:：](.*?)\*\*/s);
+			const qMatch = block.match(/\*\*Q[:：](.*?)\*\*/s);      const _aMatch = block.match(/\*\*A[:：](.*?)\*\*/s);
 			const title = qMatch ? qMatch[1].trim() : block.slice(0, 30);
 			const content = block.trim();
 			if (content.length > 0) chunks.push({ title, content });

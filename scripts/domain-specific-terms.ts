@@ -5,7 +5,7 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { createClient } from "@supabase/supabase-js";
 
 // クライアントの初期化
-const openai = new OpenAI({
+const _openai = new OpenAI({
 	apiKey: Deno.env.get("OPENAI_API_KEY"),
 });
 

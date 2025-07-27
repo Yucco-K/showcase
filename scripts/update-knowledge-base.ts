@@ -4,11 +4,15 @@ import "https://deno.land/x/dotenv@v3.2.2/load.ts";
 
 // --- 設定可能なパス ---
 const CONFIG_PATHS = {
-	PRODUCTS_DATABASE: Deno.env.get("PRODUCTS_DATABASE_PATH") || "./docs/products/products_database.md",
-	WORKFLOW_GUIDE: Deno.env.get("WORKFLOW_GUIDE_PATH") || "./docs/workflow-guide.md",
-	TECHNICAL_DOC: Deno.env.get("TECHNICAL_DOC_PATH") || "./docs/technical-documentation.md",
+	PRODUCTS_DATABASE:
+		Deno.env.get("PRODUCTS_DATABASE_PATH") ||
+		"./docs/products/products_database.md",
+	WORKFLOW_GUIDE:
+		Deno.env.get("WORKFLOW_GUIDE_PATH") || "./docs/workflow-guide.md",
+	TECHNICAL_DOC:
+		Deno.env.get("TECHNICAL_DOC_PATH") || "./docs/technical-documentation.md",
 	FAQ_DOC: Deno.env.get("FAQ_DOC_PATH") || "./docs/faq.md",
-	PRICING_DOC: Deno.env.get("PRICING_DOC_PATH") || "./docs/pricing.md"
+	PRICING_DOC: Deno.env.get("PRICING_DOC_PATH") || "./docs/pricing.md",
 };
 
 // --- 自前のパーサー関数 ---
@@ -22,8 +26,7 @@ const CONFIG_PATHS = {
 function splitText(
 	text: string,
 	options: { maxLength: number; chunkOverlap: number; delimiter: string }
-): string[] {
-	const { maxLength, chunkOverlap, delimiter } = options;
+): string[] {  const { maxLength, _chunkOverlap, delimiter } = options;
 	const chunks: string[] = [];
 	let currentChunk = "";
 
@@ -59,7 +62,7 @@ function splitText(
  * @param content ファイルの内容
  * @returns 抽出されたFAQの配列
  */
-function extractFAQ(content: string): { question: string; answer: string }[] {
+function _extractFAQ(content: string): { question: string; answer: string }[] {
 	const faqs: { question: string; answer: string }[] = [];
 	// より柔軟な正規表現（空白や改行に対応）
 	const faqRegex =
@@ -164,9 +167,7 @@ async function parseDocuments(): Promise<Document[]> {
 	console.log(`✅ FAQ情報: ${faqs.length}件`);
 
 	// 4.3 ユーザーガイド (Markdown)
-	const guideContent = await Deno.readTextFile(
-		CONFIG_PATHS.WORKFLOW_GUIDE
-	);
+	const guideContent = await Deno.readTextFile(CONFIG_PATHS.WORKFLOW_GUIDE);
 	const guideSections = splitText(guideContent, {
 		maxLength: 500,
 		chunkOverlap: 50,
@@ -182,9 +183,7 @@ async function parseDocuments(): Promise<Document[]> {
 	console.log(`✅ ユーザーガイド: ${guideSections.length}セクション`);
 
 	// 4.4 技術ドキュメント (Markdown)
-	const techDocContent = await Deno.readTextFile(
-		CONFIG_PATHS.TECHNICAL_DOC
-	);
+	const techDocContent = await Deno.readTextFile(CONFIG_PATHS.TECHNICAL_DOC);
 	const techDocSections = splitText(techDocContent, {
 		maxLength: 500,
 		chunkOverlap: 50,

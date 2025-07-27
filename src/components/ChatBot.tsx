@@ -24,6 +24,7 @@ import { useAuth } from "../contexts/AuthProvider";
 import { useProfile } from "../hooks/useSupabase";
 
 interface Message {
+	id: string;
 	text: string;
 	sender: "user" | "bot" | "system";
 }
@@ -142,18 +143,23 @@ const MessageArea = styled.div`
 	gap: 12px;
 `;
 
-const MessageBubble = styled.div<{ sender: "user" | "bot" | "system" }>`
-	align-self: ${({ sender }) =>
-		sender === "user" ? "flex-end" : "flex-start"};
-	background: ${({ sender }) =>
-		sender === "user"
+const MessageBubble = styled.div<{ $sender: "user" | "bot" | "system" }>`
+	margin: 10px;
+	padding: 10px 15px;
+	border-radius: 20px;
+	max-width: 80%;
+	align-self: ${({ $sender }) =>
+		$sender === "user" ? "flex-end" : "flex-start"};
+	background: ${({ $sender }) =>
+		$sender === "user"
 			? "linear-gradient(135deg, #007bff, #0056b3)"
 			: "rgba(255, 255, 255, 0.15)"};
 	color: white;
-	padding: 10px 15px;
-	border-radius: 18px;
-	max-width: 80%;
+	text-align: left;
 	word-wrap: break-word;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+	opacity: 0;
+	animation: ${fadeIn} 0.3s forwards;
 `;
 
 const FAQButton = styled.button`
@@ -284,8 +290,9 @@ export const ChatBot: React.FC = () => {
 	const faqCategories = useMemo(() => getFAQCategories(), []);
 
 	const initialMessages = useMemo(
-		() => [
+		(): Message[] => [
 			{
+				id: `bot-initial-${Date.now()}`,
 				text: "こんにちは！Showcase・コンシェルジュです。ご用の際はお気軽にお声がけください。",
 				sender: "bot" as const,
 			},
@@ -318,7 +325,11 @@ export const ChatBot: React.FC = () => {
 
 	const handleSendMessage = async () => {
 		if (input.trim() === "") return;
-		const userMessage: Message = { text: input, sender: "user" };
+		const userMessage: Message = {
+			id: `user-${Date.now()}`,
+			text: input,
+			sender: "user",
+		};
 		setMessages((prev) => [...prev, userMessage]);
 		const currentInput = input;
 		setInput("");
@@ -327,10 +338,20 @@ export const ChatBot: React.FC = () => {
 
 		try {
 			const reply = await fetchChatReply(currentInput);
-			const botMessage: Message = { text: reply, sender: "bot" };
+			const botMessage: Message = {
+				id: `bot-${Date.now()}`,
+				text: reply,
+				sender: "bot",
+			};
 			setMessages((prev) => [...prev, botMessage]);
 		} catch (err) {
-			setError("エラーが発生しました。しばらくしてから再度お試しください。");
+			if (err instanceof Error) {
+				setError(
+					`エラーが発生しました。しばらくしてから再度お試しください。(${err.message})`
+				);
+			} else {
+				setError("予期せぬエラーが発生しました。");
+			}
 		} finally {
 			setIsLoading(false);
 		}
@@ -339,7 +360,8 @@ export const ChatBot: React.FC = () => {
 	const handleCategorySelect = (category: FAQ["category"]) => {
 		setSelectedCategory(category);
 		const faqs = getFAQsByCategory(category);
-		const categoryMessages: Message[] = faqs.map((faq) => ({
+		const categoryMessages: Message[] = faqs.map((faq, index) => ({
+			id: `faq-cat-${category}-${index}`,
 			text: faq.question,
 			sender: "system" as const,
 		}));
@@ -355,11 +377,11 @@ export const ChatBot: React.FC = () => {
 		const faq = FAQ_DATA.find((f) => f.question === question);
 		if (faq) {
 			const faqMessages: Message[] = [
-				{ text: faq.question, sender: "user" },
-				{ text: faq.answer, sender: "bot" },
+				{ id: `faq-q-${faq.id}`, text: faq.question, sender: "user" },
+				{ id: `faq-a-${faq.id}`, text: faq.answer, sender: "bot" },
 			];
 			setMessages((prev) => [...prev, ...faqMessages]);
-			setSelectedCategory(null); // 回答後はカテゴリ選択に戻る
+			setSelectedCategory(null); // カテゴリ選択に戻る
 		}
 	};
 
@@ -401,8 +423,8 @@ export const ChatBot: React.FC = () => {
 					{error && <ErrorMessage>{error}</ErrorMessage>}
 
 					<MessageArea ref={messageAreaRef}>
-						{messages.map((msg, index) => (
-							<MessageBubble key={index} sender={msg.sender}>
+						{messages.map((msg) => (
+							<MessageBubble key={msg.id} $sender={msg.sender}>
 								{msg.sender === "system" ? (
 									<FAQButton onClick={() => handleFAQSelect(msg.text)}>
 										{msg.text}

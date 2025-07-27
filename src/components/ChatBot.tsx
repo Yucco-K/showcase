@@ -12,7 +12,12 @@ import { useToast } from "../hooks/useToast";
 import { useAuth } from "../contexts/AuthProvider";
 import { useProfile } from "../hooks/useSupabase";
 import { fetchChatReply } from "../api/chat";
-import { getPopularFAQs, type FAQ } from "../data/faq";
+import {
+	getPopularFAQs,
+	getFAQCategories,
+	getFAQsByCategory,
+	type FAQ,
+} from "../data/faq";
 import {
 	IconSend,
 	IconRobot,
@@ -397,6 +402,15 @@ const FAQTag = styled.button`
 	}
 `;
 
+const BackButton = styled(FAQTag)`
+	background: linear-gradient(
+		135deg,
+		rgba(255, 100, 100, 0.2),
+		rgba(255, 150, 150, 0.2)
+	);
+	border-color: rgba(255, 100, 100, 0.4);
+`;
+
 // Main ChatBot component
 const ChatBot: React.FC = () => {
 	const [isOpen, setIsOpen] = useState(false);
@@ -412,7 +426,17 @@ const ChatBot: React.FC = () => {
 	const messageAreaRef = useRef<HTMLDivElement>(null);
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-	const [popularFAQs] = useState<FAQ[]>(() => getPopularFAQs(5));
+	// const [popularFAQs] = useState<FAQ[]>(() => getPopularFAQs(5));
+
+	// 2層FAQのための状態管理
+	const [faqView, setFaqView] = useState<"categories" | "questions">(
+		"categories"
+	);
+	const [selectedCategory, setSelectedCategory] = useState<
+		FAQ["category"] | null
+	>(null);
+	const [categories] = useState<FAQ["category"][]>(() => getFAQCategories());
+	const [questionsForCategory, setQuestionsForCategory] = useState<FAQ[]>([]);
 
 	// 認証状態をチェック
 	useEffect(() => {
@@ -443,8 +467,10 @@ const ChatBot: React.FC = () => {
 	useEffect(() => {
 		if (!isOpen) return;
 
-		// 毎回新しいセッションとして開始
+		// 毎回新しいセッションとして開始し、FAQビューもリセット
 		setMessages([]);
+		setFaqView("categories");
+		setSelectedCategory(null);
 		setTimeout(scrollToBottom, 100);
 	}, [isOpen, scrollToBottom]);
 
@@ -572,6 +598,13 @@ const ChatBot: React.FC = () => {
 		},
 		[scrollToBottom, resetTimeout, user?.id]
 	);
+
+	// カテゴリタグクリック時の処理
+	const handleCategoryClick = useCallback((category: FAQ["category"]) => {
+		setSelectedCategory(category);
+		setQuestionsForCategory(getFAQsByCategory(category));
+		setFaqView("questions");
+	}, []);
 
 	// Handle form submission
 	const handleSubmit = async (e: FormEvent) => {
@@ -732,15 +765,36 @@ const ChatBot: React.FC = () => {
 								<FAQContainer>
 									<FAQTitle>💡 よくあるご質問</FAQTitle>
 									<FAQTags>
-										{popularFAQs.map((faq) => (
-											<FAQTag
-												key={faq.id}
-												onClick={() => handleFAQClick(faq)}
-												disabled={isClosing || showTimeoutWarning}
-											>
-												{faq.question}
-											</FAQTag>
-										))}
+										{faqView === "categories" &&
+											categories.map((category) => (
+												<FAQTag
+													key={category}
+													onClick={() => handleCategoryClick(category)}
+													disabled={isClosing || showTimeoutWarning}
+												>
+													{category}
+												</FAQTag>
+											))}
+
+										{faqView === "questions" && (
+											<>
+												<BackButton
+													onClick={() => setFaqView("categories")}
+													disabled={isClosing || showTimeoutWarning}
+												>
+													‹ カテゴリに戻る
+												</BackButton>
+												{questionsForCategory.map((faq) => (
+													<FAQTag
+														key={faq.id}
+														onClick={() => handleFAQClick(faq)}
+														disabled={isClosing || showTimeoutWarning}
+													>
+														{faq.question}
+													</FAQTag>
+												))}
+											</>
+										)}
 									</FAQTags>
 								</FAQContainer>
 							</>

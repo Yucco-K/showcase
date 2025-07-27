@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Gorse } from "gorsejs";
 import * as dotenv from "dotenv";
-import path from "path";
+import path from "node:path";
 
 // 定数定義
 const MAX_PRODUCTS_TO_SELECT = 3;

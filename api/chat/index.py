@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -10,6 +10,7 @@ from supabase.client import create_client, Client
 
 # --- FastAPIアプリ ---
 app = FastAPI()
+router = APIRouter(prefix="/api/chat")
 
 # --- CORSミドルウェアの設定 ---
 # すべてのオリジンからのリクエストを許可
@@ -73,7 +74,7 @@ def create_enhanced_query(original_query: str) -> str:
         return original_query
 
 # --- APIエンドポイントの修正 ---
-@app.post("/")
+@router.post("/")
 async def handle_chat(request: Request):
     """チャットボットのエンドポイント。Vercelが /api/chat をこの関数にルーティングする"""
     if not all([llm, vector_store, rag_qa, kw_chain, intent_chain]):
@@ -97,6 +98,9 @@ async def handle_chat(request: Request):
     except Exception as e:
         print(f"APIエラー: {e}")
         return JSONResponse(status_code=500, content={"error": "内部サーバーエラーが発生しました。"})
+
+# --- ルーターをアプリに含める ---
+app.include_router(router)
 
 # ルートパスへのGETリクエスト（ヘルスチェック用）
 @app.get("/")

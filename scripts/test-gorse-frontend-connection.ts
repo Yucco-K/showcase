@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { gorseApi } from "../src/lib/gorse";
+import { gorseApi } from "../src/lib/gorse.ts";
 
 // 環境変数を設定
 const SUPABASE_URL =

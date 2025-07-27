@@ -19,8 +19,7 @@ async function testLangChainIntegration() {
 			model: "text-embedding-3-small",
 		});
 
-		// Supabaseベクターストアの初期化
-		const vectorStore = new SupabaseVectorStore(embeddings, {
+		// Supabaseベクターストアの初期化    const _vectorStore = new SupabaseVectorStore(embeddings, {
 			client: supabase,
 			tableName: "product_embeddings",
 			queryName: "match_products",

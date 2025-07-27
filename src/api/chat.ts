@@ -1,36 +1,35 @@
-// Chat API client for communicating with Supabase Edge Functions
+// Chat API client for communicating with the Vercel serverless function
 
 export async function fetchChatReply(message: string): Promise<string> {
-	// Supabase Edge Functionのエンドポイントを使用
-	const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-	const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+	// Vercel Serverless Functionの相対パスエンドポイントを使用
+	const endpoint = "/api/chat";
 
-	if (!supabaseUrl) {
-		throw new Error("VITE_SUPABASE_URL環境変数が設定されていません");
+	try {
+		const res = await fetch(endpoint, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ message }),
+		});
+
+		if (!res.ok) {
+			const errorData = await res.json();
+			console.error("Chat API Error:", errorData);
+			throw new Error(
+				`チャットAPIからの応答に失敗しました: ${res.status} ${
+					errorData.error || ""
+				}`
+			);
+		}
+
+		const data = await res.json();
+		return data.reply || "申し訳ございませんが、応答を生成できませんでした。";
+	} catch (error) {
+		console.error("fetchChatReplyでエラーが発生しました:", error);
+		// ネットワークエラーなど、より一般的なエラーメッセージを返す
+		throw new Error(
+			"チャットサービスへの接続に失敗しました。ネットワーク接続を確認してください。"
+		);
 	}
-
-	if (!supabaseAnonKey) {
-		throw new Error("VITE_SUPABASE_ANON_KEY環境変数が設定されていません");
-	}
-
-	const endpoint = `${supabaseUrl}/functions/v1/chat`;
-
-	// 匿名アクセス（認証不要）でチャットボットAPIを呼び出し
-	const res = await fetch(endpoint, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${supabaseAnonKey}`,
-		},
-		body: JSON.stringify({ message }),
-	});
-
-	if (!res.ok) {
-		const errorText = await res.text();
-		console.error("チャットAPIエラー:", errorText);
-		throw new Error(`チャットAPIからの応答に失敗しました: ${res.status}`);
-	}
-
-	const data = await res.json();
-	return data.reply || "申し訳ございませんが、応答を生成できませんでした。";
 }

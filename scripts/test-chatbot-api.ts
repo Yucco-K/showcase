@@ -44,7 +44,7 @@ async function testChatbotAPI() {
 }
 
 // Deno用のmain判定をNode互換に修正
-// @ts-ignore
+// @ts-ignore: import.meta.main is Deno-specific and may not be in types
 if (import.meta.main) {
 	testChatbotAPI();
 }

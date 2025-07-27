@@ -2,7 +2,12 @@ export interface FAQ {
 	id: string;
 	question: string;
 	answer: string;
-	category: "製品・機能" | "アカウント" | "購入・決済" | "技術的な問題";
+	category:
+		| "製品・機能"
+		| "アカウント"
+		| "購入・決済"
+		| "技術的な問題"
+		| "その他";
 	tags: string[];
 	popularity: number; // よく問い合わせされる順位
 }
@@ -93,35 +98,35 @@ export const FAQ_DATA: FAQ[] = [
 		id: "9",
 		question: "プライバシーポリシーはどこに書かれていますか？",
 		answer:
-			"プライバシーポリシーは、お問い合わせページにてご確認いただけます。内容についてご不明な点がございましたら、お気軽にお尋ねください。",
-		category: "製品・機能",
+			"プライバシーポリシーは、ナビゲーションバーのContactをクリックすると開くお問い合わせ画面でご確認いただけます。",
+		category: "その他",
 		tags: ["プライバシー", "ポリシー", "規約"],
-		popularity: 10,
+		popularity: 2,
 	},
 	{
 		id: "10",
 		question: "利用規約はどこに書かれていますか？",
 		answer:
-			"利用規約は、お問い合わせページにてご確認いただけます。サービスをご利用いただく上での重要な内容ですので、ご一読ください。",
-		category: "製品・機能",
+			"利用規約は、ナビゲーションバーのContactをクリックすると開くお問い合わせ画面でご確認いただけます。",
+		category: "その他",
 		tags: ["利用規約", "規約", "契約条件"],
-		popularity: 11,
+		popularity: 3,
 	},
 ];
-
-// 全てのユニークなカテゴリを取得
-export const getFAQCategories = (): FAQ["category"][] => {
-	const categories = FAQ_DATA.map((faq) => faq.category);
-	return [...new Set(categories)];
-};
 
 // よく問い合わせされる上位FAQを取得
 export const getPopularFAQs = (count: number = 5): FAQ[] => {
 	return FAQ_DATA.sort((a, b) => a.popularity - b.popularity).slice(0, count);
 };
 
+// カテゴリのユニークなリストを取得
+export const getFAQCategories = (): FAQ["category"][] => {
+	const categories = FAQ_DATA.map((faq) => faq.category);
+	return [...new Set(categories)];
+};
+
 // カテゴリ別FAQを取得
-export const getFAQsByCategory = (category: FAQ["category"]): FAQ[] => {
+export const getFAQsByCategory = (category: string): FAQ[] => {
 	return FAQ_DATA.filter((faq) => faq.category === category);
 };
 

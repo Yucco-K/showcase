@@ -36,6 +36,7 @@ jobs:
             scripts/update-knowledge-base.ts \
             scripts/test-chatbot-api.ts \
             scripts/langchain-retriever.ts \
+            scripts/langchain-test.ts \
             supabase/functions/**/*.ts
 
       - name: Lint

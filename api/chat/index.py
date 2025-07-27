@@ -91,7 +91,7 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
 
     # 1a. DBから全商品名を取得
     logger.info("3. fetching_all_product_names_from_db")
-    products_response = await chatbot.supabase_client.from_("products").select("name").execute()
+    products_response = chatbot.supabase_client.from_("products").select("name").execute()
     
     matched_product_name = None
     if products_response.data:
@@ -117,7 +117,7 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     # 1b. マッチした場合、その製品の詳細を取得
     if matched_product_name:
         logger.info(f"5. fetching_details_for_matched_product: '{matched_product_name}'")
-        details_response = await chatbot.supabase_client.from_("products").select("name, description, price, features").eq("name", matched_product_name).single().execute()
+        details_response = chatbot.supabase_client.from_("products").select("name, description, price, features").eq("name", matched_product_name).single().execute()
         
         if details_response.data:
             product = details_response.data
@@ -131,7 +131,7 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     query_embedding = chatbot.emb.embed_query(query)
     logger.info("  - 6.1 query_embedding_created")
 
-    rpc_response = await chatbot.supabase_client.rpc("match_docs", {"query_embedding": query_embedding, "match_threshold": 0.05, "match_count": 5}).execute()
+    rpc_response = chatbot.supabase_client.rpc("match_docs", {"query_embedding": query_embedding, "match_threshold": 0.05, "match_count": 5}).execute()
     logger.info("  - 6.2 rpc_match_docs_executed")
 
     if rpc_response.error:

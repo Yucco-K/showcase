@@ -7,106 +7,97 @@ from langchain_community.vectorstores import SupabaseVectorStore
 from langchain.chains import LLMChain, RetrievalQA
 from langchain.prompts import PromptTemplate
 from supabase.client import create_client, Client
+import asyncio
 
 # --- FastAPIアプリとミドルウェア ---
 app = FastAPI()
-
-# デバッグ用ミドルウェア: リクエストパスをログに出力
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    print(f"受信リクエスト: {request.method} {request.url.path}")
-    response = await call_next(request)
-    return response
-
-# --- CORSミドルウェアの設定 ---
-# すべてのオリジンからのリクエストを許可
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # 本番環境では特定のドメインに制限することが望ましい
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- グローバル変数と初期化エラーハンドリング ---
-llm, vector_store, rag_qa, kw_chain, intent_chain = None, None, None, None, None
-init_error = None
+# --- LangChainコンポーネントのシングルトン管理 ---
+class ChatbotSingleton:
+    _instance = None
+    _lock = asyncio.Lock()
+    
+    llm = None
+    vector_store = None
+    rag_qa = None
+    kw_chain = None
+    intent_chain = None
+    init_error = None
 
-@app.on_event("startup")
-def startup_event():
-    """アプリケーション起動時に一度だけ実行される初期化処理"""
-    global llm, vector_store, rag_qa, kw_chain, intent_chain, init_error
+    @classmethod
+    async def get_instance(cls):
+        if cls._instance is None:
+            async with cls._lock:
+                if cls._instance is None:
+                    instance = cls()
+                    await instance._initialize()
+                    cls._instance = instance
+        return cls._instance
+
+    async def _initialize(self):
+        """非同期で実行される初期化処理"""
+        try:
+            print("--- Chatbot初期化開始 ---")
+            
+            # 1. 環境変数のチェック
+            SUPABASE_URL = os.environ.get("SUPABASE_URL")
+            SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+            OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
+            missing_vars = [v for v in ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "OPENAI_API_KEY"] if not os.environ.get(v)]
+            if missing_vars:
+                raise ValueError(f"環境変数が未設定です: {', '.join(missing_vars)}")
+            print("環境変数チェックOK")
+
+            # 2. LangChain & Supabase 初期化
+            self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1, openai_api_key=OPENAI_API_KEY)
+            self.emb = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=OPENAI_API_KEY)
+            supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            print("クライアント初期化OK")
+
+            self.vector_store = SupabaseVectorStore(
+                client=supabase_client, embedding=self.emb, table_name="doc_embeddings", query_name="match_docs"
+            )
+            print("VectorStore初期化OK")
+            
+            # 3. 各種Chainの初期化
+            kw_prompt = PromptTemplate.from_template("ユーザーの質問から商品名や重要語を3つ以内で抽出してください: {question}")
+            self.kw_chain = LLMChain(llm=self.llm, prompt=kw_prompt)
+
+            intent_prompt = PromptTemplate.from_template("質問を次のカテゴリから1つ選んで出力: 製品, FAQ, 技術情報, その他\n質問: {question}")
+            self.intent_chain = LLMChain(llm=self.llm, prompt=intent_prompt)
+
+            self.rag_qa = RetrievalQA.from_chain_type(
+                llm=self.llm, chain_type="stuff", retriever=self.vector_store.as_retriever(search_kwargs={"k": 5})
+            )
+            print("--- Chatbot初期化正常完了 ---")
+
+        except Exception as e:
+            self.init_error = f"初期化エラー: {e}"
+            print(f"!!! {self.init_error} !!!")
+
+def create_enhanced_query(chatbot_instance, original_query: str) -> str:
     try:
-        # 環境変数のチェック
-        SUPABASE_URL = os.environ.get("SUPABASE_URL")
-        SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-        OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-
-        missing_vars = [
-            var for var in ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "OPENAI_API_KEY"]
-            if not os.environ.get(var)
-        ]
-        if missing_vars:
-            raise ValueError(f"以下の環境変数が設定されていません: {', '.join(missing_vars)}")
-
-        # LangChain & Supabase 初期化
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1, openai_api_key=OPENAI_API_KEY)
-        emb = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=OPENAI_API_KEY)
-        supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-        vector_store = SupabaseVectorStore(
-            client=supabase_client, embedding=emb, table_name="doc_embeddings", query_name="match_docs"
-        )
-        
-        kw_prompt = PromptTemplate.from_template("ユーザーの質問から商品名や重要語を3つ以内で抽出してください: {question}")
-        kw_chain = LLMChain(llm=llm, prompt=kw_prompt)
-
-        intent_prompt = PromptTemplate.from_template("質問を次のカテゴリから1つ選んで出力: 製品, FAQ, 技術情報, その他\n質問: {question}")
-        intent_chain = LLMChain(llm=llm, prompt=intent_prompt)
-
-        rag_qa = RetrievalQA.from_chain_type(
-            llm=llm, chain_type="stuff", retriever=vector_store.as_retriever(search_kwargs={"k": 5})
-        )
-    except Exception as e:
-        init_error = f"初期化エラー: {e}"
-        print(init_error)
-
-# 1. キーワード抽出チェーン
-kw_prompt = PromptTemplate.from_template("ユーザーの質問から商品名や重要語を3つ以内で抽出してください: {question}")
-kw_chain = LLMChain(llm=llm, prompt=kw_prompt) if llm else None
-
-# 2. 意図分類チェーン
-intent_prompt = PromptTemplate.from_template("質問を次のカテゴリから1つ選んで出力: 製品, FAQ, 技術情報, その他\n質問: {question}")
-intent_chain = LLMChain(llm=llm, prompt=intent_prompt) if llm else None
-
-# 3. RAG 検索＋生成
-rag_qa = RetrievalQA.from_chain_type(
-    llm=llm,
-    chain_type="stuff",
-    retriever=vector_store.as_retriever(search_kwargs={"k": 5}),
-) if llm and vector_store else None
-
-def create_enhanced_query(original_query: str) -> str:
-    """キーワードと意図を付加してクエリを強化する"""
-    if not kw_chain or not intent_chain:
-        return original_query
-
-    try:
-        keywords = kw_chain.invoke({"question": original_query})["text"]
-        intent = intent_chain.invoke({"question": original_query})["text"]
-        enhanced_query = f"{original_query}\n\n[補足情報]\n重要キーワード: {keywords}\n推論された意図: {intent}"
-        return enhanced_query
+        keywords = chatbot_instance.kw_chain.invoke({"question": original_query})["text"]
+        intent = chatbot_instance.intent_chain.invoke({"question": original_query})["text"]
+        return f"{original_query}\n\n[補足情報]\n重要キーワード: {keywords}\n推論された意図: {intent}"
     except Exception as e:
         print(f"クエリ強化エラー: {e}")
         return original_query
 
-# --- APIエンドポイントの修正 ---
 @app.post("/api/chat")
 async def handle_chat(request: Request):
-    if init_error:
-        return JSONResponse(status_code=500, content={"error": f"サーバー初期化エラー: {init_error}"})
-    if not all([llm, vector_store, rag_qa, kw_chain, intent_chain]):
-        return JSONResponse(status_code=500, content={"error": "サーバーが正しく初期化されていません。"})
+    chatbot = await ChatbotSingleton.get_instance()
+    
+    if chatbot.init_error:
+        return JSONResponse(status_code=500, content={"error": chatbot.init_error})
     
     try:
         data = await request.json()
@@ -114,10 +105,10 @@ async def handle_chat(request: Request):
         if not user_query:
             return JSONResponse(status_code=400, content={"error": "メッセージが必要です。"})
         
-        enhanced_query = create_enhanced_query(user_query)
-        result = rag_qa.invoke({"query": enhanced_query})
+        enhanced_query = create_enhanced_query(chatbot, user_query)
+        result = chatbot.rag_qa.invoke({"query": enhanced_query})
         
         return JSONResponse(content={"reply": result.get("result", "回答を生成できませんでした。")})
     except Exception as e:
-        print(f"APIエラー: {e}")
+        print(f"API処理エラー: {e}")
         return JSONResponse(status_code=500, content={"error": "内部サーバーエラーが発生しました。"}) 

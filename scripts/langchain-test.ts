@@ -20,7 +20,7 @@ async function testLangChainIntegration() {
 		});
 
 		// Supabaseベクターストアの初期化
-		const vectorStore = new SupabaseVectorStore(embeddings, {
+		const _vectorStore = new SupabaseVectorStore(embeddings, {
 			client: supabase,
 			tableName: "product_embeddings",
 			queryName: "match_products",

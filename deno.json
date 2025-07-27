@@ -12,9 +12,36 @@
 	"lint": {
 		"exclude": [
 			"src/",
-			"scripts/",
 			"api/",
-			"playwright.config.ts"
+			"playwright.config.ts",
+			"scripts/export-all-docs-to-notion.ts",
+			"scripts/export-user-guide-fixed.ts",
+			"scripts/export-obsidian-to-notion.ts", 
+			"scripts/export-obsidian-workspace-to-notion.ts",
+			"scripts/export-to-notion-with-template.ts",
+			"scripts/test-obsidian-export.ts",
+			"scripts/export-technical-doc-ja.ts",
+			"scripts/export-to-notion.ts",
+			"scripts/get-notion-pages.ts",
+			"scripts/seed.ts",
+			"scripts/test-gorse-frontend-connection.ts",
+			"scripts/test-frontend-connection.ts",
+			"scripts/test-recommendation-integration.ts",
+			"scripts/generate-gorse-similarities.ts",
+			"scripts/setup-test-admin.ts",
+			"scripts/setup-production-admin.ts",
+			"scripts/fix-production-admin.ts",
+			"scripts/fix-admin-sample-role.ts",
+			"scripts/debug-use-products.ts",
+			"scripts/debug-filter.ts",
+			"scripts/add-missing-products.ts",
+			"scripts/check-products-table.ts",
+			"scripts/check-products.ts",
+			"scripts/check-all-admin-profiles.ts",
+			"scripts/check-production-admin.ts",
+			"scripts/check-rls-policies.ts",
+			"scripts/sync-gorse-products.ts",
+			"scripts/sync-data-to-gorse.sh"
 		],
 		"rules": {
 			"exclude": [

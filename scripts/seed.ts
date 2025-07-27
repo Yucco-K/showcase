@@ -1,9 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
-import { BLOG_ENTRIES } from "../src/data/blogs";
+import { BLOG_ENTRIES } from "../src/data/blogs.ts";
 
 async function main() {
-	const supabaseUrl = process.env.VITE_SUPABASE_URL;
-	const serviceKey = process.env.SUPABASE_SERVICE_KEY;
+	const supabaseUrl = Deno.env.get("VITE_SUPABASE_URL");
+	const serviceKey = Deno.env.get("SUPABASE_SERVICE_KEY");
 
 	if (!supabaseUrl || !serviceKey) {
 		throw new Error(

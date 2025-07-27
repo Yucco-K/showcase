@@ -1,6 +1,9 @@
 {
-	"version": 2,
 	"builds": [
+		{
+			"src": "api/chat/index.py",
+			"use": "@vercel/python"
+		},
 		{
 			"src": "package.json",
 			"use": "@vercel/static-build",
@@ -11,10 +14,19 @@
 	],
 	"routes": [
 		{
-			"src": "/[^.]+",
-			"dest": "/",
-			"status": 200
+			"src": "/api/(.*)",
+			"dest": "/api/chat/index.py"
+		},
+		{
+			"src": "/assets/(.*)",
+			"dest": "/assets/$1"
+		},
+		{
+			"handle": "filesystem"
+		},
+		{
+			"src": "/(.*)",
+			"dest": "/index.html"
 		}
-	],
-	"buildCommand": "npm run build"
+	]
 }

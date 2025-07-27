@@ -25,6 +25,7 @@
 			"scripts/get-notion-pages.ts",
 			"scripts/seed.ts",
 			"scripts/test-gorse-frontend-connection.ts",
+			"scripts/test-frontend-connection.ts",
 			"scripts/test-recommendation-integration.ts",
 			"scripts/generate-gorse-similarities.ts",
 			"scripts/setup-test-admin.ts",

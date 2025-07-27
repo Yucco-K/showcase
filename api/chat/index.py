@@ -101,6 +101,7 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     if "一番高い" in query or "最も高い" in query:
         logger.info("価格比較クエリ（最高値）を検出")
         products = chatbot.supabase_client.from_("products").select("name, price").execute().data
+        logger.info(f"取得した商品データ: {products}") # デバッグログ追加
         if products:
             highest_product = max(products, key=lambda p: p['price'])
             return f"最も価格が高い製品は「{highest_product['name']}」で、価格は¥{highest_product['price']:,}です。"
@@ -108,6 +109,7 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     if "一番安い" in query or "最も安い" in query:
         logger.info("価格比較クエリ（最安値）を検出")
         products = chatbot.supabase_client.from_("products").select("name, price").execute().data
+        logger.info(f"取得した商品データ: {products}") # デバッグログ追加
         if products:
             lowest_product = min(products, key=lambda p: p['price'])
             return f"最も価格が安い製品は「{lowest_product['name']}」で、価格は¥{lowest_product['price']:,}です。"
@@ -184,13 +186,15 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     logger.info(f"  - 7.2 final_context (truncated): '{final_context[:200]}...'")
 
     prompt_template = """
-    あなたは、企業の製品やサービスについて回答する、親切で優秀なAIアシスタント「ポートフォリオ・コンシェルジュ」です。
+    あなたは、企業の製品やサービスについて回答する、親切で優秀なAIアシスタント「Showcase・コンシェルジュ」です。
     以下のルールを厳密に守って、ユーザーの質問に日本語で回答してください。
 
     # ルール
     - 誠実で、丁寧な言葉遣いを徹底してください。
     - 提供された「コンテキスト情報」に書かれている事実のみに基づいて回答してください。
-    - コンテキスト情報に記載のない事柄については、「恐れ入りますが、その件に関する情報は持ち合わせておりません。」と回答してください。
+    - 「ありがとう」など、感謝の言葉には「どういたしまして。他にご不明な点はございますか？」のように、丁寧で親切な応答を返してください。
+    - コンテキスト情報に記載のない事柄については、「恐れ入れますが、その件に関する情報は持ち合わせておりません。」と正直に回答してください。
+    - 例外として、「プライバシーポリシー」や「利用規約」に関する情報が見つからなかった場合に限り、「プライバシーポリシーや利用規約については、お問い合わせページをご確認いただけます。」と案内してください。
     - 回答は、まず結論から述べ、その後に理由や詳細を簡潔に説明してください。
     - ユーザーを決して混乱させないでください。不明な点があれば、質問して明確化を求めてください。
 

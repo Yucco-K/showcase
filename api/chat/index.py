@@ -1,19 +1,30 @@
 import os
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import SupabaseVectorStore
 from langchain.chains import LLMChain, RetrievalQA
 from langchain.prompts import PromptTemplate
 from supabase.client import create_client, Client
 
+# --- FastAPIアプリ ---
+app = FastAPI()
+
+# --- CORSミドルウェアの設定 ---
+# すべてのオリジンからのリクエストを許可
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # 本番環境では特定のドメインに制限することが望ましい
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # --- 環境変数 ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") # VercelではANON_KEYではなくSERVICE_ROLE_KEYが推奨される
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-
-# --- FastAPIアプリ ---
-app = FastAPI()
 
 # --- LangChain & Supabase 初期化 ---
 try:
@@ -61,9 +72,10 @@ def create_enhanced_query(original_query: str) -> str:
         print(f"クエリ強化エラー: {e}")
         return original_query
 
-@app.post("/api/chat")
-async def chat_endpoint(request: Request):
-    """チャットボットのエンドポイント"""
+# --- APIエンドポイントの修正 ---
+@app.post("/")
+async def handle_chat(request: Request):
+    """チャットボットのエンドポイント。Vercelが /api/chat をこの関数にルーティングする"""
     if not all([llm, vector_store, rag_qa, kw_chain, intent_chain]):
         return JSONResponse(status_code=500, content={"error": "サーバーが正しく初期化されていません。"})
 
@@ -86,6 +98,7 @@ async def chat_endpoint(request: Request):
         print(f"APIエラー: {e}")
         return JSONResponse(status_code=500, content={"error": "内部サーバーエラーが発生しました。"})
 
+# ルートパスへのGETリクエスト（ヘルスチェック用）
 @app.get("/")
 def read_root():
     return {"status": "ok"} 

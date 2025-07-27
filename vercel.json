@@ -1,37 +1,21 @@
 {
-	"version": 2,
 	"builds": [
+		{
+			"src": "api/chat/index.py",
+			"use": "@vercel/python"
+		},
 		{
 			"src": "package.json",
 			"use": "@vercel/static-build",
 			"config": {
 				"distDir": "dist"
 			}
-		},
-		{
-			"src": "api/chat/index.py",
-			"use": "@vercel/python"
 		}
 	],
-	"routes": [
+	"rewrites": [
 		{
-			"src": "/api/(.*)",
-			"dest": "/api/chat/index.py"
-		},
-		{
-			"src": "/assets/(.*)",
-			"headers": {
-				"cache-control": "s-maxage=31536000,immutable"
-			},
-			"dest": "/assets/$1"
-		},
-		{
-			"src": "/(.*\\..*)",
-			"dest": "/$1"
-		},
-		{
-			"src": "/(.*)",
-			"dest": "/index.html"
+			"source": "/((?!api/).*)",
+			"destination": "/index.html"
 		}
 	]
 }

@@ -1022,7 +1022,7 @@ const Information: React.FC = () => {
 				</Group>
 			</Modal>
 
-			<ChatBot />
+			{user && <ChatBot />}
 		</>
 	);
 };

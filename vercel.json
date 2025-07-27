@@ -12,10 +12,21 @@
 			}
 		}
 	],
-	"rewrites": [
+	"routes": [
 		{
-			"source": "/((?!api/).*)",
-			"destination": "/index.html"
+			"src": "/api/(.*)",
+			"dest": "/api/chat/index.py"
+		},
+		{
+			"src": "/assets/(.*)",
+			"dest": "/assets/$1"
+		},
+		{
+			"handle": "filesystem"
+		},
+		{
+			"src": "/(.*)",
+			"dest": "/index.html"
 		}
 	]
 }

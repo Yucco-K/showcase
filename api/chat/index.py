@@ -8,7 +8,7 @@ from langchain.chains import LLMChain, RetrievalQA
 from langchain.prompts import PromptTemplate
 from supabase.client import create_client, Client
 
-# --- FastAPIアプリ ---
+# --- FastAPIアプリとミドルウェア ---
 app = FastAPI()
 
 # デバッグ用ミドルウェア: リクエストパスをログに出力
@@ -28,27 +28,48 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- 環境変数 ---
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") # VercelではANON_KEYではなくSERVICE_ROLE_KEYが推奨される
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+# --- グローバル変数と初期化エラーハンドリング ---
+llm, vector_store, rag_qa, kw_chain, intent_chain = None, None, None, None, None
+init_error = None
 
-# --- LangChain & Supabase 初期化 ---
-try:
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1, openai_api_key=OPENAI_API_KEY)
-    emb = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=OPENAI_API_KEY)
-    supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+@app.on_event("startup")
+def startup_event():
+    """アプリケーション起動時に一度だけ実行される初期化処理"""
+    global llm, vector_store, rag_qa, kw_chain, intent_chain, init_error
+    try:
+        # 環境変数のチェック
+        SUPABASE_URL = os.environ.get("SUPABASE_URL")
+        SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
-    vector_store = SupabaseVectorStore(
-        client=supabase_client,
-        embedding=emb,
-        table_name="doc_embeddings",
-        query_name="match_docs",
-    )
-except Exception as e:
-    print(f"初期化エラー: {e}")
-    llm = None
-    vector_store = None
+        missing_vars = [
+            var for var in ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "OPENAI_API_KEY"]
+            if not os.environ.get(var)
+        ]
+        if missing_vars:
+            raise ValueError(f"以下の環境変数が設定されていません: {', '.join(missing_vars)}")
+
+        # LangChain & Supabase 初期化
+        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1, openai_api_key=OPENAI_API_KEY)
+        emb = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=OPENAI_API_KEY)
+        supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+        vector_store = SupabaseVectorStore(
+            client=supabase_client, embedding=emb, table_name="doc_embeddings", query_name="match_docs"
+        )
+        
+        kw_prompt = PromptTemplate.from_template("ユーザーの質問から商品名や重要語を3つ以内で抽出してください: {question}")
+        kw_chain = LLMChain(llm=llm, prompt=kw_prompt)
+
+        intent_prompt = PromptTemplate.from_template("質問を次のカテゴリから1つ選んで出力: 製品, FAQ, 技術情報, その他\n質問: {question}")
+        intent_chain = LLMChain(llm=llm, prompt=intent_prompt)
+
+        rag_qa = RetrievalQA.from_chain_type(
+            llm=llm, chain_type="stuff", retriever=vector_store.as_retriever(search_kwargs={"k": 5})
+        )
+    except Exception as e:
+        init_error = f"初期化エラー: {e}"
+        print(init_error)
 
 # 1. キーワード抽出チェーン
 kw_prompt = PromptTemplate.from_template("ユーザーの質問から商品名や重要語を3つ以内で抽出してください: {question}")
@@ -82,25 +103,21 @@ def create_enhanced_query(original_query: str) -> str:
 # --- APIエンドポイントの修正 ---
 @app.post("/api/chat")
 async def handle_chat(request: Request):
-    """チャットボットのエンドポイント。Vercelが /api/chat をこの関数にルーティングする"""
+    if init_error:
+        return JSONResponse(status_code=500, content={"error": f"サーバー初期化エラー: {init_error}"})
     if not all([llm, vector_store, rag_qa, kw_chain, intent_chain]):
         return JSONResponse(status_code=500, content={"error": "サーバーが正しく初期化されていません。"})
-
+    
     try:
         data = await request.json()
         user_query = data.get("message")
-
         if not user_query:
             return JSONResponse(status_code=400, content={"error": "メッセージが必要です。"})
-
-        # クエリを強化
+        
         enhanced_query = create_enhanced_query(user_query)
-
-        # RAGを実行して回答を生成
         result = rag_qa.invoke({"query": enhanced_query})
         
         return JSONResponse(content={"reply": result.get("result", "回答を生成できませんでした。")})
-
     except Exception as e:
         print(f"APIエラー: {e}")
         return JSONResponse(status_code=500, content={"error": "内部サーバーエラーが発生しました。"}) 

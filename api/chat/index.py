@@ -1,5 +1,6 @@
 import os
 import re # 正規表現ライブラリをインポート
+import json
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -72,63 +73,75 @@ class ChatbotSingleton:
 # --- 回答生成ロジック ---
 async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     try:
+        print("\n--- answering_process_started ---")
+        print(f"1. raw_query: '{query}'")
+
         # --- 1. 動的なキーワードベースの製品検索 ---
         product_context = ""
         normalized_query = normalize_string(query)
+        print(f"2. normalized_query: '{normalized_query}'")
 
         # 1a. DBから全商品名を取得
+        print("3. fetching_all_product_names_from_db")
         products_response = await chatbot.supabase_client.from_("products").select("name").execute()
         
         matched_product_name = None
         if products_response.data:
-            for product in products_response.data:
+            print(f"4. product_names_fetched: {len(products_response.data)}件")
+            for i, product in enumerate(products_response.data):
                 product_name = product.get('name')
                 if not product_name:
                     continue
                 
                 normalized_name = normalize_string(product_name)
-                # 正規化されたクエリに、正規化された製品名が含まれているかチェック
+                print(f"  - 4.{i+1} checking: normalized_db_name='{normalized_name}'")
+                
                 if normalized_name and normalized_name in normalized_query:
                     matched_product_name = product_name
-                    break  # 最初に見つかった製品で決定
+                    print(f"  ✅ 4.{i+1} MATCH_FOUND! product_name='{matched_product_name}'")
+                    break
+            
+            if not matched_product_name:
+                print("  ❌ 4. no_keyword_match_found")
+        else:
+            print("4. no_products_found_in_db")
 
         # 1b. マッチした場合、その製品の詳細を取得
         if matched_product_name:
-            print(f"キーワード一致を検出: {matched_product_name}")
-            # .eq()は完全一致。正確な商品名がわかっているので、これで製品を一意に特定
+            print(f"5. fetching_details_for_matched_product: '{matched_product_name}'")
             details_response = await chatbot.supabase_client.from_("products").select("name, description, price, features").eq("name", matched_product_name).single().execute()
             
             if details_response.data:
                 product = details_response.data
-                product_context = f"""
-                [製品情報]
-                商品名: {product.get('name')}
-                価格: ¥{product.get('price')}
-                説明: {product.get('description')}
-                機能: {', '.join(product.get('features', []))}
-                """
+                product_context = f"[製品情報]\n商品名: {product.get('name')}\n価格: ¥{product.get('price')}\n説明: {product.get('description')}\n機能: {', '.join(product.get('features', []))}"
+                print("  ✅ 5. product_details_fetched_and_context_created")
+            else:
+                print(f"  ❌ 5. failed_to_fetch_details for '{matched_product_name}'")
 
         # --- 2. ベクトル検索によるドキュメント検索 ---
+        print("6. starting_vector_search")
         query_embedding = chatbot.emb.embed_query(query)
-        response = await chatbot.supabase_client.rpc(
-            "match_docs",
-            {
-                "query_embedding": query_embedding,
-                "match_threshold": 0.05,  # 閾値を下げて、より多くの候補を拾う
-                "match_count": 5,
-            },
-        ).execute()
+        print("  - 6.1 query_embedding_created")
 
-        if response.error:
-            raise Exception(f"Supabase RPCエラー: {response.error.message}")
+        rpc_response = await chatbot.supabase_client.rpc("match_docs", {"query_embedding": query_embedding, "match_threshold": 0.05, "match_count": 5}).execute()
+        print("  - 6.2 rpc_match_docs_executed")
 
-        semantic_context = "\n---\n".join([doc["content"] for doc in response.data])
+        if rpc_response.error:
+            print(f"  ❌ 6.3 rpc_error: {rpc_response.error.message}")
+            raise Exception(f"Supabase RPCエラー: {rpc_response.error.message}")
+
+        semantic_context = "\n---\n".join([doc["content"] for doc in rpc_response.data])
+        print(f"  - 6.4 semantic_context_created: found {len(rpc_response.data)} documents")
         
         # --- 3. コンテキストを結合して最終的なプロンプトを作成 ---
+        print("7. preparing_final_prompt")
         final_context = f"{product_context}\n\n{semantic_context}".strip()
 
         if not final_context:
+            print("  ❌ 7.1 final_context_is_empty. aborting.")
             return "申し訳ありません、ご質問に関連する情報が見つかりませんでした。"
+        
+        print(f"  - 7.2 final_context (truncated): '{final_context[:200]}...'")
 
         prompt_template = """
         あなたは、企業の製品やサービスについて回答する、親切で優秀なAIアシスタント「ポートフォリオ・コンシェルジュ」です。
@@ -159,7 +172,7 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
         return answer.content
 
     except Exception as e:
-        print(f"回答生成エラー: {e}")
+        print(f"!!!回答生成プロセスで予期せぬエラー!!!: {e}")
         return "申し訳ありません、現在回答を生成できません。"
 
 @app.post("/api/chat")

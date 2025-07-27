@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "../../hooks/useToast";
 import { Toast } from "../ui/Toast";
 import { useAuth } from "../../contexts/AuthProvider";
 import type { ContactCategory } from "../../types/database";
+import { getFAQCategories, getFAQsByCategory, FAQ_DATA } from "../../data/faq";
 
 const Container = styled.div`
 	max-width: 600px;
@@ -95,6 +96,84 @@ const ScrollBox = styled.div`
 		max-height: 250px;
 		font-size: 0.9rem;
 	}
+`;
+
+const Accordion = styled.div`
+	width: 100%;
+	margin-bottom: 2rem;
+`;
+
+const AccordionItem = styled.div`
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+`;
+
+const AccordionButton = styled.button`
+	width: 100%;
+	background-color: transparent;
+	border: none;
+	padding: 1rem 0;
+	text-align: left;
+	color: #a5c9ff;
+	font-size: 1rem;
+	font-weight: bold;
+	cursor: pointer;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+
+	&:hover {
+		color: #d1e3ff;
+	}
+`;
+
+const AccordionContent = styled.div<{ $isOpen: boolean }>`
+	max-height: ${(props) => (props.$isOpen ? "1000px" : "0")};
+	overflow: hidden;
+	transition: max-height 0.3s ease-in-out;
+	padding: 0 0.5rem;
+`;
+
+const FAQItem = styled.div`
+	padding: 0.5rem 0 1rem 0;
+`;
+
+const FAQQuestion = styled.p`
+	color: #a5c9ff;
+	font-weight: bold;
+	margin: 0 0 0.5rem 0;
+`;
+
+const FAQAnswer = styled.p`
+	color: #e0e0e0;
+	margin: 0;
+	white-space: pre-wrap;
+	line-height: 1.6;
+`;
+
+const CategoryFilterButton = styled.button<{ $isActive: boolean }>`
+	background-color: ${({ $isActive }) =>
+		$isActive ? "rgba(78, 154, 255, 0.3)" : "rgba(255, 255, 255, 0.1)"};
+	color: white;
+	border: 1px solid
+		${({ $isActive }) =>
+			$isActive ? "rgba(78, 154, 255, 0.8)" : "rgba(255, 255, 255, 0.2)"};
+	padding: 0.5rem 1rem;
+	border-radius: 20px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	margin: 0.25rem;
+
+	&:hover {
+		background-color: rgba(78, 154, 255, 0.4);
+		border-color: rgba(78, 154, 255, 1);
+	}
+`;
+
+const CategoryFilterContainer = styled.div`
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	margin-bottom: 1.5rem;
 `;
 
 const CheckboxLabel = styled.label`
@@ -391,7 +470,7 @@ const CATEGORY_DETAILS: Record<
 export const ContactForm: React.FC = () => {
 	const { user } = useAuth();
 	const [name, setName] = useState("");
-	const [email, setEmail] = useState(user?.email || "");
+	const [email, setEmail] = useState("");
 	const [title, setTitle] = useState("");
 	const [message, setMessage] = useState("");
 	const [category, setCategory] = useState<ContactCategory>("other");
@@ -400,6 +479,37 @@ export const ContactForm: React.FC = () => {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [showPreview, setShowPreview] = useState(false);
 	const { toast, showError, showSuccess, hideToast } = useToast();
+
+	const [openAccordion, setOpenAccordion] = useState<string | null>(null);
+	const [activeCategory, setActiveCategory] = useState<string>("すべて");
+	const faqCategories = ["すべて", ...getFAQCategories()];
+	const popularFAQs = [...FAQ_DATA]
+		.sort((a, b) => a.popularity - b.popularity)
+		.slice(0, 5);
+
+	const accordionRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+	useEffect(() => {
+		if (user) {
+			setName(user.user_metadata.full_name || "");
+			setEmail(user.email || "");
+		}
+	}, [user]);
+
+	const toggleAccordion = (id: string, index: number) => {
+		const newOpenId = openAccordion === id ? null : id;
+		setOpenAccordion(newOpenId);
+
+		if (newOpenId !== null) {
+			// 少し待ってからスクロールを実行
+			setTimeout(() => {
+				accordionRefs.current[index]?.scrollIntoView({
+					behavior: "smooth",
+					block: "nearest",
+				});
+			}, 300); // アニメーションの時間と合わせる
+		}
+	};
 
 	// バリデーション関数
 	const validateForm = () => {
@@ -577,127 +687,80 @@ export const ContactForm: React.FC = () => {
 				<>
 					<ScrollBox>
 						<h3>よくあるご質問</h3>
-						<details>
-							<summary>
-								<strong>Q1:</strong> サービスの利用は無料ですか？
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong>{" "}
-								はい、基本機能はすべて無料でご利用いただけます。一部のプレミアム機能や商品購入には料金が発生する場合があります。
-							</p>
-						</details>
-						<details>
-							<summary>
-								<strong>Q2:</strong> アカウント登録は必要ですか？
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong>{" "}
-								商品の閲覧やブログの閲覧は登録不要です。商品の購入、お気に入り登録、レビュー投稿にはアカウント登録が必要です。
-							</p>
-						</details>
-						<details>
-							<summary>
-								<strong>Q3:</strong> 商品の購入方法を教えてください。
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong>{" "}
-								商品詳細ページで「購入する」ボタンをクリックし、Stripe決済システムでクレジットカード情報を入力して購入できます。購入後はマイページで購入履歴を確認できます。
-							</p>
-						</details>
-						<details>
-							<summary>
-								<strong>Q4:</strong> 商品の返品・交換は可能ですか？
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong>{" "}
-								デジタル商品のため、原則として返品・交換はお受けできません。商品に不具合がある場合は、お問い合わせフォームよりご連絡ください。
-							</p>
-						</details>
-						<details>
-							<summary>
-								<strong>Q5:</strong> お気に入り機能の使い方を教えてください。
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong>{" "}
-								商品カードのハートマークをクリックするとお気に入りに追加できます。ログインが必要で、マイページでお気に入り商品を一覧表示できます。
-							</p>
-						</details>
-						<details>
-							<summary>
-								<strong>Q6:</strong>{" "}
-								レビューを投稿するにはどうすればいいですか？
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong>{" "}
-								商品詳細ページのレビューセクションで、星評価（1〜5）とコメントを入力して投稿できます。ログインが必要で、購入済み商品のみレビュー可能です。
-							</p>
-						</details>
-						<details>
-							<summary>
-								<strong>Q7:</strong> ブログの投稿はできますか？
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong>{" "}
-								現在、ブログの投稿は管理者のみが可能です。一般ユーザーはブログの閲覧のみ可能です。
-							</p>
-						</details>
-						<details>
-							<summary>
-								<strong>Q8:</strong>{" "}
-								パスワードを忘れた場合はどうすればいいですか？
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong>{" "}
-								ログインページで「パスワードを忘れた場合」をクリックし、登録済みのメールアドレスを入力すると、パスワードリセット用のメールが送信されます。
-							</p>
-						</details>
-						<details>
-							<summary>
-								<strong>Q9:</strong>{" "}
-								メールアドレスやパスワードを変更したい場合はどうすればいいですか？
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong>{" "}
-								マイページからメールアドレスやパスワードの変更が可能です。ログイン後、マイページにアクセスして設定を変更してください。
-							</p>
-						</details>
-						<details>
-							<summary>
-								<strong>Q10:</strong> 退会方法を教えてください。
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong>{" "}
-								お問い合わせフォームより退会の旨ご連絡ください。退会後はアカウント情報とデータが削除されます。
-							</p>
-						</details>
-						<details>
-							<summary>
-								<strong>Q11:</strong> 問い合わせの返答はいつもらえますか？
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong>{" "}
-								原則として2営業日以内にメールでご連絡いたします。緊急の場合は、お問い合わせ内容に「緊急」と記載してください。
-							</p>
-						</details>
-						<details>
-							<summary>
-								<strong>Q12:</strong> データのバックアップはされていますか？
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong> はい、Supabase
-								Proプランを使用して1日1回のバックアップを取得し、過去7日間分を保持しています。システム障害時は数分〜数十分で復旧可能です。
-							</p>
-						</details>
-						<details>
-							<summary>
-								<strong>Q13:</strong> 対応ブラウザを教えてください。
-							</summary>
-							<p style={{ marginTop: "8px" }}>
-								<strong>A:</strong>{" "}
-								Chrome、Firefox、Safari、Edgeの最新版に対応しています。Internet
-								Explorerはサポートしていません。
-							</p>
-						</details>
+						<p>お問い合わせの前に、まずはこちらをご確認ください。</p>
+
+						<Accordion>
+							<CategoryFilterContainer>
+								{faqCategories.map((cat) => (
+									<CategoryFilterButton
+										key={cat}
+										$isActive={activeCategory === cat}
+										onClick={() => setActiveCategory(cat)}
+									>
+										{cat}
+									</CategoryFilterButton>
+								))}
+							</CategoryFilterContainer>
+
+							{(activeCategory === "すべて"
+								? popularFAQs
+								: getFAQsByCategory(activeCategory)
+							).map((faq, index) => {
+								const setAccordionRef = (el: HTMLDivElement | null) => {
+									accordionRefs.current[index] = el;
+								};
+								return (
+									<AccordionItem key={faq.id} ref={setAccordionRef}>
+										<AccordionButton
+											onClick={() => toggleAccordion(faq.id, index)}
+										>
+											<span>Q: {faq.question}</span>
+											<span>{openAccordion === faq.id ? "−" : "+"}</span>
+										</AccordionButton>
+										<AccordionContent $isOpen={openAccordion === faq.id}>
+											<FAQItem>
+												<FAQAnswer>A: {faq.answer}</FAQAnswer>
+											</FAQItem>
+										</AccordionContent>
+									</AccordionItem>
+								);
+							})}
+
+							{activeCategory === "すべて" && (
+								<div style={{ marginTop: "2rem" }}>
+									<h4 style={{ color: "white", textAlign: "center" }}>
+										カテゴリ別のよくある質問
+									</h4>
+									{getFAQCategories().map((cat, catIndex) => {
+										const setCategoryAccordionRef = (
+											el: HTMLDivElement | null
+										) => {
+											accordionRefs.current[popularFAQs.length + catIndex] = el;
+										};
+										return (
+											<AccordionItem key={cat} ref={setCategoryAccordionRef}>
+												<AccordionButton
+													onClick={() =>
+														toggleAccordion(cat, popularFAQs.length + catIndex)
+													}
+												>
+													<span>{cat}</span>
+													<span>{openAccordion === cat ? "▾" : "▸"}</span>
+												</AccordionButton>
+												<AccordionContent $isOpen={openAccordion === cat}>
+													{getFAQsByCategory(cat).map((faq) => (
+														<FAQItem key={faq.id}>
+															<FAQQuestion>Q: {faq.question}</FAQQuestion>
+															<FAQAnswer>A: {faq.answer}</FAQAnswer>
+														</FAQItem>
+													))}
+												</AccordionContent>
+											</AccordionItem>
+										);
+									})}
+								</div>
+							)}
+						</Accordion>
 
 						<h3>利用規約（詳細）</h3>
 						<p>

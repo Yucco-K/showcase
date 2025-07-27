@@ -31,8 +31,12 @@ jobs:
           if [ -f "deno.lock" ]; then
             rm deno.lock
           fi
-          # Generate new lockfile
-          deno cache --lock=deno.lock --lock-write scripts/*.ts supabase/functions/**/*.ts
+          # Generate new lockfile (only for Deno-compatible scripts)
+          deno cache --lock=deno.lock --lock-write \
+            scripts/update-knowledge-base.ts \
+            scripts/test-chatbot-api.ts \
+            scripts/langchain-retriever.ts \
+            supabase/functions/**/*.ts
 
       - name: Lint
         run: deno lint

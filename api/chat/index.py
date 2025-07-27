@@ -18,6 +18,12 @@ import asyncio
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# --- 事前定義された応答 ---
+GREETINGS = {
+    "ありがとう": "どういたしまして。他にご不明な点はございますか？",
+    "こんにちは": "こんにちは！ポートフォリオ・コンシェルジュです。ご用の際はお気軽にお声がけください。",
+}
+
 # --- FastAPIアプリとミドルウェア ---
 app = FastAPI()
 app.add_middleware(
@@ -85,7 +91,29 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     logger.info("--- answering_process_started ---")
     logger.info(f"1. raw_query: '{query}'")
 
-    # --- 1. 動的なキーワードベースの製品検索 ---
+    # --- 0. 事前定義された応答のチェック ---
+    normalized_query_for_greeting = normalize_string(query)
+    if normalized_query_for_greeting in GREETINGS:
+        logger.info(f"✅ Predefined response found for '{query}'")
+        return GREETINGS[normalized_query_for_greeting]
+
+    # --- 1. 価格比較のチェック ---
+    if "一番高い" in query or "最も高い" in query:
+        logger.info("価格比較クエリ（最高値）を検出")
+        products = chatbot.supabase_client.from_("products").select("name, price").execute().data
+        if products:
+            highest_product = max(products, key=lambda p: p['price'])
+            return f"最も価格が高い製品は「{highest_product['name']}」で、価格は¥{highest_product['price']:,}です。"
+    
+    if "一番安い" in query or "最も安い" in query:
+        logger.info("価格比較クエリ（最安値）を検出")
+        products = chatbot.supabase_client.from_("products").select("name, price").execute().data
+        if products:
+            lowest_product = min(products, key=lambda p: p['price'])
+            return f"最も価格が安い製品は「{lowest_product['name']}」で、価格は¥{lowest_product['price']:,}です。"
+
+
+    # --- 2. 動的なキーワードベースの製品検索 ---
     product_context = ""
     normalized_query = normalize_string(query)
     logger.info(f"2. normalized_query: '{normalized_query}'")

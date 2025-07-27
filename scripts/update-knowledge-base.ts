@@ -55,8 +55,8 @@ function extractFAQ(content: string): { question: string; answer: string }[] {
 	// より柔軟な正規表現（空白や改行に対応）
 	const faqRegex =
 		/{\s*question:\s*`([\s\S]+?)`,\s*answer:\s*`([\s\S]+?)`\s*}/g;
-	let match;
-	while ((match = faqRegex.exec(content)) !== null) {
+	let match: RegExpExecArray | null;
+	while ((match = faqRegex.exec(content))) {
 		faqs.push({
 			question: match[1].trim(),
 			answer: match[2].trim().replace(/\s+/g, " "),
@@ -120,9 +120,11 @@ async function generateEmbedding(text: string): Promise<number[]> {
 async function parseDocuments(): Promise<Document[]> {
 	const allDocuments: Document[] = [];
 
+	// 全てのパスをプロジェクトルートからの相対パスで指定
+
 	// 4.1 製品情報 (Markdown)
 	const productContent = await Deno.readTextFile(
-		"docs/products/products_database.md"
+		"./docs/products/products_database.md"
 	);
 	const products = parseMarkdown(productContent, { sectionDelimiter: "###" });
 	products.forEach((p) => {
@@ -136,21 +138,25 @@ async function parseDocuments(): Promise<Document[]> {
 	});
 	console.log(`✅ 製品情報: ${products.length}件`);
 
-	// 4.2 FAQ (TypeScript)
-	const faqContent = await Deno.readTextFile("src/data/faq.ts");
-	const faqs = extractFAQ(faqContent);
+	// 4.2 FAQ (Markdownファイルから読み込み)
+	const faqContent = await Deno.readTextFile("./docs/faq.md");
+	const faqs = parseMarkdown(faqContent, { sectionDelimiter: "###" });
 	faqs.forEach((faq) => {
-		allDocuments.push({
-			type: "faq",
-			title: faq.question,
-			content: `Q: ${faq.question}\nA: ${faq.answer}`,
-		});
+		if (faq.title) {
+			allDocuments.push({
+				type: "faq",
+				title: faq.title,
+				content: `Q: ${faq.title}\nA: ${faq.content
+					.replace(faq.title, "")
+					.trim()}`,
+			});
+		}
 	});
 	console.log(`✅ FAQ情報: ${faqs.length}件`);
 
 	// 4.3 ユーザーガイド (Markdown)
 	const guideContent = await Deno.readTextFile(
-		"obsidian-vault/docs_backup/USER_GUIDE_JA.md"
+		"./obsidian-vault/docs_backup/USER_GUIDE_JA.md"
 	);
 	const guideSections = splitText(guideContent, {
 		maxLength: 500,
@@ -168,7 +174,7 @@ async function parseDocuments(): Promise<Document[]> {
 
 	// 4.4 技術ドキュメント (Markdown)
 	const techDocContent = await Deno.readTextFile(
-		"obsidian-vault/docs_backup/TECHNICAL_DOCUMENTATION_JA.md"
+		"./obsidian-vault/docs_backup/TECHNICAL_DOCUMENTATION_JA.md"
 	);
 	const techDocSections = splitText(techDocContent, {
 		maxLength: 500,

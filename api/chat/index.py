@@ -12,6 +12,24 @@ from langchain.prompts import PromptTemplate
 from supabase.client import create_client, Client
 from postgrest import APIError # v2の正式なエラー型をインポート
 import asyncio
+from logging.handlers import RotatingFileHandler
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request, HTTPException
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from supabase.lib.client_options import ClientOptions
+from supabase import create_client, Client
+
+# --- .envファイルのパスを明示的に指定して読み込む ---
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path=dotenv_path, override=True)
+else:
+    load_dotenv(override=True) # フォールバック
+
+# --- ロギング設定 ---
+log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
 # --- ロガーのセットアップ ---
 # Vercelの標準ログ出力に合わせ、フォーマットを指定
@@ -19,9 +37,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # --- 事前定義された応答 ---
-GREETINGS = {
-    "ありがとう": "どういたしまして。他にご不明な点はございますか？",
-    "こんにちは": "こんにちは！ポートフォリオ・コンシェルジュです。ご用の際はお気軽にお声がけください。",
+PREDEFINED_RESPONSES = {
+    r"ありがとう|どうも": "どういたしまして。他にご不明な点はございますか？",
+    r"こんにちは|こんばんは|やあ": "こんにちは！Showcase・コンシェルジュです。ご用の際はお気軽にお声がけください。",
 }
 
 # --- FastAPIアプリとミドルウェア ---
@@ -93,26 +111,30 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
 
     # --- 0. 事前定義された応答のチェック ---
     normalized_query_for_greeting = normalize_string(query)
-    if normalized_query_for_greeting in GREETINGS:
-        logger.info(f"✅ Predefined response found for '{query}'")
-        return GREETINGS[normalized_query_for_greeting]
+    for regex, response in PREDEFINED_RESPONSES.items():
+        if re.search(regex, normalized_query_for_greeting):
+            logger.info(f"✅ Predefined response found for '{query}'")
+            return response
 
     # --- 1. 価格比較のチェック ---
-    if "一番高い" in query or "最も高い" in query:
+    # 高い/安いのキーワードを幅広く拾うように修正
+    if any(keyword in query for keyword in ["一番高い", "最も高い", "高い"]):
         logger.info("価格比較クエリ（最高値）を検出")
         products = chatbot.supabase_client.from_("products").select("name, price").execute().data
-        logger.info(f"取得した商品データ: {products}") # デバッグログ追加
         if products:
             highest_product = max(products, key=lambda p: p['price'])
-            return f"最も価格が高い製品は「{highest_product['name']}」で、価格は¥{highest_product['price']:,}です。"
+            response = f"最も価格が高い製品は「{highest_product['name']}」で、価格は¥{highest_product['price']:,}です。"
+            response += "\n\n正確な最新情報については、各製品ページをご確認ください。"
+            return response
     
-    if "一番安い" in query or "最も安い" in query:
+    if any(keyword in query for keyword in ["一番安い", "最も安い", "安い"]):
         logger.info("価格比較クエリ（最安値）を検出")
         products = chatbot.supabase_client.from_("products").select("name, price").execute().data
-        logger.info(f"取得した商品データ: {products}") # デバッグログ追加
         if products:
             lowest_product = min(products, key=lambda p: p['price'])
-            return f"最も価格が安い製品は「{lowest_product['name']}」で、価格は¥{lowest_product['price']:,}です。"
+            response = f"最も価格が安い製品は「{lowest_product['name']}」で、価格は¥{lowest_product['price']:,}です。"
+            response += "\n\n正確な最新情報については、各製品ページをご確認ください。"
+            return response
 
 
     # --- 2. 動的なキーワードベースの製品検索 ---
@@ -192,11 +214,10 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     # ルール
     - 誠実で、丁寧な言葉遣いを徹底してください。
     - 提供された「コンテキスト情報」に書かれている事実のみに基づいて回答してください。
-    - 「ありがとう」など、感謝の言葉には「どういたしまして。他にご不明な点はございますか？」のように、丁寧で親切な応答を返してください。
+    - 感謝の言葉や挨拶以外の、定型的な応答（例：「他にご不明な点はございますか？」）は不要です。自然な会話を心がけてください。
     - コンテキスト情報に記載のない事柄については、「恐れ入れますが、その件に関する情報は持ち合わせておりません。」と正直に回答してください。
     - 例外として、「プライバシーポリシー」や「利用規約」に関する情報が見つからなかった場合に限り、「プライバシーポリシーや利用規約については、お問い合わせページをご確認いただけます。」と案内してください。
     - 回答は、まず結論から述べ、その後に理由や詳細を簡潔に説明してください。
-    - ユーザーを決して混乱させないでください。不明な点があれば、質問して明確化を求めてください。
 
     # コンテキスト情報
     {context}

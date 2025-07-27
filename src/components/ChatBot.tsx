@@ -3,852 +3,461 @@ import React, {
 	useEffect,
 	useRef,
 	useCallback,
-	type FormEvent,
+	useMemo,
 } from "react";
-import styled from "styled-components";
-import ReactMarkdown from "react-markdown";
-import { supabase } from "../lib/supabase";
-import { useToast } from "../hooks/useToast";
-import { useAuth } from "../contexts/AuthProvider";
-import { useProfile } from "../hooks/useSupabase";
+import styled, { keyframes } from "styled-components";
 import { fetchChatReply } from "../api/chat";
 import {
-	getPopularFAQs,
+	FAQ_DATA,
 	getFAQCategories,
 	getFAQsByCategory,
 	type FAQ,
 } from "../data/faq";
 import {
 	IconSend,
+	IconMessageCircle,
+	IconX,
 	IconRobot,
 	IconUser,
-	IconX,
-	IconMessageCircle,
 } from "@tabler/icons-react";
+import { useAuth } from "../contexts/AuthProvider";
+import { useProfile } from "../hooks/useSupabase";
 
-// Type definitions for chat messages stored in Supabase
-interface ChatMessage {
-	id: string;
-	role: "user" | "assistant";
-	content: string;
-	created_at: string;
+interface Message {
+	text: string;
+	sender: "user" | "bot" | "system";
 }
 
-// Styled components
-const ChatContainer = styled.div<{ $isOpen: boolean; $isClosing: boolean }>`
+const fadeIn = keyframes`
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+`;
+
+const fadeOut = keyframes`
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
+`;
+
+const Wrapper = styled.div<{ $isClosing: boolean }>`
 	position: fixed;
 	bottom: 20px;
 	right: 20px;
-	width: ${({ $isOpen }) => ($isOpen ? "400px" : "60px")};
-	height: ${({ $isOpen }) => ($isOpen ? "600px" : "60px")};
-	background: linear-gradient(
-		135deg,
-		rgba(224, 255, 255, 0.95),
-		rgba(176, 224, 230, 0.95)
-	);
+	width: 400px;
+	height: 600px;
+	background: rgba(19, 21, 25, 0.85);
+	backdrop-filter: blur(10px);
 	border-radius: 12px;
-	box-shadow: 0 8px 32px rgba(64, 224, 208, 0.2);
-	backdrop-filter: blur(20px);
-	border: 1px solid rgba(135, 206, 235, 0.3);
-	transition: all 0.3s ease;
-	z-index: 9999;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+	border: 1px solid rgba(255, 255, 255, 0.18);
 	display: flex;
 	flex-direction: column;
-	overflow: hidden;
+	animation: ${({ $isClosing }) => ($isClosing ? fadeOut : fadeIn)} 0.3s
+		ease-out forwards;
+	z-index: 1000;
 
-	${({ $isClosing }) =>
-		$isClosing &&
-		`
-		animation: fadeToMist 2s ease-out forwards;
-		pointer-events: none;
-	`}
-
-	@keyframes fadeToMist {
-		0% {
-			opacity: 1;
-			transform: scale(1);
-			filter: blur(0px);
-		}
-		50% {
-			opacity: 0.7;
-			transform: scale(1.02);
-			filter: blur(1px);
-		}
-		100% {
-			opacity: 0;
-			transform: scale(1.05);
-			filter: blur(5px);
-		}
-	}
-
-	@media (max-width: 768px) {
-		width: ${({ $isOpen }) => ($isOpen ? "calc(100vw - 40px)" : "60px")};
-		height: ${({ $isOpen }) => ($isOpen ? "calc(100vh - 40px)" : "60px")};
-		bottom: 20px;
-		right: 20px;
+	@media (max-width: 480px) {
+		width: calc(100vw - 40px);
+		height: calc(100vh - 90px);
 	}
 `;
 
-const ChatToggle = styled.button<{ $isOpen: boolean }>`
+const ChatButton = styled.button`
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
 	width: 60px;
 	height: 60px;
 	border-radius: 50%;
-	background: linear-gradient(135deg, #40e0d0, #87ceeb);
+	background: linear-gradient(135deg, #3ea8ff, #0066cc);
 	border: none;
 	color: white;
-	cursor: pointer;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	position: ${({ $isOpen }) => ($isOpen ? "absolute" : "static")};
-	top: ${({ $isOpen }) => ($isOpen ? "10px" : "auto")};
-	right: ${({ $isOpen }) => ($isOpen ? "10px" : "auto")};
-	z-index: 10000;
+	box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+	cursor: pointer;
+	z-index: 999;
+`;
+
+const Header = styled.div`
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 12px;
+	background: linear-gradient(135deg, #2c3e50, #1a2833);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+	position: relative;
+`;
+
+const HeaderTitle = styled.span`
+	font-weight: bold;
+	color: white;
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+`;
+
+const TopButton = styled.button`
+	background: none;
+	border: 1px solid rgba(255, 255, 255, 0.4);
+	color: white;
+	padding: 4px 8px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 0.8rem;
 	transition: all 0.2s ease;
-	box-shadow: 0 4px 12px rgba(64, 224, 208, 0.3);
+	z-index: 1;
 
 	&:hover {
-		transform: scale(1.05);
-		box-shadow: 0 6px 16px rgba(64, 224, 208, 0.4);
-		background: linear-gradient(135deg, #20b2aa, #40e0d0);
+		background: rgba(255, 255, 255, 0.1);
+		border-color: rgba(255, 255, 255, 0.7);
 	}
 `;
 
-const ChatHeader = styled.div`
-	padding: 16px;
-	border-bottom: 1px solid rgba(135, 206, 235, 0.2);
-	background: rgba(176, 224, 230, 0.3);
+const CloseButton = styled.button`
+	background: none;
+	border: none;
+	color: white;
+	border-radius: 50%;
+	cursor: pointer;
+	font-size: 20px;
+	width: 28px;
+	height: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1;
 
-	h3 {
-		margin: 0;
-		color: #2c5f6e;
-		font-size: 16px;
-		font-weight: 600;
+	&:hover {
+		background: rgba(255, 255, 255, 0.2);
 	}
 `;
 
-const MessageArea = styled.div<{ $isClosing: boolean }>`
+const MessageArea = styled.div`
 	flex: 1;
 	padding: 16px;
 	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	max-height: calc(100% - 120px);
-
-	${({ $isClosing }) =>
-		$isClosing &&
-		`
-		.message-content {
-			animation: dissolveMessages 2s ease-out forwards;
-		}
-	`}
-
-	@keyframes dissolveMessages {
-		0% {
-			opacity: 1;
-			transform: translateY(0);
-		}
-		50% {
-			opacity: 0.3;
-			transform: translateY(-5px);
-		}
-		100% {
-			opacity: 0;
-			transform: translateY(-10px);
-		}
-	}
 `;
 
-const Message = styled.div<{ $isUser: boolean }>`
-	display: flex;
-	align-items: flex-start;
-	gap: 8px;
-	flex-direction: ${({ $isUser }) => ($isUser ? "row-reverse" : "row")};
-
-	.icon {
-		width: 32px;
-		height: 32px;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: ${({ $isUser }) =>
-			$isUser
-				? "linear-gradient(135deg, #3ea8ff, #0066cc)"
-				: "linear-gradient(135deg, #ffb366, #ffd4a3)"};
-		color: ${({ $isUser }) => ($isUser ? "white" : "#8b4513")};
-		flex-shrink: 0;
-		overflow: hidden;
-	}
-
-	.content {
-		background: ${({ $isUser }) =>
-			$isUser
-				? "linear-gradient(135deg, #3ea8ff, #0066cc)"
-				: "rgba(255, 255, 255, 0.8)"};
-		color: ${({ $isUser }) => ($isUser ? "white" : "#2c1810")};
-		padding: 12px 16px;
-		border-radius: 18px;
-		max-width: 80%;
-		word-wrap: break-word;
-		line-height: 1.4;
-		font-size: 14px;
-
-		/* マークダウンスタイル */
-		p {
-			margin: 0 0 8px 0;
-			&:last-child {
-				margin-bottom: 0;
-			}
-		}
-
-		code {
-			background: rgba(0, 0, 0, 0.1);
-			padding: 2px 4px;
-			border-radius: 4px;
-			font-family: "Courier New", monospace;
-			font-size: 12px;
-		}
-
-		pre {
-			background: rgba(0, 0, 0, 0.1);
-			padding: 8px;
-			border-radius: 6px;
-			overflow-x: auto;
-			margin: 8px 0;
-
-			code {
-				background: none;
-				padding: 0;
-			}
-		}
-
-		ul,
-		ol {
-			margin: 8px 0;
-			padding-left: 20px;
-		}
-
-		li {
-			margin: 4px 0;
-		}
-
-		strong {
-			font-weight: 600;
-		}
-
-		em {
-			font-style: italic;
-		}
-
-		blockquote {
-			border-left: 3px solid rgba(0, 0, 0, 0.2);
-			padding-left: 12px;
-			margin: 8px 0;
-			font-style: italic;
-		}
-	}
+const MessageBubble = styled.div<{ sender: "user" | "bot" | "system" }>`
+	align-self: ${({ sender }) =>
+		sender === "user" ? "flex-end" : "flex-start"};
+	background: ${({ sender }) =>
+		sender === "user"
+			? "linear-gradient(135deg, #007bff, #0056b3)"
+			: "rgba(255, 255, 255, 0.15)"};
+	color: white;
+	padding: 10px 15px;
+	border-radius: 18px;
+	max-width: 80%;
+	word-wrap: break-word;
 `;
 
-const UserAvatar = styled.img`
+const FAQButton = styled.button`
+	background: none;
+	border: none;
+	padding: 0;
+	margin: 0;
+	color: #a5c9ff;
+	cursor: pointer;
+	text-align: left;
 	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	border-radius: 50%;
+	font-size: inherit;
+
+	&:hover {
+		text-decoration: underline;
+	}
 `;
 
-const InputArea = styled.form`
+const InputArea = styled.div`
 	padding: 16px;
-	border-top: 1px solid rgba(135, 206, 235, 0.2);
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
 	display: flex;
 	gap: 8px;
-	background: rgba(176, 224, 230, 0.2);
 `;
 
 const Input = styled.input`
 	flex: 1;
-	padding: 12px 16px;
-	border: 1px solid rgba(135, 206, 235, 0.3);
-	border-radius: 24px;
-	background: rgba(255, 255, 255, 0.9);
-	color: #2c5f6e;
-	font-size: 14px;
-	outline: none;
-
-	&:focus {
-		border-color: #40e0d0;
-		background: rgba(255, 255, 255, 0.95);
-		box-shadow: 0 0 0 2px rgba(64, 224, 208, 0.2);
-	}
+	padding: 12px;
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	background: rgba(255, 255, 255, 0.1);
+	color: white;
 
 	&::placeholder {
-		color: rgba(44, 95, 110, 0.6);
+		color: rgba(255, 255, 255, 0.6);
 	}
 `;
 
 const SendButton = styled.button`
 	width: 48px;
 	height: 48px;
-	border-radius: 50%;
-	background: linear-gradient(135deg, #40e0d0, #87ceeb);
+	border-radius: 8px;
 	border: none;
+	background: #007bff;
 	color: white;
-	cursor: pointer;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: all 0.2s ease;
-	box-shadow: 0 2px 8px rgba(64, 224, 208, 0.3);
-
-	&:hover:not(:disabled) {
-		transform: scale(1.05);
-		background: linear-gradient(135deg, #20b2aa, #40e0d0);
-		box-shadow: 0 4px 12px rgba(64, 224, 208, 0.4);
-	}
+	cursor: pointer;
 
 	&:disabled {
 		opacity: 0.5;
-		cursor: not-allowed;
 	}
 `;
 
-const LoadingIndicator = styled.div`
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	color: #666;
-	font-size: 14px;
-	padding: 8px 0;
-
-	&::after {
-		content: "";
-		width: 16px;
-		height: 16px;
-		border: 2px solid #ddd;
-		border-top: 2px solid #ffb366;
-		border-radius: 50%;
-		animation: spin 1s linear infinite;
-	}
+const Spinner = styled.div`
+	border: 2px solid #f3f3f3;
+	border-top: 2px solid #3498db;
+	border-radius: 50%;
+	width: 18px;
+	height: 18px;
+	animation: spin 1s linear infinite;
 
 	@keyframes spin {
-		to {
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
 			transform: rotate(360deg);
 		}
 	}
 `;
 
 const FAQContainer = styled.div`
-	margin-bottom: 16px;
 	padding: 12px;
-	background: rgba(255, 255, 255, 0.05);
-	border-radius: 12px;
-	border: 1px solid rgba(135, 206, 235, 0.2);
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+	max-height: 200px;
+	overflow-y: auto;
 `;
 
-const FAQTitle = styled.h4`
-	margin: 0 0 12px 0;
-	color: #40e0d0;
-	font-size: 14px;
-	font-weight: 600;
-	text-align: center;
-`;
-
-const FAQTags = styled.div`
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-`;
-
-const FAQTag = styled.button`
-	background: linear-gradient(
-		135deg,
-		rgba(64, 224, 208, 0.2),
-		rgba(135, 206, 235, 0.2)
-	);
-	border: 1px solid rgba(64, 224, 208, 0.4);
-	border-radius: 16px;
-	color: #2d3748;
-	padding: 6px 12px;
-	font-size: 12px;
-	font-weight: 600;
+const CategoryButton = styled.button`
+	display: block;
+	width: 100%;
+	padding: 10px;
+	margin-bottom: 8px;
+	background: rgba(255, 255, 255, 0.1);
+	color: white;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 8px;
 	cursor: pointer;
-	transition: all 0.2s ease;
-	white-space: nowrap;
+`;
+
+const BackButton = styled.button`
+	background: rgba(255, 255, 255, 0.2);
+	border: none;
+	color: white;
+	padding: 8px 16px;
+	border-radius: 6px;
+	cursor: pointer;
+	margin-bottom: 12px;
+	margin-left: 12px;
 
 	&:hover {
-		background: linear-gradient(
-			135deg,
-			rgba(64, 224, 208, 0.3),
-			rgba(135, 206, 235, 0.3)
-		);
-		border-color: rgba(64, 224, 208, 0.6);
-		transform: translateY(-1px);
-		color: #1a202c;
-	}
-
-	&:active {
-		transform: translateY(0);
-	}
-
-	&:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-		transform: none;
-
-		&:hover {
-			transform: none;
-		}
+		background: rgba(255, 255, 255, 0.3);
 	}
 `;
 
-const BackButton = styled(FAQTag)`
-	background: linear-gradient(
-		135deg,
-		rgba(255, 100, 100, 0.2),
-		rgba(255, 150, 150, 0.2)
-	);
-	border-color: rgba(255, 100, 100, 0.4);
+const ErrorMessage = styled.div`
+	color: #ffcccc;
+	padding: 12px;
+	text-align: center;
+	background: rgba(255, 100, 100, 0.2);
 `;
 
-// Main ChatBot component
-const ChatBot: React.FC = () => {
+export const ChatBot: React.FC = () => {
 	const [isOpen, setIsOpen] = useState(false);
-	const [messages, setMessages] = useState<ChatMessage[]>([]);
-	const [input, setInput] = useState("");
-	const [loading, setLoading] = useState(false);
-	const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); // null = loading, false = not authenticated, true = authenticated
 	const [isClosing, setIsClosing] = useState(false);
-	const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
-	const { showError } = useToast();
-	const { user } = useAuth();
-	const { profile } = useProfile(user?.id);
-	const messageAreaRef = useRef<HTMLDivElement>(null);
-	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-	const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-	// const [popularFAQs] = useState<FAQ[]>(() => getPopularFAQs(5));
-
-	// 2層FAQのための状態管理
-	const [faqView, setFaqView] = useState<"categories" | "questions">(
-		"categories"
-	);
+	const [messages, setMessages] = useState<Message[]>([]);
+	const [input, setInput] = useState("");
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const [selectedCategory, setSelectedCategory] = useState<
 		FAQ["category"] | null
 	>(null);
-	const [categories] = useState<FAQ["category"][]>(() => getFAQCategories());
-	const [questionsForCategory, setQuestionsForCategory] = useState<FAQ[]>([]);
+	const [isMounted, setIsMounted] = useState(false);
+	const messageAreaRef = useRef<HTMLDivElement>(null);
 
-	// 認証状態をチェック
+	const faqCategories = useMemo(() => getFAQCategories(), []);
+
+	const initialMessages = useMemo(
+		() => [
+			{
+				text: "こんにちは！Showcase・コンシェルジュです。ご用の際はお気軽にお声がけください。",
+				sender: "bot" as const,
+			},
+		],
+		[]
+	);
+
+	const resetChatState = useCallback(() => {
+		setMessages(initialMessages);
+		setSelectedCategory(null);
+		setInput("");
+		setError(null);
+	}, [initialMessages]);
+
 	useEffect(() => {
-		const checkAuthStatus = async () => {
-			try {
-				const {
-					data: { user },
-				} = await supabase.auth.getUser();
-
-				setIsAuthenticated(!!user);
-			} catch (error) {
-				console.error("Error checking auth status:", error);
-				setIsAuthenticated(false);
-			}
-		};
-
-		checkAuthStatus();
+		setIsMounted(true);
 	}, []);
 
-	// メッセージが更新されたときに自動で最下部にスクロール
-	const scrollToBottom = useCallback(() => {
+	useEffect(() => {
+		if (isOpen) {
+			resetChatState();
+		}
+	}, [isOpen, resetChatState]);
+
+	useEffect(() => {
 		if (messageAreaRef.current) {
 			messageAreaRef.current.scrollTop = messageAreaRef.current.scrollHeight;
 		}
-	}, []);
+	}, [messages]);
 
-	// チャットが開かれた時の初期化（履歴は読み込まず、常にFAQタグを表示）
-	useEffect(() => {
-		if (!isOpen) return;
-
-		// 毎回新しいセッションとして開始し、FAQビューもリセット
-		setMessages([]);
-		setFaqView("categories");
-		setSelectedCategory(null);
-		setTimeout(scrollToBottom, 100);
-	}, [isOpen, scrollToBottom]);
-
-	// タイムアウト管理
-	const resetTimeout = useCallback(() => {
-		// 既存のタイマーをクリア
-		if (timeoutRef.current) {
-			clearTimeout(timeoutRef.current);
-		}
-		if (warningTimeoutRef.current) {
-			clearTimeout(warningTimeoutRef.current);
-		}
-
-		setShowTimeoutWarning(false);
-
-		// 4分後に警告メッセージを表示
-		warningTimeoutRef.current = setTimeout(() => {
-			setShowTimeoutWarning(true);
-			const warningMessage = {
-				id: crypto.randomUUID(),
-				role: "assistant" as const,
-				content:
-					"一定時間経過いたしました。続いてのご質問はありませんか？では、いったんチャットを閉じて終了いたします。",
-				created_at: new Date().toISOString(),
-			};
-			setMessages((prev) => [...prev, warningMessage]);
-			setTimeout(scrollToBottom, 100);
-		}, 4 * 60 * 1000); // 4分
-
-		// 5分後に自動クローズ
-		timeoutRef.current = setTimeout(() => {
-			setIsClosing(true);
-			setTimeout(() => {
-				setIsOpen(false);
-				// リセット処理はuseEffectで自動実行される
-			}, 2000); // 2秒のフェードアウト時間
-		}, 5 * 60 * 1000); // 5分
-	}, [scrollToBottom]);
-
-	// チャット画面をリセットする関数
-	const resetChatState = useCallback(() => {
-		setMessages([]);
+	const handleSendMessage = async () => {
+		if (input.trim() === "") return;
+		const userMessage: Message = { text: input, sender: "user" };
+		setMessages((prev) => [...prev, userMessage]);
+		const currentInput = input;
 		setInput("");
-		setLoading(false);
-		setIsClosing(false);
-		setShowTimeoutWarning(false);
-
-		// タイマーをクリア
-		if (timeoutRef.current) {
-			clearTimeout(timeoutRef.current);
-		}
-		if (warningTimeoutRef.current) {
-			clearTimeout(warningTimeoutRef.current);
-		}
-	}, []);
-
-	// チャットが開かれたときとメッセージが送信されたときにタイマーをリセット
-	useEffect(() => {
-		if (isOpen) {
-			resetTimeout();
-		} else {
-			// チャットが閉じられたときに画面をリセット
-			resetChatState();
-		}
-
-		return () => {
-			if (timeoutRef.current) {
-				clearTimeout(timeoutRef.current);
-			}
-			if (warningTimeoutRef.current) {
-				clearTimeout(warningTimeoutRef.current);
-			}
-		};
-	}, [isOpen, resetTimeout, resetChatState]);
-
-	// FAQタグクリック時の処理
-	const handleFAQClick = useCallback(
-		async (faq: FAQ) => {
-			// FAQの質問をユーザーメッセージとして追加
-			const userMessage = {
-				id: crypto.randomUUID(),
-				role: "user" as const,
-				content: faq.question,
-				created_at: new Date().toISOString(),
-			};
-
-			setMessages((prev) => [...prev, userMessage]);
-			setTimeout(scrollToBottom, 100);
-
-			// タイムアウトをリセット
-			resetTimeout();
-
-			// FAQ回答をAIメッセージとして追加
-			setTimeout(() => {
-				const aiMessage = {
-					id: crypto.randomUUID(),
-					role: "assistant" as const,
-					content: `${faq.answer}\n\n他にご質問がございましたら、お気軽にお尋ねください。`,
-					created_at: new Date().toISOString(),
-				};
-				setMessages((prev) => [...prev, aiMessage]);
-				setTimeout(scrollToBottom, 100);
-			}, 500); // 0.5秒後に回答を表示
-
-			// データベースにも保存（バックグラウンドで実行）
-			try {
-				const sessionId = crypto.randomUUID();
-				await supabase.from("messages").insert([
-					{
-						role: "user",
-						content: faq.question,
-						session_id: sessionId,
-						user_id: user?.id || null,
-					},
-					{
-						role: "assistant",
-						content: `${faq.answer}\n\n他にご質問がございましたら、お気軽にお尋ねください。`,
-						session_id: sessionId,
-						user_id: null, // ボットのメッセージは常にnull
-					},
-				]);
-			} catch (error) {
-				console.warn("Failed to save FAQ messages to database:", error);
-			}
-		},
-		[scrollToBottom, resetTimeout, user?.id]
-	);
-
-	// カテゴリタグクリック時の処理
-	const handleCategoryClick = useCallback((category: FAQ["category"]) => {
-		setSelectedCategory(category);
-		setQuestionsForCategory(getFAQsByCategory(category));
-		setFaqView("questions");
-	}, []);
-
-	// Handle form submission
-	const handleSubmit = async (e: FormEvent) => {
-		e.preventDefault();
-		const trimmed = input.trim();
-		if (!trimmed || loading) return;
-
-		// Append user's message to local state
-		const newUserMessage: Omit<ChatMessage, "id" | "created_at"> = {
-			role: "user",
-			content: trimmed,
-		};
-
-		const tempId = crypto.randomUUID();
-		setMessages((prev) => [
-			...prev,
-			{
-				id: tempId,
-				role: newUserMessage.role,
-				content: newUserMessage.content,
-				created_at: new Date().toISOString(),
-			},
-		]);
-		setInput("");
-		setLoading(true);
-
-		// ユーザーメッセージ追加後にスクロール
-		setTimeout(scrollToBottom, 100);
-
-		// タイムアウトをリセット
-		resetTimeout();
-
-		// セッションIDを生成
-		const sessionId = crypto.randomUUID();
+		setIsLoading(true);
+		setError(null);
 
 		try {
-			// Try to save user's message into Supabase (optional for anonymous users)
-			try {
-				const { error: insertError } = await supabase.from("messages").insert({
-					role: newUserMessage.role,
-					content: newUserMessage.content,
-					session_id: sessionId,
-					user_id: user?.id || null,
-				});
-
-				if (insertError && !insertError.message?.includes("Refresh Token")) {
-					console.error("Supabase insert error:", insertError);
-				}
-			} catch (dbError) {
-				console.warn(
-					"Failed to save user message to database (continuing with local storage only):",
-					dbError
-				);
-			}
-
-			// Get AI response using the API client
-			const assistantReply = await fetchChatReply(trimmed);
-
-			// Try to save assistant's reply into Supabase (optional for anonymous users)
-			try {
-				const { error: assistantInsertError } = await supabase
-					.from("messages")
-					.insert({
-						role: "assistant",
-						content: assistantReply,
-						session_id: sessionId,
-						user_id: null, // ボットのメッセージは常にnull
-					});
-
-				if (
-					assistantInsertError &&
-					!assistantInsertError.message?.includes("Refresh Token")
-				) {
-					console.error(
-						"Supabase insert error (assistant):",
-						assistantInsertError
-					);
-				}
-			} catch (dbError) {
-				console.warn(
-					"Failed to save assistant message to database (continuing with local storage only):",
-					dbError
-				);
-			}
-
-			// Append assistant's reply to local state
-			setMessages((prev) => [
-				...prev,
-				{
-					id: crypto.randomUUID(),
-					role: "assistant",
-					content: assistantReply,
-					created_at: new Date().toISOString(),
-				},
-			]);
-
-			// AI応答追加後にスクロール
-			setTimeout(scrollToBottom, 100);
+			const reply = await fetchChatReply(currentInput);
+			const botMessage: Message = { text: reply, sender: "bot" };
+			setMessages((prev) => [...prev, botMessage]);
 		} catch (err) {
-			console.error("Error calling chat endpoint:", err);
-			showError(
-				"チャットボットの応答に失敗しました。しばらく時間をおいて再度お試しください。"
-			);
+			setError("エラーが発生しました。しばらくしてから再度お試しください。");
 		} finally {
-			setLoading(false);
+			setIsLoading(false);
 		}
 	};
 
-	// 認証チェックのローディング状態
-	if (isAuthenticated === null) {
+	const handleCategorySelect = (category: FAQ["category"]) => {
+		setSelectedCategory(category);
+		const faqs = getFAQsByCategory(category);
+		const categoryMessages: Message[] = faqs.map((faq) => ({
+			text: faq.question,
+			sender: "system" as const,
+		}));
+		setMessages((prev) => [...prev, ...categoryMessages]);
+	};
+
+	const handleBackToCategories = () => {
+		setSelectedCategory(null);
+		setMessages(initialMessages);
+	};
+
+	const handleFAQSelect = (question: string) => {
+		const faq = FAQ_DATA.find((f) => f.question === question);
+		if (faq) {
+			const faqMessages: Message[] = [
+				{ text: faq.question, sender: "user" },
+				{ text: faq.answer, sender: "bot" },
+			];
+			setMessages((prev) => [...prev, ...faqMessages]);
+			setSelectedCategory(null); // 回答後はカテゴリ選択に戻る
+		}
+	};
+
+	const handleClose = () => {
+		setIsClosing(true);
+		setTimeout(() => {
+			setIsOpen(false);
+			setIsClosing(false);
+		}, 300);
+	};
+
+	if (!isMounted) {
 		return null;
 	}
 
-	// 未認証ユーザーにはチャットボットを表示しない
-	if (!isAuthenticated) {
-		return null;
-	}
+	const showTopButton = messages.length > 1 || selectedCategory;
+	const showFAQCategories = !selectedCategory && messages.length === 1;
+	const showBackToCategories = !isLoading && selectedCategory;
 
 	return (
-		<ChatContainer $isOpen={isOpen} $isClosing={isClosing}>
-			<ChatToggle
-				$isOpen={isOpen}
-				onClick={() => {
-					if (!isClosing) {
-						if (isOpen) {
-							// 手動で閉じる場合
-							setIsOpen(false);
-						} else {
-							// 開く場合
-							setIsOpen(true);
-						}
-					}
-				}}
-			>
-				{isOpen ? <IconX size={24} /> : <IconMessageCircle size={24} />}
-			</ChatToggle>
-
+		<>
+			{!isOpen && (
+				<ChatButton onClick={() => setIsOpen(true)}>
+					<IconMessageCircle size={24} />
+				</ChatButton>
+			)}
 			{isOpen && (
-				<>
-					<ChatHeader>
-						<h3>AI アシスタント</h3>
-					</ChatHeader>
+				<Wrapper $isClosing={isClosing}>
+					<Header>
+						<div>
+							{showTopButton && (
+								<TopButton onClick={resetChatState}>TOPへ</TopButton>
+							)}
+						</div>
+						<HeaderTitle>Showcase・コンシェルジュ</HeaderTitle>
+						<CloseButton onClick={handleClose}>×</CloseButton>
+					</Header>
 
-					<MessageArea ref={messageAreaRef} $isClosing={isClosing}>
-						{messages.length === 0 && (
-							<>
-								<Message $isUser={false}>
-									<div className="icon">
-										<IconRobot size={18} />
-									</div>
-									<div className="content message-content">
-										こんにちは！何かご質問はありますか？
-										<br />
-										よくあるご質問から選択することもできます。
-									</div>
-								</Message>
+					{error && <ErrorMessage>{error}</ErrorMessage>}
 
-								<FAQContainer>
-									<FAQTitle>💡 よくあるご質問</FAQTitle>
-									<FAQTags>
-										{faqView === "categories" &&
-											categories.map((category) => (
-												<FAQTag
-													key={category}
-													onClick={() => handleCategoryClick(category)}
-													disabled={isClosing || showTimeoutWarning}
-												>
-													{category}
-												</FAQTag>
-											))}
-
-										{faqView === "questions" && (
-											<>
-												<BackButton
-													onClick={() => setFaqView("categories")}
-													disabled={isClosing || showTimeoutWarning}
-												>
-													‹ カテゴリに戻る
-												</BackButton>
-												{questionsForCategory.map((faq) => (
-													<FAQTag
-														key={faq.id}
-														onClick={() => handleFAQClick(faq)}
-														disabled={isClosing || showTimeoutWarning}
-													>
-														{faq.question}
-													</FAQTag>
-												))}
-											</>
-										)}
-									</FAQTags>
-								</FAQContainer>
-							</>
-						)}
-
-						{messages.map((msg) => (
-							<Message key={msg.id} $isUser={msg.role === "user"}>
-								<div className="icon">
-									{msg.role === "user" ? (
-										profile?.avatar_url ? (
-											<UserAvatar src={profile.avatar_url} alt="You" />
-										) : (
-											<IconUser size={18} />
-										)
-									) : (
-										<IconRobot size={18} />
-									)}
-								</div>
-								<div className={`content message-content`}>
-									{msg.role === "assistant" ? (
-										<ReactMarkdown>{msg.content}</ReactMarkdown>
-									) : (
-										msg.content
-									)}
-								</div>
-							</Message>
+					<MessageArea ref={messageAreaRef}>
+						{messages.map((msg, index) => (
+							<MessageBubble key={index} sender={msg.sender}>
+								{msg.sender === "system" ? (
+									<FAQButton onClick={() => handleFAQSelect(msg.text)}>
+										{msg.text}
+									</FAQButton>
+								) : (
+									msg.text
+								)}
+							</MessageBubble>
 						))}
-
-						{loading && (
-							<LoadingIndicator>AI が回答を生成しています...</LoadingIndicator>
-						)}
 					</MessageArea>
 
-					<InputArea onSubmit={handleSubmit}>
+					{showFAQCategories ? (
+						<FAQContainer>
+							<p
+								style={{
+									color: "white",
+									textAlign: "center",
+									fontSize: "0.9rem",
+									marginBottom: "12px",
+								}}
+							>
+								または、以下のカテゴリから選択してください
+							</p>
+							{faqCategories.map((category) => (
+								<CategoryButton
+									key={category}
+									onClick={() => handleCategorySelect(category)}
+								>
+									{category}
+								</CategoryButton>
+							))}
+						</FAQContainer>
+					) : (
+						showBackToCategories && (
+							<BackButton onClick={handleBackToCategories}>
+								カテゴリに戻る
+							</BackButton>
+						)
+					)}
+
+					<InputArea>
 						<Input
 							type="text"
 							value={input}
 							onChange={(e) => setInput(e.target.value)}
-							placeholder="メッセージを入力してください..."
-							disabled={loading || isClosing || showTimeoutWarning}
-							maxLength={500}
+							onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+							placeholder="メッセージを入力..."
 						/>
-						<SendButton
-							type="submit"
-							disabled={
-								loading || isClosing || showTimeoutWarning || !input.trim()
-							}
-						>
-							<IconSend size={20} />
+						<SendButton onClick={handleSendMessage} disabled={isLoading}>
+							{isLoading ? <Spinner /> : <IconSend size={18} />}
 						</SendButton>
 					</InputArea>
-				</>
+				</Wrapper>
 			)}
-		</ChatContainer>
+		</>
 	);
 };
 

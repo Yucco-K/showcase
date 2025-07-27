@@ -10,6 +10,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import SupabaseVectorStore
 from langchain.prompts import PromptTemplate
 from supabase.client import create_client, Client
+from postgrest import APIError # v2の正式なエラー型をインポート
 import asyncio
 
 # --- ロガーのセットアップ ---
@@ -131,12 +132,19 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     query_embedding = chatbot.emb.embed_query(query)
     logger.info("  - 6.1 query_embedding_created")
 
-    rpc_response = chatbot.supabase_client.rpc("match_docs", {"query_embedding": query_embedding, "match_threshold": 0.05, "match_count": 5}).execute()
-    logger.info("  - 6.2 rpc_match_docs_executed")
+    try:
+        rpc_response = chatbot.supabase_client.rpc("match_docs", {"query_embedding": query_embedding, "match_threshold": 0.05, "match_count": 5}).execute()
+        logger.info("  - 6.2 rpc_match_docs_executed")
 
-    semantic_context = "\n---\n".join([doc["content"] for doc in rpc_response.data])
-    logger.info(f"  - 6.4 semantic_context_created: found {len(rpc_response.data)} documents")
-    
+        # Supabase-py v2では、成功すると.dataに、失敗するとAPIErrorがraiseされる
+        semantic_context = "\n---\n".join([doc["content"] for doc in rpc_response.data])
+        logger.info(f"  - 6.3 semantic_context_created: found {len(rpc_response.data)} documents")
+
+    except APIError as e:
+        logger.error(f"  ❌ Supabase RPC 'match_docs' failed: {e.message}")
+        # このエラーを上位のhandle_chatに伝播させて500エラーを返させる
+        raise Exception(f"ベクトル検索中にデータベースエラーが発生しました: {e.message}")
+
     # --- 3. コンテキストを結合して最終的なプロンプトを作成 ---
     logger.info("7. preparing_final_prompt")
     final_context = f"{product_context}\n\n{semantic_context}".strip()

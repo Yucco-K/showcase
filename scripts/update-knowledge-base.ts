@@ -2,6 +2,15 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import OpenAI from "npm:openai@4";
 import "https://deno.land/x/dotenv@v3.2.2/load.ts";
 
+// --- 設定可能なパス ---
+const CONFIG_PATHS = {
+	PRODUCTS_DATABASE: Deno.env.get("PRODUCTS_DATABASE_PATH") || "./docs/products/products_database.md",
+	WORKFLOW_GUIDE: Deno.env.get("WORKFLOW_GUIDE_PATH") || "./docs/workflow-guide.md",
+	TECHNICAL_DOC: Deno.env.get("TECHNICAL_DOC_PATH") || "./docs/technical-documentation.md",
+	FAQ_DOC: Deno.env.get("FAQ_DOC_PATH") || "./docs/faq.md",
+	PRICING_DOC: Deno.env.get("PRICING_DOC_PATH") || "./docs/pricing.md"
+};
+
 // --- 自前のパーサー関数 ---
 
 /**
@@ -124,7 +133,7 @@ async function parseDocuments(): Promise<Document[]> {
 
 	// 4.1 製品情報 (Markdown)
 	const productContent = await Deno.readTextFile(
-		"./docs/products/products_database.md"
+		CONFIG_PATHS.PRODUCTS_DATABASE
 	);
 	const products = parseMarkdown(productContent, { sectionDelimiter: "###" });
 	products.forEach((p) => {
@@ -139,7 +148,7 @@ async function parseDocuments(): Promise<Document[]> {
 	console.log(`✅ 製品情報: ${products.length}件`);
 
 	// 4.2 FAQ (Markdownファイルから読み込み)
-	const faqContent = await Deno.readTextFile("./docs/faq.md");
+	const faqContent = await Deno.readTextFile(CONFIG_PATHS.FAQ_DOC);
 	const faqs = parseMarkdown(faqContent, { sectionDelimiter: "###" });
 	faqs.forEach((faq) => {
 		if (faq.title) {
@@ -156,7 +165,7 @@ async function parseDocuments(): Promise<Document[]> {
 
 	// 4.3 ユーザーガイド (Markdown)
 	const guideContent = await Deno.readTextFile(
-		"./obsidian-vault/docs_backup/USER_GUIDE_JA.md"
+		CONFIG_PATHS.WORKFLOW_GUIDE
 	);
 	const guideSections = splitText(guideContent, {
 		maxLength: 500,
@@ -174,7 +183,7 @@ async function parseDocuments(): Promise<Document[]> {
 
 	// 4.4 技術ドキュメント (Markdown)
 	const techDocContent = await Deno.readTextFile(
-		"./obsidian-vault/docs_backup/TECHNICAL_DOCUMENTATION_JA.md"
+		CONFIG_PATHS.TECHNICAL_DOC
 	);
 	const techDocSections = splitText(techDocContent, {
 		maxLength: 500,

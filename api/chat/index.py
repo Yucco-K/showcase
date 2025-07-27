@@ -1,4 +1,5 @@
 import os
+import re # 正規表現ライブラリをインポート
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +18,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- ヘルパー関数: 高度な文字列正規化 ---
+def normalize_string(text: str) -> str:
+    """スペース、改行、タブなどの空白をすべて除去し、小文字に変換する"""
+    if not text:
+        return ""
+    # \s+ は1つ以上の任意の空白文字（スペース、タブ、改行など）にマッチ
+    text = re.sub(r'\s+', '', text)
+    return text.lower()
 
 # --- LangChainコンポーネントのシングルトン管理 ---
 class ChatbotSingleton:
@@ -62,20 +72,40 @@ class ChatbotSingleton:
 # --- 回答生成ロジック ---
 async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     try:
-        # --- 1. キーワードベースの製品検索 ---
+        # --- 1. 動的なキーワードベースの製品検索 ---
         product_context = ""
-        # 'MyRecipeNote'のような具体的な製品名がクエリに含まれているかチェック
-        # (将来的には正規表現や製品名リストとの照合に拡張可能)
-        if "myrecipenote" in query.lower():
-            response = await chatbot.supabase_client.from_("products").select("name, description, price, features").eq("name", "MyRecipeNote").execute()
-            if response.data:
-                product = response.data[0]
+        normalized_query = normalize_string(query)
+
+        # 1a. DBから全商品名を取得
+        products_response = await chatbot.supabase_client.from_("products").select("name").execute()
+        
+        matched_product_name = None
+        if products_response.data:
+            for product in products_response.data:
+                product_name = product.get('name')
+                if not product_name:
+                    continue
+                
+                normalized_name = normalize_string(product_name)
+                # 正規化されたクエリに、正規化された製品名が含まれているかチェック
+                if normalized_name and normalized_name in normalized_query:
+                    matched_product_name = product_name
+                    break  # 最初に見つかった製品で決定
+
+        # 1b. マッチした場合、その製品の詳細を取得
+        if matched_product_name:
+            print(f"キーワード一致を検出: {matched_product_name}")
+            # .eq()は完全一致。正確な商品名がわかっているので、これで製品を一意に特定
+            details_response = await chatbot.supabase_client.from_("products").select("name, description, price, features").eq("name", matched_product_name).single().execute()
+            
+            if details_response.data:
+                product = details_response.data
                 product_context = f"""
                 [製品情報]
-                商品名: {product['name']}
-                価格: ¥{product['price']}
-                説明: {product['description']}
-                機能: {', '.join(product['features'])}
+                商品名: {product.get('name')}
+                価格: ¥{product.get('price')}
+                説明: {product.get('description')}
+                機能: {', '.join(product.get('features', []))}
                 """
 
         # --- 2. ベクトル検索によるドキュメント検索 ---

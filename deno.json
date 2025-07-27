@@ -12,7 +12,6 @@
 	"lint": {
 		"exclude": [
 			"src/",
-			"scripts/",
 			"api/",
 			"playwright.config.ts"
 		],

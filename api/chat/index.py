@@ -13,7 +13,7 @@ from supabase.client import create_client, Client
 from postgrest import APIError # v2の正式なエラー型をインポート
 import asyncio
 from logging.handlers import RotatingFileHandler
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from fastapi import FastAPI, Request, HTTPException
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains import create_retrieval_chain
@@ -21,9 +21,18 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from supabase.lib.client_options import ClientOptions
 from supabase import create_client, Client
 
-# --- .envファイルのパスを明示的に指定して読み込む ---
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
-if os.path.exists(dotenv_path):
+# --- カスタム例外クラス ---
+class DatabaseError(Exception):
+    """データベース関連のエラー"""
+    pass
+
+# --- 設定定数 ---
+MATCH_THRESHOLD = 0.05
+MATCH_COUNT = 5
+
+# --- .envファイルのパスを動的に検索して読み込む ---
+dotenv_path = find_dotenv()
+if dotenv_path:
     load_dotenv(dotenv_path=dotenv_path, override=True)
 else:
     load_dotenv(override=True) # フォールバック
@@ -169,15 +178,21 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
 
     # 1b. マッチした場合、その製品の詳細を取得
     if matched_product_name:
-        logger.info(f"5. fetching_details_for_matched_product: '{matched_product_name}'")
-        details_response = chatbot.supabase_client.from_("products").select("name, description, price, features").eq("name", matched_product_name).single().execute()
-        
-        if details_response.data:
-            product = details_response.data
-            product_context = f"[製品情報]\n商品名: {product.get('name')}\n価格: ¥{product.get('price')}\n説明: {product.get('description')}\n機能: {', '.join(product.get('features', []))}"
-            logger.info("  ✅ 5. product_details_fetched_and_context_created")
+        # 製品名をホワイトリストで検証
+        valid_product_names = [product.get('name') for product in products_response.data if product.get('name')]
+        if matched_product_name not in valid_product_names:
+            logger.error(f"  ❌ 5. matched_product_name '{matched_product_name}' is not in the whitelist of valid product names.")
+            matched_product_name = None  # 無効な製品名の場合はリセット
         else:
-            logger.info(f"  ❌ 5. failed_to_fetch_details for '{matched_product_name}'")
+            logger.info(f"5. fetching_details_for_matched_product: '{matched_product_name}'")
+            details_response = chatbot.supabase_client.from_("products").select("name, description, price, features").eq("name", matched_product_name).single().execute()
+            
+            if details_response.data:
+                product = details_response.data
+                product_context = f"[製品情報]\n商品名: {product.get('name')}\n価格: ¥{product.get('price')}\n説明: {product.get('description')}\n機能: {', '.join(product.get('features', []))}"
+                logger.info("  ✅ 5. product_details_fetched_and_context_created")
+            else:
+                logger.info(f"  ❌ 5. failed_to_fetch_details for '{matched_product_name}'")
 
     # --- 2. ベクトル検索によるドキュメント検索 ---
     logger.info("6. starting_vector_search")
@@ -185,7 +200,7 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     logger.info("  - 6.1 query_embedding_created")
 
     try:
-        rpc_response = chatbot.supabase_client.rpc("match_docs", {"query_embedding": query_embedding, "match_threshold": 0.05, "match_count": 5}).execute()
+        rpc_response = chatbot.supabase_client.rpc("match_docs", {"query_embedding": query_embedding, "match_threshold": MATCH_THRESHOLD, "match_count": MATCH_COUNT}).execute()
         logger.info("  - 6.2 rpc_match_docs_executed")
 
         # Supabase-py v2では、成功すると.dataに、失敗するとAPIErrorがraiseされる
@@ -195,7 +210,7 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     except APIError as e:
         logger.error(f"  ❌ Supabase RPC 'match_docs' failed: {e.message}")
         # このエラーを上位のhandle_chatに伝播させて500エラーを返させる
-        raise Exception(f"ベクトル検索中にデータベースエラーが発生しました: {e.message}")
+        raise DatabaseError(f"ベクトル検索中にデータベースエラーが発生しました: {e.message}") from e
 
     # --- 3. コンテキストを結合して最終的なプロンプトを作成 ---
     logger.info("7. preparing_final_prompt")
@@ -269,4 +284,4 @@ async def handle_chat(request: Request):
         logger.error("!!! UNHANDLED EXCEPTION in handle_chat !!!")
         logger.error(f"Error: {e}")
         logger.error(f"Traceback:\n{error_details}")
-        return JSONResponse(status_code=500, content={"error": "予期せぬ内部サーバーエラーが発生しました。詳細はログを確認してください。"}) 
+        return JSONResponse(status_code=500, content={"error": "予期せぬ内部サーバーエラーが発生しました。詳細はログを確認してください。"})

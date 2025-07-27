@@ -25,6 +25,15 @@ jobs:
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
           echo "CHATBOT_API_URL=${{ secrets.CHATBOT_API_URL }}" >> $GITHUB_ENV
 
+      - name: Cache and regenerate lockfile
+        run: |
+          # Remove old lockfile if version is incompatible
+          if [ -f "deno.lock" ]; then
+            rm deno.lock
+          fi
+          # Generate new lockfile
+          deno cache --lock=deno.lock --lock-write scripts/*.ts supabase/functions/**/*.ts
+
       - name: Lint
         run: deno lint
 

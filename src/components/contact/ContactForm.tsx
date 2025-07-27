@@ -470,7 +470,7 @@ const CATEGORY_DETAILS: Record<
 export const ContactForm: React.FC = () => {
 	const { user } = useAuth();
 	const [name, setName] = useState("");
-	const [email, setEmail] = useState("");
+	const [email, setEmail] = useState(user?.email || "");
 	const [title, setTitle] = useState("");
 	const [message, setMessage] = useState("");
 	const [category, setCategory] = useState<ContactCategory>("other");

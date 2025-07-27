@@ -11,6 +11,13 @@ from supabase.client import create_client, Client
 # --- FastAPIアプリ ---
 app = FastAPI()
 
+# デバッグ用ミドルウェア: リクエストパスをログに出力
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    print(f"受信リクエスト: {request.method} {request.url.path}")
+    response = await call_next(request)
+    return response
+
 # --- CORSミドルウェアの設定 ---
 # すべてのオリジンからのリクエストを許可
 app.add_middleware(
@@ -73,7 +80,7 @@ def create_enhanced_query(original_query: str) -> str:
         return original_query
 
 # --- APIエンドポイントの修正 ---
-@app.post("/")
+@app.post("/api/chat")
 async def handle_chat(request: Request):
     """チャットボットのエンドポイント。Vercelが /api/chat をこの関数にルーティングする"""
     if not all([llm, vector_store, rag_qa, kw_chain, intent_chain]):

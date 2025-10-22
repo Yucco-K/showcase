@@ -6,9 +6,12 @@ import type { Product } from "../types/product.ts";
 // 注意: 本番環境ではhttps://forum.yu-cco.com/apiを使用
 const GORSE_ENDPOINT =
 	import.meta.env.VITE_GORSE_ENDPOINT || "http://18.183.44.71:8087";
-const GORSE_API_KEY =
-	import.meta.env.VITE_GORSE_API_KEY ||
-	"kmKLLA5eCveQTVOVDftScxlWJaKmJJVbfSlPMZYSqno=";
+
+// ⚠️ セキュリティ上の注意:
+// Gorse API Keyはクライアント側では空文字列にして、
+// 実際のAPIキーはSupabase Edge Functionsなどのサーバー側で管理すべきです。
+// 現状、読み取り専用のAPIなのでリスクは限定的ですが、改善が必要です。
+const GORSE_API_KEY = "";
 
 console.log(`[Gorse] Using API endpoint: ${GORSE_ENDPOINT}`);
 // APIキーはセキュリティ上の理由で完全には表示しない

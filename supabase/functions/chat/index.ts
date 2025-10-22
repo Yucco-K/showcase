@@ -45,7 +45,14 @@ class PortfolioShowcaseChatbot {
 	constructor() {
 		this.supabase = createClient(
 			getEnv("SUPABASE_URL"),
-			getEnv("SUPABASE_ANON_KEY")
+			getEnv("SUPABASE_ANON_KEY"),
+			{
+				auth: {
+					persistSession: false,
+					autoRefreshToken: false,
+					detectSessionInUrl: false,
+				},
+			}
 		);
 
 		this.openai = new OpenAI({
@@ -255,7 +262,7 @@ Deno.serve(async (req) => {
 	const corsHeaders = {
 		"Access-Control-Allow-Origin": "*",
 		"Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-		"Access-Control-Allow-Headers": "Content-Type",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization",
 	};
 
 	// プリフライトリクエストの処理

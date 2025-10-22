@@ -81,9 +81,7 @@ serve(async (req: Request) => {
 
 			const gorseEndpoint =
 				Deno.env.get("GORSE_ENDPOINT") || "http://52.198.15.232:8086";
-			const gorseApiKey =
-				Deno.env.get("GORSE_API_KEY") ||
-				"[REDACTED_GORSE_API_KEY]=";
+			const gorseApiKey = Deno.env.get("GORSE_API_KEY") || "";
 
 			console.log(`Fetching similar items for ${itemId} from ${gorseEndpoint}`);
 

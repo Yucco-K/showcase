@@ -1,5 +1,36 @@
 # セキュリティガイド
 
+## ⚠️ 重要：`VITE_` プレフィックスについて
+
+### Viteの環境変数の仕組み
+
+```typescript
+// VITE_ で始まる環境変数
+VITE_SUPABASE_URL=https://xxx.supabase.co
+
+// → ビルド時にJavaScriptバンドルに埋め込まれる
+// → ブラウザの開発者ツールで誰でも見られる 🚨
+```
+
+### 安全な環境変数 vs 危険な環境変数
+
+| 環境変数 | `VITE_` | 安全性 | 理由 |
+|----------|---------|--------|------|
+| `VITE_SUPABASE_URL` | ✅ 使用可能 | ✅ 安全 | 公開URL |
+| `VITE_SUPABASE_ANON_KEY` | ✅ 使用可能 | ✅ 安全 | 匿名キー（RLSで保護） |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | ✅ 使用可能 | ✅ 安全 | 公開可能なキー |
+| `VITE_GORSE_ENDPOINT` | ✅ 使用可能 | ✅ 安全 | 公開URL |
+| ❌ `VITE_OPENAI_API_KEY` | ❌ 使用禁止 | ❌ 危険 | APIキーは秘密にすべき |
+| ❌ `VITE_SUPABASE_SERVICE_ROLE_KEY` | ❌ 使用禁止 | ❌ 危険 | 管理者権限のキー |
+
+### ✅ ルール
+
+1. **公開しても問題ない情報のみ `VITE_` を使用**
+2. **APIキーや秘密鍵は絶対に `VITE_` をつけない**
+3. **秘密情報はサーバー側（Supabase Edge Functions等）で管理**
+
+---
+
 ## 🔒 環境変数の管理
 
 ### 現在の状況

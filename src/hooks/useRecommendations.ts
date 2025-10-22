@@ -137,7 +137,7 @@ export const useSimilarProducts = (
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [retryCount, setRetryCount] = useState(0);
-	const maxRetries = 2;
+	const maxRetries = 1; // リトライ回数を減らして高速化
 
 	const fetchSimilar = useCallback(async () => {
 		if (!productId) {
@@ -154,7 +154,14 @@ export const useSimilarProducts = (
 					maxRetries + 1
 				}回目)`
 			);
-			const items = await getSimilarItems(productId, allProducts, limit);
+			// ユーザーIDを取得（認証済みの場合）
+			const userId = undefined; // 必要に応じてAuthContextから取得
+			const items = await getSimilarItems(
+				productId,
+				allProducts,
+				limit,
+				userId
+			);
 			console.log(`[Recommendations] Gorseから取得した類似商品ID:`, items);
 			setSimilarItems(items);
 			// 成功したらリトライカウントをリセット

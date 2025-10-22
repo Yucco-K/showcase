@@ -62,92 +62,234 @@ export const FEEDBACK_TYPES = {
 
 export type FeedbackType = (typeof FEEDBACK_TYPES)[keyof typeof FEEDBACK_TYPES];
 
+// レート制限の設定
+interface RateLimitEntry {
+	count: number;
+	resetTime: number; // タイムスタンプ
+}
+
 class GorseClient {
 	private endpoint: string;
 	private apiKey: string;
+	private requestCache: Map<string, { data: unknown; timestamp: number }> =
+		new Map();
+	private cacheTimeout = 5 * 60 * 1000; // 5分間キャッシュ
+	private requestQueue: Map<string, Promise<unknown>> = new Map();
+
+	// レート制限: IPアドレスまたはユーザーID毎に管理
+	private rateLimits: Map<string, RateLimitEntry> = new Map();
+	private maxRequestsPerDay = 100; // 1日あたりの最大リクエスト数
+	private maxRequestsPerHour = 30; // 1時間あたりの最大リクエスト数
 
 	constructor(endpoint: string, apiKey: string) {
 		this.endpoint = endpoint;
 		this.apiKey = apiKey;
+
+		// 定期的に古いレート制限エントリをクリーンアップ（1時間ごと）
+		setInterval(() => this.cleanupRateLimits(), 60 * 60 * 1000);
 	}
 
-	private async request(path: string, options?: RequestInit): Promise<unknown> {
+	private cleanupRateLimits(): void {
+		const now = Date.now();
+		for (const [key, entry] of this.rateLimits.entries()) {
+			if (now > entry.resetTime) {
+				this.rateLimits.delete(key);
+			}
+		}
+	}
+
+	private checkRateLimit(
+		identifier: string,
+		windowMs: number,
+		maxRequests: number
+	): boolean {
+		const now = Date.now();
+		const entry = this.rateLimits.get(identifier);
+
+		if (!entry || now > entry.resetTime) {
+			// 新しいウィンドウを開始
+			this.rateLimits.set(identifier, {
+				count: 1,
+				resetTime: now + windowMs,
+			});
+			return true;
+		}
+
+		if (entry.count >= maxRequests) {
+			// レート制限を超過
+			console.warn(
+				`[Gorse] Rate limit exceeded for ${identifier}. Limit: ${maxRequests}, Current: ${entry.count}`
+			);
+			return false;
+		}
+
+		// カウントを増やす
+		entry.count++;
+		return true;
+	}
+
+	private getRateLimitIdentifier(userId?: string): string {
+		// ユーザーIDがあればそれを使用、なければIPアドレスベースの識別子
+		if (userId) {
+			return `user:${userId}`;
+		}
+		// ブラウザのフィンガープリントまたはセッションID
+		// LocalStorageを使用してクライアント側で永続化
+		let clientId = localStorage.getItem("gorse_client_id");
+		if (!clientId) {
+			clientId = `client:${Date.now()}-${Math.random()
+				.toString(36)
+				.substring(7)}`;
+			localStorage.setItem("gorse_client_id", clientId);
+		}
+		return clientId;
+	}
+
+	private async request(
+		path: string,
+		options?: RequestInit,
+		userId?: string
+	): Promise<unknown> {
 		const url = `${this.endpoint}${path}`;
+
+		// レート制限チェック
+		const identifier = this.getRateLimitIdentifier(userId);
+		const hourlyLimit = this.checkRateLimit(
+			`${identifier}:hourly`,
+			60 * 60 * 1000, // 1時間
+			this.maxRequestsPerHour
+		);
+		const dailyLimit = this.checkRateLimit(
+			`${identifier}:daily`,
+			24 * 60 * 60 * 1000, // 24時間
+			this.maxRequestsPerDay
+		);
+
+		if (!hourlyLimit || !dailyLimit) {
+			const errorMsg = !hourlyLimit
+				? `1時間あたりの制限（${this.maxRequestsPerHour}回）を超過しました。しばらく待ってから再度お試しください。`
+				: `1日あたりの制限（${this.maxRequestsPerDay}回）を超過しました。明日再度お試しください。`;
+			console.error(`[Gorse] ⛔ Rate limit exceeded: ${errorMsg}`);
+			throw new Error(errorMsg);
+		}
+
+		// GETリクエストのみキャッシュ
+		const method = options?.method || "GET";
+		const cacheKey = `${method}:${url}`;
+
+		// キャッシュチェック
+		if (method === "GET") {
+			const cached = this.requestCache.get(cacheKey);
+			if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+				console.log(`[Gorse] 💾 Cache hit: ${path}`);
+				return cached.data;
+			}
+
+			// 同じリクエストが進行中の場合は待機（重複リクエスト防止）
+			const ongoing = this.requestQueue.get(cacheKey);
+			if (ongoing) {
+				console.log(`[Gorse] ⏳ Waiting for ongoing request: ${path}`);
+				return ongoing;
+			}
+		}
+
 		const controller = new AbortController();
-		const timeout = 5000; // 5秒タイムアウト
+		const timeout = 2000; // 2秒タイムアウト（高速フォールバック用）
 		const timeoutId = setTimeout(() => controller.abort(), timeout);
 
 		const isDev =
 			(typeof import.meta !== "undefined" &&
 				(import.meta as { env?: { DEV?: boolean } }).env?.DEV) ||
 			process.env.NODE_ENV === "development";
-		try {
-			// 開発モードのみ詳細ログ
-			if (isDev) {
-				console.debug(`[Gorse] → ${options?.method || "GET"} ${url}`);
-			}
 
-			const startTime = performance.now();
-			const response = await fetch(url, {
-				...options,
-				signal: controller.signal,
-				headers: {
-					"Content-Type": "application/json",
-					"X-API-Key": this.apiKey,
-					...options?.headers,
-				},
-				// CORSエラー対策
-				mode: "cors",
-				credentials: "same-origin",
-			});
-			const endTime = performance.now();
+		const requestPromise = (async () => {
+			try {
+				// 開発モードのみ詳細ログ
+				if (isDev) {
+					console.debug(`[Gorse] → ${options?.method || "GET"} ${url}`);
+				}
 
-			if (isDev) {
-				console.debug(
-					`[Gorse] ← ${response.status} ${url} (${Math.round(
-						endTime - startTime
-					)}ms)`
-				);
-			}
+				const startTime = performance.now();
+				const response = await fetch(url, {
+					...options,
+					signal: controller.signal,
+					headers: {
+						"Content-Type": "application/json",
+						"X-API-Key": this.apiKey,
+						...options?.headers,
+					},
+					// CORSエラー対策
+					mode: "cors",
+					credentials: "same-origin",
+				});
+				const endTime = performance.now();
 
-			if (!response.ok) {
-				const errorText = await response
-					.text()
-					.catch(() => "No error text available");
-				throw new Error(
-					`HTTP error! status: ${response.status}, url: ${url}, details: ${errorText}`
-				);
-			}
-
-			const data = await response.json();
-			return data;
-		} catch (error) {
-			if (error instanceof Error) {
-				if (error.name === "AbortError") {
-					console.error(`[Gorse] Request timeout after ${timeout}ms: ${url}`);
-					throw new Error(`リクエストがタイムアウトしました（${timeout}ms）`);
-				} else if (
-					error.name === "TypeError" &&
-					error.message.includes("Failed to fetch")
-				) {
-					console.error(
-						`[Gorse] Network error - likely CORS or connectivity issue: ${url}`
-					);
-					throw new Error(
-						`ネットワークエラー: APIサーバーに接続できません。CORSポリシーまたはサーバー接続の問題の可能性があります。`
+				if (isDev) {
+					console.debug(
+						`[Gorse] ← ${response.status} ${url} (${Math.round(
+							endTime - startTime
+						)}ms)`
 					);
 				}
-				console.error(`[Gorse] Request failed: ${url}`, {
-					error: error.message,
-					name: error.name,
-					stack: error.stack,
-					timestamp: new Date().toISOString(),
-				});
+
+				if (!response.ok) {
+					const errorText = await response
+						.text()
+						.catch(() => "No error text available");
+					throw new Error(
+						`HTTP error! status: ${response.status}, url: ${url}, details: ${errorText}`
+					);
+				}
+
+				const data = await response.json();
+
+				// GETリクエストの場合はキャッシュに保存
+				if (method === "GET") {
+					this.requestCache.set(cacheKey, {
+						data,
+						timestamp: Date.now(),
+					});
+				}
+
+				return data;
+			} catch (error) {
+				if (error instanceof Error) {
+					if (error.name === "AbortError") {
+						console.error(`[Gorse] Request timeout after ${timeout}ms: ${url}`);
+						throw new Error(`リクエストがタイムアウトしました（${timeout}ms）`);
+					} else if (
+						error.name === "TypeError" &&
+						error.message.includes("Failed to fetch")
+					) {
+						console.error(
+							`[Gorse] Network error - likely CORS or connectivity issue: ${url}`
+						);
+						throw new Error(
+							`ネットワークエラー: APIサーバーに接続できません。CORSポリシーまたはサーバー接続の問題の可能性があります。`
+						);
+					}
+					console.error(`[Gorse] Request failed: ${url}`, {
+						error: error.message,
+						name: error.name,
+						stack: error.stack,
+						timestamp: new Date().toISOString(),
+					});
+				}
+				throw error;
+			} finally {
+				clearTimeout(timeoutId);
 			}
-			throw error;
-		} finally {
-			clearTimeout(timeoutId);
+		})();
+
+		// GETリクエストの場合はキューに追加
+		if (method === "GET") {
+			this.requestQueue.set(cacheKey, requestPromise);
+			requestPromise.finally(() => {
+				this.requestQueue.delete(cacheKey);
+			});
 		}
+
+		return requestPromise;
 	}
 
 	private async retryRequest(
@@ -274,9 +416,11 @@ class GorseClient {
 		userId: string,
 		n = 10
 	): Promise<GorseRecommendation[]> {
-		return this.retryRequest(`/api/recommend/${userId}?n=${n}`) as Promise<
-			GorseRecommendation[]
-		>;
+		return this.request(
+			`/api/recommend/${userId}?n=${n}`,
+			{ method: "GET" },
+			userId
+		) as Promise<GorseRecommendation[]>;
 	}
 
 	async getLatestRecommendations(
@@ -300,11 +444,14 @@ class GorseClient {
 	// 類似アイテム
 	async getSimilarItems(
 		itemId: string,
-		n = 10
+		n = 10,
+		userId?: string
 	): Promise<GorseRecommendation[]> {
 		try {
-			const response = await this.retryRequest(
-				`/api/item/${itemId}/neighbors?n=${n}`
+			const response = await this.request(
+				`/api/item/${itemId}/neighbors?n=${n}`,
+				{ method: "GET" },
+				userId
 			);
 
 			// レスポンス形式の確認とマッピング
@@ -469,7 +616,8 @@ const getLocalSimilarItems = (
 export const getSimilarItems = async (
 	itemId: string,
 	allProducts: Product[] = [],
-	limit: number = 5
+	limit: number = 5,
+	userId?: string
 ): Promise<string[]> => {
 	console.log(`[Gorse] 類似商品を取得中: ${itemId} (最大${limit}個)`);
 
@@ -480,7 +628,7 @@ export const getSimilarItems = async (
 
 	try {
 		console.log(`[Gorse] APIから類似商品を取得中...`);
-		const similarItems = await gorse.getSimilarItems(itemId, limit);
+		const similarItems = await gorse.getSimilarItems(itemId, limit, userId);
 
 		// APIレスポンスの検証
 		if (Array.isArray(similarItems) && similarItems.length > 0) {

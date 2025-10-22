@@ -6,7 +6,9 @@ import React, {
 	useMemo,
 } from "react";
 import styled, { keyframes } from "styled-components";
-import { fetchChatReply } from "../api/chat";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { fetchChatReply, getChatRemainingRequests } from "../api/chat";
 import {
 	FAQ_DATA,
 	getFAQCategories,
@@ -160,6 +162,61 @@ const MessageBubble = styled.div<{ $sender: "user" | "bot" | "system" }>`
 	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 	opacity: 0;
 	animation: ${fadeIn} 0.3s forwards;
+
+	/* Markdown styling */
+	p {
+		margin: 0.5em 0;
+		&:first-child {
+			margin-top: 0;
+		}
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	ul,
+	ol {
+		margin: 0.5em 0;
+		padding-left: 1.5em;
+	}
+
+	li {
+		margin: 0.25em 0;
+	}
+
+	code {
+		background: rgba(0, 0, 0, 0.2);
+		padding: 2px 6px;
+		border-radius: 4px;
+		font-family: "Courier New", monospace;
+		font-size: 0.9em;
+	}
+
+	pre {
+		background: rgba(0, 0, 0, 0.3);
+		padding: 10px;
+		border-radius: 6px;
+		overflow-x: auto;
+		margin: 0.5em 0;
+
+		code {
+			background: none;
+			padding: 0;
+		}
+	}
+
+	strong {
+		font-weight: 600;
+	}
+
+	em {
+		font-style: italic;
+	}
+
+	a {
+		color: #a5c9ff;
+		text-decoration: underline;
+	}
 `;
 
 const FAQButton = styled.button`
@@ -274,6 +331,27 @@ const ErrorMessage = styled.div`
 	background: rgba(255, 100, 100, 0.2);
 `;
 
+const RateLimitInfo = styled.div`
+	padding: 8px 12px;
+	font-size: 0.75rem;
+	color: rgba(255, 255, 255, 0.6);
+	text-align: center;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+	background: rgba(0, 0, 0, 0.2);
+
+	span {
+		margin: 0 8px;
+	}
+
+	.warning {
+		color: #ffcc00;
+	}
+
+	.danger {
+		color: #ff6b6b;
+	}
+`;
+
 export const ChatBot: React.FC = () => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [isClosing, setIsClosing] = useState(false);
@@ -285,6 +363,10 @@ export const ChatBot: React.FC = () => {
 		FAQ["category"] | null
 	>(null);
 	const [isMounted, setIsMounted] = useState(false);
+	const [remainingRequests, setRemainingRequests] = useState<{
+		hourly: number;
+		daily: number;
+	}>({ hourly: 50, daily: 100 });
 	const messageAreaRef = useRef<HTMLDivElement>(null);
 
 	const faqCategories = useMemo(() => getFAQCategories(), []);
@@ -344,6 +426,13 @@ export const ChatBot: React.FC = () => {
 				sender: "bot",
 			};
 			setMessages((prev) => [...prev, botMessage]);
+
+			// レート制限情報を更新
+			const remaining = getChatRemainingRequests();
+			setRemainingRequests(remaining);
+			console.log(
+				`[Chat] 残りのリクエスト数 - 時間: ${remaining.hourly}, 日: ${remaining.daily}`
+			);
 		} catch (err) {
 			if (err instanceof Error) {
 				setError(
@@ -429,6 +518,10 @@ export const ChatBot: React.FC = () => {
 									<FAQButton onClick={() => handleFAQSelect(msg.text)}>
 										{msg.text}
 									</FAQButton>
+								) : msg.sender === "bot" ? (
+									<ReactMarkdown remarkPlugins={[remarkGfm]}>
+										{msg.text}
+									</ReactMarkdown>
 								) : (
 									msg.text
 								)}
@@ -477,6 +570,31 @@ export const ChatBot: React.FC = () => {
 							{isLoading ? <Spinner /> : <IconSend size={18} />}
 						</SendButton>
 					</InputArea>
+
+					<RateLimitInfo>
+						<span
+							className={
+								remainingRequests.hourly <= 10
+									? "danger"
+									: remainingRequests.hourly <= 20
+									? "warning"
+									: ""
+							}
+						>
+							残り: {remainingRequests.hourly}/50 (時間)
+						</span>
+						<span
+							className={
+								remainingRequests.daily <= 20
+									? "danger"
+									: remainingRequests.daily <= 40
+									? "warning"
+									: ""
+							}
+						>
+							{remainingRequests.daily}/100 (日)
+						</span>
+					</RateLimitInfo>
 				</Wrapper>
 			)}
 		</>

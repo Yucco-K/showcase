@@ -218,3 +218,9 @@ logs/
 .local/
 local/
 .vercel
+.env*.local
+
+# Environment variable files with sensitive data
+vercel-env-vars.txt
+*.env-vars.txt
+env-vars.txt

@@ -98,6 +98,9 @@ const HeaderTitle = styled.span`
 	position: absolute;
 	left: 50%;
 	transform: translateX(-50%);
+	white-space: nowrap;
+	line-height: 1;
+	margin-top: 2px;
 `;
 
 const TopButton = styled.button`

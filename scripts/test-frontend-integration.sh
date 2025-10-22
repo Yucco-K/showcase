@@ -41,7 +41,7 @@ check_environment() {
     
     # デフォルト値を設定
     export VITE_GORSE_ENDPOINT=${VITE_GORSE_ENDPOINT:-"http://localhost:8087"}
-    export GORSE_API_KEY=${GORSE_API_KEY:-"kmKLLA5eCveQTVOVDftScxlWJaKmJJVbfSlPMZYSqno="}
+    export GORSE_API_KEY=${GORSE_API_KEY:-""}
     export VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-"https://your-project.supabase.co"}
     export VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-"your-anon-key"}
     
@@ -143,7 +143,7 @@ test_recommendation_integration() {
     cat > scripts/test-recommendation-integration.ts << 'EOF'
 // 環境変数を設定
 process.env.VITE_GORSE_ENDPOINT = process.env.VITE_GORSE_ENDPOINT || 'http://localhost:8087';
-process.env.GORSE_API_KEY = process.env.GORSE_API_KEY || 'kmKLLA5eCveQTVOVDftScxlWJaKmJJVbfSlPMZYSqno=';
+process.env.GORSE_API_KEY = process.env.GORSE_API_KEY || '';
 process.env.VITE_SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
 process.env.VITE_SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
 

@@ -10,7 +10,7 @@ else
 fi
 
 API_ENDPOINT="http://${EC2_IP}:8087"
-API_KEY="kmKLLA5eCveQTVOVDftScxlWJaKmJJVbfSlPMZYSqno="
+API_KEY="${GORSE_API_KEY:-}"
 
 echo "Gorse APIの動作を確認しています..."
 echo "API Endpoint: ${API_ENDPOINT}"

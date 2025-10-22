@@ -19,7 +19,7 @@ remote_exec() {
 
 # Supabase接続情報入力
 read -p "Supabase Database URL (postgresql://postgres.user:password@host:5432/postgres): " SUPABASE_URL
-GORSE_API_KEY="kmKLLA5eCveQTVOVDftScxlWJaKmJJVbfSlPMZYSqno="
+GORSE_API_KEY="${GORSE_API_KEY:-}"
 
 echo "本番環境用のGorse設定を更新しています..."
 

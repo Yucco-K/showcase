@@ -9,8 +9,8 @@ else
   read -p "EC2インスタンスのIPアドレスを入力してください: " EC2_IP
 fi
 
-KEY_NAME="gorse-key"
-SSH_USER="ubuntu"
+KEY_NAME="gorse-key-new"
+SSH_USER="ec2-user"
 
 # リモート実行関数
 remote_exec() {

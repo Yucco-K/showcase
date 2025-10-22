@@ -10,7 +10,7 @@ else
 fi
 
 GORSE_ENDPOINT="http://${EC2_IP}:8087"
-GORSE_API_KEY="kmKLLA5eCveQTVOVDftScxlWJaKmJJVbfSlPMZYSqno="
+GORSE_API_KEY="${GORSE_API_KEY:-}"
 
 echo "フロントエンドとGorseの連携をテストしています..."
 

@@ -13,12 +13,12 @@ export default defineConfig({
 			protocol: "ws",
 			timeout: 5000,
 		},
-		proxy: {
-			"/api": {
-				target: "http://127.0.0.1:8000",
-				changeOrigin: true,
-			},
-		},
+		// proxy: {
+		// 	"/api": {
+		// 		target: "http://127.0.0.1:8000",
+		// 		changeOrigin: true,
+		// 	},
+		// },
 	},
 	optimizeDeps: {
 		// 頻繁に使用されるパッケージを事前にバンドル

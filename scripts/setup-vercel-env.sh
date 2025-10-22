@@ -10,7 +10,7 @@ else
 fi
 
 GORSE_ENDPOINT="http://${EC2_IP}:8087"
-GORSE_API_KEY="kmKLLA5eCveQTVOVDftScxlWJaKmJJVbfSlPMZYSqno="
+GORSE_API_KEY="${GORSE_API_KEY:-}"  # 環境変数から取得（空の場合はGorseサーバーで認証無効化が必要）
 
 echo "Vercel環境変数を設定しています..."
 

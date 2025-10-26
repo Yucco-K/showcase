@@ -46,7 +46,7 @@ const Wrapper = styled.div<{ $isClosing: boolean }>`
 	bottom: 20px;
 	right: 20px;
 	width: 400px;
-	height: 738px;
+	height: 698px;
 	background: rgba(19, 21, 25, 0.85);
 	backdrop-filter: blur(10px);
 	border-radius: 12px;

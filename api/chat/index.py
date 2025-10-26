@@ -213,6 +213,7 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
                     response += f"{i}. {product['name']} - ¥{product['price']:,}\n"
             
             response += "\n正確な最新情報については、各製品ページをご確認ください。"
+            logger.info(f"[Price Comparison] Returning: {response[:100]}...")
             return response
         else:
             logger.warning("有効な価格データを持つ商品が見つかりませんでした")

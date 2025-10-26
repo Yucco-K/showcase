@@ -15,8 +15,6 @@ from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv, find_dotenv
 from fastapi import FastAPI, Request, HTTPException
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
 from supabase.lib.client_options import ClientOptions
 from supabase import create_client, Client
 

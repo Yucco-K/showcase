@@ -16,7 +16,7 @@
 			"playwright.config.ts",
 			"scripts/export-all-docs-to-notion.ts",
 			"scripts/export-user-guide-fixed.ts",
-			"scripts/export-obsidian-to-notion.ts", 
+			"scripts/export-obsidian-to-notion.ts",
 			"scripts/export-obsidian-workspace-to-notion.ts",
 			"scripts/export-to-notion-with-template.ts",
 			"scripts/test-obsidian-export.ts",

@@ -26,7 +26,8 @@ const CONFIG_PATHS = {
 function splitText(
 	text: string,
 	options: { maxLength: number; chunkOverlap: number; delimiter: string }
-): string[] {  const { maxLength, _chunkOverlap, delimiter } = options;
+): string[] {
+	const { maxLength, _chunkOverlap, delimiter } = options;
 	const chunks: string[] = [];
 	let currentChunk = "";
 

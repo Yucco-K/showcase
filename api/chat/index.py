@@ -8,14 +8,13 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import SupabaseVectorStore
-from langchain.prompts import PromptTemplate
 from supabase.client import create_client, Client
 from postgrest import APIError # v2の正式なエラー型をインポート
 import asyncio
 from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv, find_dotenv
 from fastapi import FastAPI, Request, HTTPException
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from supabase.lib.client_options import ClientOptions
@@ -118,9 +117,6 @@ async def analyze_query_intent(chatbot: ChatbotSingleton, query: str) -> dict:
     LLMを使ってクエリの意図を分析
     返り値: {"type": "price_comparison", "sort": "asc/desc", "limit": int} or None
     """
-    from langchain_core.output_parsers import JsonOutputParser
-    from langchain_core.prompts import PromptTemplate
-    
     intent_prompt = PromptTemplate(
         template="""あなたはユーザーの質問を分析するAIです。価格に関する質問かどうかを判定してください。
 

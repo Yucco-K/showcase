@@ -159,8 +159,8 @@ export const SimilarProductsList: React.FC<SimilarProductsListProps> = ({
 				}
 				return actualProduct;
 			} else {
-				// 商品データが見つからない場合のフォールバック
-				console.warn(`❌ 商品データが見つかりません: ${id}`);
+				// 商品データが見つからない場合のフォールバック（Gorseには存在するがSupabaseにない商品）
+				console.warn(`商品データが見つかりません: ${id}`);
 				const fallbackProduct: Product = {
 					id,
 					name: `商品 (${id.slice(0, 8)})`,

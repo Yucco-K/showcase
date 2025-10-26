@@ -5,6 +5,7 @@ import { ProductCard } from "../components/products/ProductCard";
 import { useProducts } from "../hooks/useProducts";
 import type { Product } from "../types/product";
 import { ProductCategory } from "../types/product";
+import ChatBot from "../components/ChatBot";
 
 const Container = styled.div`
 	min-height: 100vh;
@@ -452,6 +453,7 @@ const ProductList: React.FC = () => {
 					</NoResults>
 				)}
 			</ContentWrapper>
+			<ChatBot />
 		</Container>
 	);
 };

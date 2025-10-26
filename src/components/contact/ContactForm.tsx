@@ -6,6 +6,7 @@ import { Toast } from "../ui/Toast";
 import { useAuth } from "../../contexts/AuthProvider";
 import type { ContactCategory } from "../../types/database";
 import { getFAQCategories, getFAQsByCategory, FAQ_DATA } from "../../data/faq";
+import ChatBot from "../ChatBot";
 
 const Container = styled.div`
 	max-width: 600px;
@@ -1027,6 +1028,7 @@ export const ContactForm: React.FC = () => {
 				isVisible={toast.isVisible}
 				onClose={hideToast}
 			/>
+			<ChatBot />
 		</Container>
 	);
 };

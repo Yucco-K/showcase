@@ -46,7 +46,7 @@ const Wrapper = styled.div<{ $isClosing: boolean }>`
 	bottom: 20px;
 	right: 20px;
 	width: 400px;
-	height: 600px;
+	height: 738px;
 	background: rgba(19, 21, 25, 0.85);
 	backdrop-filter: blur(10px);
 	border-radius: 12px;
@@ -255,7 +255,7 @@ const FAQButton = styled.button`
 	font-size: inherit;
 
 	&:hover {
-		text-decoration: underline;
+		opacity: 0.8;
 	}
 `;
 
@@ -353,6 +353,8 @@ const ErrorMessage = styled.div`
 	padding: 12px;
 	text-align: center;
 	background: rgba(255, 100, 100, 0.2);
+	white-space: pre-line;
+	line-height: 1.5;
 `;
 
 const RateLimitInfo = styled.div`
@@ -456,6 +458,14 @@ export const ChatBot: React.FC = () => {
 			};
 			setMessages((prev) => [...prev, botMessage]);
 
+			// ボット返信後、メッセージエリアを最下部にスクロール（返信の1行目が見えるように）
+			setTimeout(() => {
+				if (messageAreaRef.current) {
+					messageAreaRef.current.scrollTop =
+						messageAreaRef.current.scrollHeight;
+				}
+			}, 100);
+
 			// レート制限情報を更新
 			const remaining = getChatRemainingRequests(isAuthenticated);
 			setRemainingRequests(remaining);
@@ -464,9 +474,14 @@ export const ChatBot: React.FC = () => {
 			);
 		} catch (err) {
 			if (err instanceof Error) {
-				setError(
-					`エラーが発生しました。しばらくしてから再度お試しください。(${err.message})`
-				);
+				// レート制限エラーの場合は見やすく整形
+				if (err.message.includes("制限")) {
+					setError(`申し訳ありません。\n${err.message}`);
+				} else {
+					setError(
+						`エラーが発生しました。しばらくしてから再度お試しください。\n(${err.message})`
+					);
+				}
 			} else {
 				setError("予期せぬエラーが発生しました。");
 			}
@@ -500,6 +515,7 @@ export const ChatBot: React.FC = () => {
 			];
 			setMessages((prev) => [...prev, ...faqMessages]);
 			setSelectedCategory(null); // カテゴリ選択に戻る
+			// FAQ選択はローカルデータなのでレート制限にカウントしない
 		}
 	};
 
@@ -622,8 +638,8 @@ export const ChatBot: React.FC = () => {
 							}
 						>
 							残り: {remainingRequests.hourly}/{isAuthenticated ? 50 : 10}{" "}
-							(時間)
-						</span>
+							(1時間)
+						</span>{" "}
 						<span
 							className={
 								remainingRequests.daily <= (isAuthenticated ? 20 : 3)
@@ -633,7 +649,10 @@ export const ChatBot: React.FC = () => {
 									: ""
 							}
 						>
-							{remainingRequests.daily}/{isAuthenticated ? 100 : 10} (日)
+							{remainingRequests.daily}/{isAuthenticated ? 100 : 10} (1日)
+						</span>{" "}
+						<span style={{ fontSize: "0.7rem", opacity: 0.7 }}>
+							※ FAQは除く
 						</span>
 					</RateLimitInfo>
 				</Wrapper>

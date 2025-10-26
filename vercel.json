@@ -20,6 +20,10 @@
 		{
 			"source": "/api/:path*",
 			"destination": "/api/chat/index.py"
+		},
+		{
+			"source": "/:path*",
+			"destination": "/index.html"
 		}
 	]
 }

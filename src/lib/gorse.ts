@@ -471,10 +471,10 @@ class GorseClient {
 				return response as GorseRecommendation[];
 			}
 
-			console.error("[Gorse] Unexpected response format:", response);
+			console.warn("[Gorse] Unexpected response format:", response);
 			return [];
 		} catch (error) {
-			console.error(`[Gorse] Error in getSimilarItems: ${error}`);
+			console.warn(`[Gorse] API not available, using local fallback: ${error}`);
 			throw error;
 		}
 	}

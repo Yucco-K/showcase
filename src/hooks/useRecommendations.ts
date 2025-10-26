@@ -168,23 +168,13 @@ export const useSimilarProducts = (
 			setRetryCount(0);
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : String(err);
-			console.error(
-				`[Recommendations] Failed to fetch similar items for ${productId}:`,
+			console.warn(
+				`[Recommendations] Gorse API unavailable, using local fallback for ${productId}:`,
 				errorMessage
 			);
 
-			// エラーメッセージを設定
-			if (errorMessage.includes("タイムアウト")) {
-				setError(
-					`APIリクエストがタイムアウトしました。サーバーの応答が遅いか、接続に問題がある可能性があります。`
-				);
-			} else if (errorMessage.includes("CORS")) {
-				setError(
-					`CORSポリシーエラー: APIサーバーへのアクセスが制限されています。`
-				);
-			} else {
-				setError(`類似アイテムの取得に失敗しました: ${errorMessage}`);
-			}
+			// Gorse APIが利用できない場合はローカルフォールバックを使用
+			// エラーメッセージは設定しない（正常な動作）
 
 			// フォールバックロジック
 			if (allProducts.length > 0) {

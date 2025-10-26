@@ -336,23 +336,54 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
             else:
                 logger.info(f"  ❌ 5. failed_to_fetch_details for '{matched_product_name}'")
 
-    # --- 2. ベクトル検索によるドキュメント検索 ---
+    # --- 2. ベクトル検索（ドキュメント + 商品） ---
     logger.info("6. starting_vector_search")
     query_embedding = chatbot.emb.embed_query(query)
     logger.info("  - 6.1 query_embedding_created")
 
+    semantic_context = ""
+    
+    # 2a. ドキュメント検索
     try:
-        rpc_response = chatbot.supabase_client.rpc("match_docs", {"query_embedding": query_embedding, "match_threshold": MATCH_THRESHOLD, "match_count": MATCH_COUNT}).execute()
-        logger.info("  - 6.2 rpc_match_docs_executed")
-
-        # Supabase-py v2では、成功すると.dataに、失敗するとAPIErrorがraiseされる
-        semantic_context = "\n---\n".join([doc["content"] for doc in rpc_response.data])
-        logger.info(f"  - 6.3 semantic_context_created: found {len(rpc_response.data)} documents")
+        docs_response = chatbot.supabase_client.rpc("match_docs", {"query_embedding": query_embedding, "match_threshold": MATCH_THRESHOLD, "match_count": MATCH_COUNT}).execute()
+        logger.info(f"  - 6.2 rpc_match_docs_executed: found {len(docs_response.data)} documents")
+        
+        if docs_response.data:
+            doc_context = "\n---\n".join([doc["content"] for doc in docs_response.data])
+            semantic_context += doc_context
 
     except APIError as e:
         logger.error(f"  ❌ Supabase RPC 'match_docs' failed: {e.message}")
-        # このエラーを上位のhandle_chatに伝播させて500エラーを返させる
-        raise DatabaseError(f"ベクトル検索中にデータベースエラーが発生しました: {e.message}") from e
+        raise DatabaseError(f"ドキュメント検索中にデータベースエラーが発生しました: {e.message}") from e
+
+    # 2b. 商品検索（キーワードマッチがない場合のみ）
+    if not matched_product_name:
+        try:
+            products_response = chatbot.supabase_client.rpc("match_products", {"query_embedding": query_embedding, "match_threshold": MATCH_THRESHOLD, "match_count": 3}).execute()
+            logger.info(f"  - 6.3 rpc_match_products_executed: found {len(products_response.data)} products")
+            
+            if products_response.data:
+                # 商品IDから詳細情報を取得
+                product_ids = [p["product_id"] for p in products_response.data]
+                details_response = chatbot.supabase_client.from_("products").select("name, description, price, features").in_("id", product_ids).execute()
+                
+                if details_response.data:
+                    product_contexts = []
+                    for product in details_response.data:
+                        product_text = f"[製品情報]\n商品名: {product.get('name')}\n価格: ¥{product.get('price')}\n説明: {product.get('description')}\n機能: {', '.join(product.get('features', []))}"
+                        product_contexts.append(product_text)
+                    
+                    if semantic_context:
+                        semantic_context += "\n---\n"
+                    semantic_context += "\n---\n".join(product_contexts)
+                    logger.info(f"  - 6.4 vector_search_product_context_added: {len(product_contexts)} products")
+
+        except APIError as e:
+            logger.error(f"  ❌ Supabase RPC 'match_products' failed: {e.message}")
+            # 商品検索の失敗は致命的ではないので、ログのみ
+            logger.warning("  ⚠️ 商品のベクトル検索に失敗しましたが、処理を続行します")
+    
+    logger.info(f"  - 6.5 semantic_context_created: total length {len(semantic_context)}")
 
     # --- 3. コンテキストを結合して最終的なプロンプトを作成 ---
     logger.info("7. preparing_final_prompt")

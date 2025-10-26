@@ -60,7 +60,7 @@ const Wrapper = styled.div<{ $isClosing: boolean }>`
 
 	@media (max-width: 480px) {
 		width: calc(100vw - 40px);
-		height: calc(100vh - 90px);
+		height: calc(100vh - 122px);
 	}
 `;
 

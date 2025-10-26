@@ -118,38 +118,57 @@ async def analyze_query_intent(chatbot: ChatbotSingleton, query: str) -> dict:
     LLMを使ってクエリの意図を分析
     返り値: {"type": "price_comparison", "sort": "asc/desc", "limit": int} or None
     """
-    intent_prompt = f"""
-以下のユーザーの質問を分析して、価格比較の意図があるかを判定してください。
+    from langchain_core.output_parsers import JsonOutputParser
+    from langchain_core.prompts import PromptTemplate
+    
+    intent_prompt = PromptTemplate(
+        template="""以下のユーザーの質問を分析して、価格比較の意図があるかを判定してください。
 
 質問: {query}
 
-以下のJSON形式で回答してください：
-- 価格比較の意図がある場合:
-  {{"type": "price_comparison", "sort": "asc" or "desc", "limit": 数値}}
-  - sort: "asc"（安い順）または "desc"（高い順）
-  - limit: 求められている商品数（明示されていない場合は1）
-  
-- 価格比較の意図がない場合:
-  {{"type": "none"}}
+以下のルールに従ってJSON形式で回答してください：
+
+1. 価格に関する質問（安い、高い、お手頃、コスパ、予算、値段など）の場合:
+   {{"type": "price_comparison", "sort": "asc" or "desc", "limit": 数値}}
+   - sort: "asc"（安い・お手頃・コスパ良い・予算に優しい）または "desc"（高い・高額・プレミアム）
+   - limit: 求められている商品数（明示されていない場合は1、「複数」などの場合は3）
+
+2. 価格に関係ない質問の場合:
+   {{"type": "none"}}
 
 例:
+- 「安いアプリ」→ {{"type": "price_comparison", "sort": "asc", "limit": 1}}
 - 「一番安いアプリは？」→ {{"type": "price_comparison", "sort": "asc", "limit": 1}}
 - 「低価格商品3つ教えて」→ {{"type": "price_comparison", "sort": "asc", "limit": 3}}
 - 「お手頃な製品を5つ」→ {{"type": "price_comparison", "sort": "asc", "limit": 5}}
+- 「コスパの良いアプリ」→ {{"type": "price_comparison", "sort": "asc", "limit": 1}}
 - 「高額なアプリトップ3」→ {{"type": "price_comparison", "sort": "desc", "limit": 3}}
 - 「使い方を教えて」→ {{"type": "none"}}
 
-JSON形式のみで回答してください（説明不要）。
-"""
+{format_instructions}
+""",
+        input_variables=["query"],
+        partial_variables={"format_instructions": "JSON形式のみで回答してください。"},
+    )
     
     try:
-        response = await chatbot.llm.ainvoke(intent_prompt)
+        chain = intent_prompt | chatbot.llm
+        response = await chain.ainvoke({"query": query})
+        
         import json
-        intent_data = json.loads(response.content.strip())
-        logger.info(f"[Intent Analysis] {intent_data}")
+        import re
+        # JSONを抽出（マークダウンのコードブロックなどを除去）
+        content = response.content.strip()
+        json_match = re.search(r'\{.*\}', content, re.DOTALL)
+        if json_match:
+            content = json_match.group(0)
+        
+        intent_data = json.loads(content)
+        logger.info(f"[Intent Analysis] Query: '{query}' → {intent_data}")
         return intent_data
     except Exception as e:
-        logger.warning(f"[Intent Analysis] Failed: {e}")
+        logger.warning(f"[Intent Analysis] Failed for '{query}': {e}")
+        logger.warning(f"[Intent Analysis] Response: {response.content if 'response' in locals() else 'N/A'}")
         return {"type": "none"}
 
 # --- 回答生成ロジック ---
@@ -167,6 +186,7 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
 
     # --- 1. LLMによる意図分析 ---
     intent = await analyze_query_intent(chatbot, query)
+    logger.info(f"[Intent] Detected: {intent}")
     
     if intent.get("type") == "price_comparison":
         logger.info("価格比較クエリを検出（LLM分析）")

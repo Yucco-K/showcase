@@ -112,6 +112,46 @@ class ChatbotSingleton:
             logger.error(f"!!! {self.init_error} !!!")
             logger.error(traceback.format_exc()) # トレースバックもログに出力
 
+# --- クエリ意図分析（LLM使用） ---
+async def analyze_query_intent(chatbot: ChatbotSingleton, query: str) -> dict:
+    """
+    LLMを使ってクエリの意図を分析
+    返り値: {"type": "price_comparison", "sort": "asc/desc", "limit": int} or None
+    """
+    intent_prompt = f"""
+以下のユーザーの質問を分析して、価格比較の意図があるかを判定してください。
+
+質問: {query}
+
+以下のJSON形式で回答してください：
+- 価格比較の意図がある場合:
+  {{"type": "price_comparison", "sort": "asc" or "desc", "limit": 数値}}
+  - sort: "asc"（安い順）または "desc"（高い順）
+  - limit: 求められている商品数（明示されていない場合は1）
+  
+- 価格比較の意図がない場合:
+  {{"type": "none"}}
+
+例:
+- 「一番安いアプリは？」→ {{"type": "price_comparison", "sort": "asc", "limit": 1}}
+- 「低価格商品3つ教えて」→ {{"type": "price_comparison", "sort": "asc", "limit": 3}}
+- 「お手頃な製品を5つ」→ {{"type": "price_comparison", "sort": "asc", "limit": 5}}
+- 「高額なアプリトップ3」→ {{"type": "price_comparison", "sort": "desc", "limit": 3}}
+- 「使い方を教えて」→ {{"type": "none"}}
+
+JSON形式のみで回答してください（説明不要）。
+"""
+    
+    try:
+        response = await chatbot.llm.ainvoke(intent_prompt)
+        import json
+        intent_data = json.loads(response.content.strip())
+        logger.info(f"[Intent Analysis] {intent_data}")
+        return intent_data
+    except Exception as e:
+        logger.warning(f"[Intent Analysis] Failed: {e}")
+        return {"type": "none"}
+
 # --- 回答生成ロジック ---
 async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     # この関数内のエラーは呼び出し元(handle_chat)に伝播させ、そこで一元的に処理します。
@@ -125,18 +165,52 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
             logger.info(f"✅ Predefined response found for '{query}'")
             return response
 
-    # --- 1. 価格比較のチェック ---
+    # --- 1. LLMによる意図分析 ---
+    intent = await analyze_query_intent(chatbot, query)
+    
+    if intent.get("type") == "price_comparison":
+        logger.info("価格比較クエリを検出（LLM分析）")
+        sort_order = intent.get("sort", "asc")
+        limit = min(intent.get("limit", 1), 10)  # 最大10件
+        
+        # データベースから価格順に商品を取得
+        is_desc = (sort_order == "desc")
+        result = chatbot.supabase_client.from_("products").select("name, price").gt("price", 0).order("price", desc=is_desc).limit(limit).execute()
+        
+        if result.data and len(result.data) > 0:
+            if limit == 1:
+                # 1件の場合
+                product = result.data[0]
+                logger.info(f"商品: {product['name']} - ¥{product['price']}")
+                price_desc = "最も価格が高い" if is_desc else "最も価格が安い"
+                response = f"{price_desc}製品は「{product['name']}」で、価格は¥{product['price']:,}です。"
+            else:
+                # 複数件の場合
+                logger.info(f"商品{len(result.data)}件を取得")
+                price_desc = "価格が高い順" if is_desc else "価格が安い順"
+                response = f"{price_desc}に{len(result.data)}件の製品をご紹介します：\n\n"
+                for i, product in enumerate(result.data, 1):
+                    response += f"{i}. {product['name']} - ¥{product['price']:,}\n"
+            
+            response += "\n正確な最新情報については、各製品ページをご確認ください。"
+            return response
+        else:
+            logger.warning("有効な価格データを持つ商品が見つかりませんでした")
+            return "申し訳ありません、現在価格情報のある商品が見つかりませんでした。"
+
+    # --- 2. 従来のキーワードベースの価格比較（フォールバック） ---
     # 高い/安いのキーワードを幅広く拾うように修正
     if any(keyword in query for keyword in ["一番高い", "最も高い", "高い", "高価格", "高額"]):
         logger.info("価格比較クエリ（最高値）を検出")
         
-        # 複数商品を求めているかチェック（例：「3つ」「5個」「トップ3」など）
+        # 複数商品を求めているかチェック
+        # パターン: 「3つ」「5個」「商品3つ」「もの3つ」「トップ3」など
         import re
-        count_match = re.search(r'(\d+)\s*(つ|個|件|商品|製品)|トップ\s*(\d+)', query)
+        count_match = re.search(r'(\d+)\s*(つ|個|件)|(?:商品|製品|もの|アプリ)\s*(\d+)\s*(?:つ|個|件)?|トップ\s*(\d+)', query)
         limit = 1
         if count_match:
-            # マッチしたグループから数値を取得
-            limit = int(count_match.group(1) or count_match.group(3))
+            # マッチしたグループから数値を取得（どのグループにマッチしたかチェック）
+            limit = int(count_match.group(1) or count_match.group(3) or count_match.group(4))
             limit = min(limit, 10)  # 最大10件に制限
             logger.info(f"複数商品リクエスト検出: {limit}件")
         
@@ -164,13 +238,14 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     if any(keyword in query for keyword in ["一番安い", "最も安い", "安い", "低価格"]):
         logger.info("価格比較クエリ（最安値）を検出")
         
-        # 複数商品を求めているかチェック（例：「3つ」「5個」「トップ3」など）
+        # 複数商品を求めているかチェック
+        # パターン: 「3つ」「5個」「商品3つ」「もの3つ」「トップ3」など
         import re
-        count_match = re.search(r'(\d+)\s*(つ|個|件|商品|製品)|トップ\s*(\d+)', query)
+        count_match = re.search(r'(\d+)\s*(つ|個|件)|(?:商品|製品|もの|アプリ)\s*(\d+)\s*(?:つ|個|件)?|トップ\s*(\d+)', query)
         limit = 1
         if count_match:
-            # マッチしたグループから数値を取得
-            limit = int(count_match.group(1) or count_match.group(3))
+            # マッチしたグループから数値を取得（どのグループにマッチしたかチェック）
+            limit = int(count_match.group(1) or count_match.group(3) or count_match.group(4))
             limit = min(limit, 10)  # 最大10件に制限
             logger.info(f"複数商品リクエスト検出: {limit}件")
         

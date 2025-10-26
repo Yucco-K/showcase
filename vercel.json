@@ -18,6 +18,10 @@
 			"dest": "/api/chat/index.py"
 		},
 		{
+			"src": "/gorse-api/(.*)",
+			"dest": "http://18.183.35.86:8087/api/$1"
+		},
+		{
 			"src": "/assets/(.*)",
 			"dest": "/assets/$1"
 		},

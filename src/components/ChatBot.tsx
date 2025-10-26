@@ -18,12 +18,10 @@ import {
 import {
 	IconSend,
 	IconMessageCircle,
-	IconX,
 	IconRobot,
 	IconUser,
 } from "@tabler/icons-react";
 import { useAuth } from "../contexts/AuthProvider";
-import { useProfile } from "../hooks/useSupabase";
 
 interface Message {
 	id: string;
@@ -46,7 +44,7 @@ const Wrapper = styled.div<{ $isClosing: boolean }>`
 	bottom: 20px;
 	right: 20px;
 	width: 400px;
-	height: 722px;
+	height: 734px;
 	background: rgba(19, 21, 25, 0.85);
 	backdrop-filter: blur(10px);
 	border-radius: 12px;
@@ -431,8 +429,28 @@ export const ChatBot: React.FC = () => {
 	}, [isOpen, resetChatState]);
 
 	useEffect(() => {
-		if (messageAreaRef.current) {
-			messageAreaRef.current.scrollTop = messageAreaRef.current.scrollHeight;
+		if (messageAreaRef.current && messages.length > 1) {
+			// 初期メッセージ（1件）の場合はスクロールしない
+			const lastMessage = messages[messages.length - 1];
+			const messageArea = messageAreaRef.current;
+
+			// ボットメッセージとユーザーメッセージの場合は最新メッセージの位置にスクロール
+			if (lastMessage.sender === "bot" || lastMessage.sender === "user") {
+				requestAnimationFrame(() => {
+					requestAnimationFrame(() => {
+						const lastMessageElement =
+							messageArea.lastElementChild as HTMLElement;
+						if (lastMessageElement) {
+							const messageTop = lastMessageElement.offsetTop;
+							// 初期メッセージの位置（padding 16px + margin 10px = 26px）に合わせる
+							messageArea.scrollTop = messageTop - 80;
+						}
+					});
+				});
+			} else {
+				// システムメッセージ（FAQ）の場合は最下部までスクロール
+				messageArea.scrollTop = messageArea.scrollHeight;
+			}
 		}
 	}, [messages]);
 
@@ -457,14 +475,6 @@ export const ChatBot: React.FC = () => {
 				sender: "bot",
 			};
 			setMessages((prev) => [...prev, botMessage]);
-
-			// ボット返信後、メッセージエリアを最下部にスクロール（返信の1行目が見えるように）
-			setTimeout(() => {
-				if (messageAreaRef.current) {
-					messageAreaRef.current.scrollTop =
-						messageAreaRef.current.scrollHeight;
-				}
-			}, 100);
 
 			// レート制限情報を更新
 			const remaining = getChatRemainingRequests(isAuthenticated);
@@ -557,32 +567,44 @@ export const ChatBot: React.FC = () => {
 					{error && <ErrorMessage>{error}</ErrorMessage>}
 
 					<MessageArea ref={messageAreaRef}>
-						{messages.map((msg) => (
-							<MessageContainer key={msg.id} $sender={msg.sender}>
-								{msg.sender !== "system" && (
-									<Avatar $sender={msg.sender as "user" | "bot"}>
-										{msg.sender === "bot" ? (
-											<IconRobot size={20} />
-										) : (
-											<IconUser size={20} />
-										)}
-									</Avatar>
-								)}
-								<MessageBubble $sender={msg.sender}>
-									{msg.sender === "system" ? (
-										<FAQButton onClick={() => handleFAQSelect(msg.text)}>
-											{msg.text}
-										</FAQButton>
-									) : msg.sender === "bot" ? (
-										<ReactMarkdown remarkPlugins={[remarkGfm]}>
-											{msg.text}
-										</ReactMarkdown>
-									) : (
-										msg.text
+						{messages
+							.filter((msg, index) => {
+								// 会話が始まったら（メッセージが2件以上）初期メッセージ（1件目）を非表示
+								if (
+									messages.length > 1 &&
+									index === 0 &&
+									msg.id.includes("bot-initial")
+								) {
+									return false;
+								}
+								return true;
+							})
+							.map((msg) => (
+								<MessageContainer key={msg.id} $sender={msg.sender}>
+									{msg.sender !== "system" && (
+										<Avatar $sender={msg.sender as "user" | "bot"}>
+											{msg.sender === "bot" ? (
+												<IconRobot size={20} />
+											) : (
+												<IconUser size={20} />
+											)}
+										</Avatar>
 									)}
-								</MessageBubble>
-							</MessageContainer>
-						))}
+									<MessageBubble $sender={msg.sender}>
+										{msg.sender === "system" ? (
+											<FAQButton onClick={() => handleFAQSelect(msg.text)}>
+												{msg.text}
+											</FAQButton>
+										) : msg.sender === "bot" ? (
+											<ReactMarkdown remarkPlugins={[remarkGfm]}>
+												{msg.text}
+											</ReactMarkdown>
+										) : (
+											msg.text
+										)}
+									</MessageBubble>
+								</MessageContainer>
+							))}
 					</MessageArea>
 
 					{showFAQCategories ? (

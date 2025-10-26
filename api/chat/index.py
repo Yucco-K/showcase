@@ -129,21 +129,31 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     # 高い/安いのキーワードを幅広く拾うように修正
     if any(keyword in query for keyword in ["一番高い", "最も高い", "高い"]):
         logger.info("価格比較クエリ（最高値）を検出")
-        products = chatbot.supabase_client.from_("products").select("name, price").execute().data
-        if products:
-            highest_product = max(products, key=lambda p: p['price'])
+        # データベース側で価格の降順ソートして最初の1件を取得
+        result = chatbot.supabase_client.from_("products").select("name, price").gt("price", 0).order("price", desc=True).limit(1).execute()
+        if result.data and len(result.data) > 0:
+            highest_product = result.data[0]
+            logger.info(f"最高値商品: {highest_product['name']} - ¥{highest_product['price']}")
             response = f"最も価格が高い製品は「{highest_product['name']}」で、価格は¥{highest_product['price']:,}です。"
             response += "\n\n正確な最新情報については、各製品ページをご確認ください。"
             return response
+        else:
+            logger.warning("有効な価格データを持つ商品が見つかりませんでした")
+            return "申し訳ありません、現在価格情報のある商品が見つかりませんでした。"
     
     if any(keyword in query for keyword in ["一番安い", "最も安い", "安い"]):
         logger.info("価格比較クエリ（最安値）を検出")
-        products = chatbot.supabase_client.from_("products").select("name, price").execute().data
-        if products:
-            lowest_product = min(products, key=lambda p: p['price'])
+        # データベース側で価格の昇順ソートして最初の1件を取得
+        result = chatbot.supabase_client.from_("products").select("name, price").gt("price", 0).order("price", desc=False).limit(1).execute()
+        if result.data and len(result.data) > 0:
+            lowest_product = result.data[0]
+            logger.info(f"最安値商品: {lowest_product['name']} - ¥{lowest_product['price']}")
             response = f"最も価格が安い製品は「{lowest_product['name']}」で、価格は¥{lowest_product['price']:,}です。"
             response += "\n\n正確な最新情報については、各製品ページをご確認ください。"
             return response
+        else:
+            logger.warning("有効な価格データを持つ商品が見つかりませんでした")
+            return "申し訳ありません、現在価格情報のある商品が見つかりませんでした。"
 
 
     # --- 2. 動的なキーワードベースの製品検索 ---

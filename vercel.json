@@ -14,7 +14,7 @@
 	],
 	"rewrites": [
 		{
-			"source": "/gorse-api/:path*",
+			"source": "/gorse-api/api/:path*",
 			"destination": "http://18.183.35.86:8087/api/:path*"
 		},
 		{

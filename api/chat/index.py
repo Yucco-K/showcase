@@ -122,33 +122,35 @@ async def analyze_query_intent(chatbot: ChatbotSingleton, query: str) -> dict:
     from langchain_core.prompts import PromptTemplate
     
     intent_prompt = PromptTemplate(
-        template="""以下のユーザーの質問を分析して、価格比較の意図があるかを判定してください。
+        template="""あなたはユーザーの質問を分析するAIです。価格に関する質問かどうかを判定してください。
 
 質問: {query}
 
-以下のルールに従ってJSON形式で回答してください：
+以下のキーワードが含まれる場合は必ず価格比較と判定してください：
+- 安い、安価、低価格、お手頃、コスパ、予算、格安、リーズナブル
+- 高い、高価、高額、プレミアム、高級、値段が張る
+- 価格、値段、料金
 
-1. 価格に関する質問（安い、高い、お手頃、コスパ、予算、値段など）の場合:
-   {{"type": "price_comparison", "sort": "asc" or "desc", "limit": 数値}}
-   - sort: "asc"（安い・お手頃・コスパ良い・予算に優しい）または "desc"（高い・高額・プレミアム）
-   - limit: 求められている商品数（明示されていない場合は1、「複数」などの場合は3）
+JSON形式で回答してください：
 
-2. 価格に関係ない質問の場合:
-   {{"type": "none"}}
+価格に関する質問の場合:
+{{"type": "price_comparison", "sort": "asc or desc", "limit": 数値}}
+- sort: "asc"（安い系のキーワード）または "desc"（高い系のキーワード）
+- limit: 数値が明示されている場合はその数、なければ1
+
+価格に関係ない質問の場合:
+{{"type": "none"}}
 
 例:
-- 「安いアプリ」→ {{"type": "price_comparison", "sort": "asc", "limit": 1}}
-- 「一番安いアプリは？」→ {{"type": "price_comparison", "sort": "asc", "limit": 1}}
-- 「低価格商品3つ教えて」→ {{"type": "price_comparison", "sort": "asc", "limit": 3}}
-- 「お手頃な製品を5つ」→ {{"type": "price_comparison", "sort": "asc", "limit": 5}}
-- 「コスパの良いアプリ」→ {{"type": "price_comparison", "sort": "asc", "limit": 1}}
-- 「高額なアプリトップ3」→ {{"type": "price_comparison", "sort": "desc", "limit": 3}}
-- 「使い方を教えて」→ {{"type": "none"}}
+「安いアプリ」→ {{"type": "price_comparison", "sort": "asc", "limit": 1}}
+「コスパの良いアプリ3つ」→ {{"type": "price_comparison", "sort": "asc", "limit": 3}}
+「低価格アプリ5つ」→ {{"type": "price_comparison", "sort": "asc", "limit": 5}}
+「一番安いアプリは？」→ {{"type": "price_comparison", "sort": "asc", "limit": 1}}
+「使い方を教えて」→ {{"type": "none"}}
 
-{format_instructions}
+JSONのみ回答:
 """,
         input_variables=["query"],
-        partial_variables={"format_instructions": "JSON形式のみで回答してください。"},
     )
     
     try:

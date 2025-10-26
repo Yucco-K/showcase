@@ -184,8 +184,30 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
     
     if intent.get("type") == "price_comparison":
         logger.info("価格比較クエリを検出（LLM分析）")
-        sort_order = intent.get("sort", "asc")
-        limit = min(intent.get("limit", 1), 10)  # 最大10件
+        # 1) LLM解析結果をベースにしつつ、質問文から件数/並び順を再判定して上書き（堅牢化）
+        # 件数の明示指定（例: 3つ/5個/商品3つ/トップ3 など）を正規表現で抽出
+        count_match = re.search(r'(\d+)\s*(つ|個|件)|(?:商品|製品|もの|アプリ)\s*(\d+)\s*(?:つ|個|件)?|トップ\s*(\d+)', query)
+        extracted_count = None
+        if count_match:
+            try:
+                extracted_count = int(count_match.group(1) or count_match.group(3) or count_match.group(4))
+            except Exception:
+                extracted_count = None
+        # LLMのlimit → 正規表現の順で採用し、最大10件にクランプ
+        limit = intent.get("limit") or extracted_count or 1
+        limit = min(max(int(limit), 1), 10)
+
+        # 並び順はLLMの結果を優先しつつ、未指定/誤判定時はキーワードから補正
+        sort_order = intent.get("sort")
+        if sort_order not in ("asc", "desc"):
+            asc_keywords = ["安", "低価格", "お手頃", "コスパ", "格安", "リーズナブル"]
+            desc_keywords = ["高", "高価", "高額", "プレミアム", "高級"]
+            if any(k in query for k in asc_keywords):
+                sort_order = "asc"
+            elif any(k in query for k in desc_keywords):
+                sort_order = "desc"
+            else:
+                sort_order = "asc"  # デフォルトは安い順
         
         # データベースから価格順に商品を取得
         is_desc = (sort_order == "desc")

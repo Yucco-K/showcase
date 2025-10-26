@@ -131,15 +131,16 @@ export async function fetchChatReply(
 	if (!limitCheck.allowed) {
 		throw new Error(limitCheck.message || "レート制限を超過しました。");
 	}
-	// Supabase Edge Functionsのエンドポイントを使用
-	const endpoint = "https://ljjptkfrdeiktywbbybr.supabase.co/functions/v1/chat";
+	// Vercel Python APIのエンドポイントを使用
+	const endpoint = import.meta.env.DEV
+		? "http://localhost:8001/api/chat" // 開発環境
+		: "/api/chat"; // 本番環境（Vercelプロキシ経由）
 
 	try {
 		const res = await fetch(endpoint, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
 			},
 			body: JSON.stringify({ message }),
 		});

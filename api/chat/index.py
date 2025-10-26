@@ -151,8 +151,6 @@ JSONのみ回答:
         chain = intent_prompt | chatbot.llm
         response = await chain.ainvoke({"query": query})
         
-        import json
-        import re
         # JSONを抽出（マークダウンのコードブロックなどを除去）
         content = response.content.strip()
         json_match = re.search(r'\{.*\}', content, re.DOTALL)
@@ -222,7 +220,6 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
         
         # 複数商品を求めているかチェック
         # パターン: 「3つ」「5個」「商品3つ」「もの3つ」「トップ3」など
-        import re
         count_match = re.search(r'(\d+)\s*(つ|個|件)|(?:商品|製品|もの|アプリ)\s*(\d+)\s*(?:つ|個|件)?|トップ\s*(\d+)', query)
         limit = 1
         if count_match:
@@ -257,7 +254,6 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
         
         # 複数商品を求めているかチェック
         # パターン: 「3つ」「5個」「商品3つ」「もの3つ」「トップ3」など
-        import re
         count_match = re.search(r'(\d+)\s*(つ|個|件)|(?:商品|製品|もの|アプリ)\s*(\d+)\s*(?:つ|個|件)?|トップ\s*(\d+)', query)
         limit = 1
         if count_match:

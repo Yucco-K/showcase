@@ -127,29 +127,69 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
 
     # --- 1. 価格比較のチェック ---
     # 高い/安いのキーワードを幅広く拾うように修正
-    if any(keyword in query for keyword in ["一番高い", "最も高い", "高い"]):
+    if any(keyword in query for keyword in ["一番高い", "最も高い", "高い", "高価格", "高額"]):
         logger.info("価格比較クエリ（最高値）を検出")
-        # データベース側で価格の降順ソートして最初の1件を取得
-        result = chatbot.supabase_client.from_("products").select("name, price").gt("price", 0).order("price", desc=True).limit(1).execute()
+        
+        # 複数商品を求めているかチェック（例：「3つ」「5個」「トップ3」など）
+        import re
+        count_match = re.search(r'(\d+)\s*(つ|個|件|商品|製品)|トップ\s*(\d+)', query)
+        limit = 1
+        if count_match:
+            # マッチしたグループから数値を取得
+            limit = int(count_match.group(1) or count_match.group(3))
+            limit = min(limit, 10)  # 最大10件に制限
+            logger.info(f"複数商品リクエスト検出: {limit}件")
+        
+        # データベース側で価格の降順ソートして指定件数を取得
+        result = chatbot.supabase_client.from_("products").select("name, price").gt("price", 0).order("price", desc=True).limit(limit).execute()
         if result.data and len(result.data) > 0:
-            highest_product = result.data[0]
-            logger.info(f"最高値商品: {highest_product['name']} - ¥{highest_product['price']}")
-            response = f"最も価格が高い製品は「{highest_product['name']}」で、価格は¥{highest_product['price']:,}です。"
-            response += "\n\n正確な最新情報については、各製品ページをご確認ください。"
+            if limit == 1:
+                # 1件の場合
+                highest_product = result.data[0]
+                logger.info(f"最高値商品: {highest_product['name']} - ¥{highest_product['price']}")
+                response = f"最も価格が高い製品は「{highest_product['name']}」で、価格は¥{highest_product['price']:,}です。"
+            else:
+                # 複数件の場合
+                logger.info(f"高価格商品{len(result.data)}件を取得")
+                response = f"価格が高い順に{len(result.data)}件の製品をご紹介します：\n\n"
+                for i, product in enumerate(result.data, 1):
+                    response += f"{i}. {product['name']} - ¥{product['price']:,}\n"
+            
+            response += "\n正確な最新情報については、各製品ページをご確認ください。"
             return response
         else:
             logger.warning("有効な価格データを持つ商品が見つかりませんでした")
             return "申し訳ありません、現在価格情報のある商品が見つかりませんでした。"
     
-    if any(keyword in query for keyword in ["一番安い", "最も安い", "安い"]):
+    if any(keyword in query for keyword in ["一番安い", "最も安い", "安い", "低価格"]):
         logger.info("価格比較クエリ（最安値）を検出")
-        # データベース側で価格の昇順ソートして最初の1件を取得
-        result = chatbot.supabase_client.from_("products").select("name, price").gt("price", 0).order("price", desc=False).limit(1).execute()
+        
+        # 複数商品を求めているかチェック（例：「3つ」「5個」「トップ3」など）
+        import re
+        count_match = re.search(r'(\d+)\s*(つ|個|件|商品|製品)|トップ\s*(\d+)', query)
+        limit = 1
+        if count_match:
+            # マッチしたグループから数値を取得
+            limit = int(count_match.group(1) or count_match.group(3))
+            limit = min(limit, 10)  # 最大10件に制限
+            logger.info(f"複数商品リクエスト検出: {limit}件")
+        
+        # データベース側で価格の昇順ソートして指定件数を取得
+        result = chatbot.supabase_client.from_("products").select("name, price").gt("price", 0).order("price", desc=False).limit(limit).execute()
         if result.data and len(result.data) > 0:
-            lowest_product = result.data[0]
-            logger.info(f"最安値商品: {lowest_product['name']} - ¥{lowest_product['price']}")
-            response = f"最も価格が安い製品は「{lowest_product['name']}」で、価格は¥{lowest_product['price']:,}です。"
-            response += "\n\n正確な最新情報については、各製品ページをご確認ください。"
+            if limit == 1:
+                # 1件の場合
+                lowest_product = result.data[0]
+                logger.info(f"最安値商品: {lowest_product['name']} - ¥{lowest_product['price']}")
+                response = f"最も価格が安い製品は「{lowest_product['name']}」で、価格は¥{lowest_product['price']:,}です。"
+            else:
+                # 複数件の場合
+                logger.info(f"低価格商品{len(result.data)}件を取得")
+                response = f"価格が安い順に{len(result.data)}件の製品をご紹介します：\n\n"
+                for i, product in enumerate(result.data, 1):
+                    response += f"{i}. {product['name']} - ¥{product['price']:,}\n"
+            
+            response += "\n正確な最新情報については、各製品ページをご確認ください。"
             return response
         else:
             logger.warning("有効な価格データを持つ商品が見つかりませんでした")

@@ -349,7 +349,9 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
             
             if details_response.data:
                 product = details_response.data
-                product_context = f"[製品情報]\n商品名: {product.get('name')}\n価格: ¥{product.get('price')}\n説明: {product.get('description')}\n機能: {', '.join(product.get('features', []))}"
+                features = product.get('features', [])
+                features_str = ', '.join(features) if isinstance(features, list) else str(features) if features else ''
+                product_context = f"[製品情報]\n商品名: {product.get('name')}\n価格: ¥{product.get('price')}\n説明: {product.get('description')}\n機能: {features_str}"
                 logger.info("  ✅ 5. product_details_fetched_and_context_created")
             else:
                 logger.info(f"  ❌ 5. failed_to_fetch_details for '{matched_product_name}'")
@@ -388,7 +390,9 @@ async def generate_final_answer(chatbot: ChatbotSingleton, query: str):
                 if details_response.data:
                     product_contexts = []
                     for product in details_response.data:
-                        product_text = f"[製品情報]\n商品名: {product.get('name')}\n価格: ¥{product.get('price')}\n説明: {product.get('description')}\n機能: {', '.join(product.get('features', []))}"
+                        features = product.get('features', [])
+                        features_str = ', '.join(features) if isinstance(features, list) else str(features) if features else ''
+                        product_text = f"[製品情報]\n商品名: {product.get('name')}\n価格: ¥{product.get('price')}\n説明: {product.get('description')}\n機能: {features_str}"
                         product_contexts.append(product_text)
                     
                     if semantic_context:

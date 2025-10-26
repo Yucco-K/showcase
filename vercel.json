@@ -12,25 +12,14 @@
 			}
 		}
 	],
-	"routes": [
+	"rewrites": [
 		{
-			"src": "/api/(.*)",
-			"dest": "/api/chat/index.py"
+			"source": "/gorse-api/:path*",
+			"destination": "http://18.183.35.86:8087/api/:path*"
 		},
 		{
-			"src": "/gorse-api/(.*)",
-			"dest": "http://18.183.35.86:8087/api/$1"
-		},
-		{
-			"src": "/assets/(.*)",
-			"dest": "/assets/$1"
-		},
-		{
-			"handle": "filesystem"
-		},
-		{
-			"src": "/(.*)",
-			"dest": "/index.html"
+			"source": "/api/:path*",
+			"destination": "/api/chat/index.py"
 		}
 	]
 }

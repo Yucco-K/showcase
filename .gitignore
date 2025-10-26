@@ -224,3 +224,10 @@ local/
 vercel-env-vars.txt
 *.env-vars.txt
 env-vars.txt
+
+# Security audit and internal documentation
+SECURITY_AUDIT_REPORT.md
+GITHUB_PUBLIC_RELEASE_CHECKLIST.md
+
+# EC2 IP addresses
+gorse-ec2-ip.txt

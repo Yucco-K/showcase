@@ -148,13 +148,34 @@ const MessageArea = styled.div`
 	gap: 12px;
 `;
 
-const MessageBubble = styled.div<{ $sender: "user" | "bot" | "system" }>`
+const MessageContainer = styled.div<{ $sender: "user" | "bot" | "system" }>`
+	display: flex;
+	gap: 8px;
+	align-items: flex-start;
 	margin: 10px;
+	flex-direction: ${({ $sender }) =>
+		$sender === "user" ? "row-reverse" : "row"};
+`;
+
+const Avatar = styled.div<{ $sender: "user" | "bot" }>`
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: ${({ $sender }) =>
+		$sender === "user"
+			? "linear-gradient(135deg, #007bff, #0056b3)"
+			: "linear-gradient(135deg, #10b981, #059669)"};
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+`;
+
+const MessageBubble = styled.div<{ $sender: "user" | "bot" | "system" }>`
 	padding: 10px 15px;
 	border-radius: 20px;
 	max-width: 80%;
-	align-self: ${({ $sender }) =>
-		$sender === "user" ? "flex-end" : "flex-start"};
 	background: ${({ $sender }) =>
 		$sender === "user"
 			? "linear-gradient(135deg, #007bff, #0056b3)"
@@ -521,19 +542,30 @@ export const ChatBot: React.FC = () => {
 
 					<MessageArea ref={messageAreaRef}>
 						{messages.map((msg) => (
-							<MessageBubble key={msg.id} $sender={msg.sender}>
-								{msg.sender === "system" ? (
-									<FAQButton onClick={() => handleFAQSelect(msg.text)}>
-										{msg.text}
-									</FAQButton>
-								) : msg.sender === "bot" ? (
-									<ReactMarkdown remarkPlugins={[remarkGfm]}>
-										{msg.text}
-									</ReactMarkdown>
-								) : (
-									msg.text
+							<MessageContainer key={msg.id} $sender={msg.sender}>
+								{msg.sender !== "system" && (
+									<Avatar $sender={msg.sender as "user" | "bot"}>
+										{msg.sender === "bot" ? (
+											<IconRobot size={20} />
+										) : (
+											<IconUser size={20} />
+										)}
+									</Avatar>
 								)}
-							</MessageBubble>
+								<MessageBubble $sender={msg.sender}>
+									{msg.sender === "system" ? (
+										<FAQButton onClick={() => handleFAQSelect(msg.text)}>
+											{msg.text}
+										</FAQButton>
+									) : msg.sender === "bot" ? (
+										<ReactMarkdown remarkPlugins={[remarkGfm]}>
+											{msg.text}
+										</ReactMarkdown>
+									) : (
+										msg.text
+									)}
+								</MessageBubble>
+							</MessageContainer>
 						))}
 					</MessageArea>
 

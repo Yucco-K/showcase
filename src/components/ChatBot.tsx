@@ -356,6 +356,8 @@ const RateLimitInfo = styled.div`
 `;
 
 export const ChatBot: React.FC = () => {
+	const { user } = useAuth();
+	const isAuthenticated = !!user;
 	const [isOpen, setIsOpen] = useState(false);
 	const [isClosing, setIsClosing] = useState(false);
 	const [messages, setMessages] = useState<Message[]>([]);
@@ -369,7 +371,7 @@ export const ChatBot: React.FC = () => {
 	const [remainingRequests, setRemainingRequests] = useState<{
 		hourly: number;
 		daily: number;
-	}>({ hourly: 50, daily: 100 });
+	}>({ hourly: isAuthenticated ? 50 : 10, daily: isAuthenticated ? 100 : 10 });
 	const messageAreaRef = useRef<HTMLDivElement>(null);
 
 	const faqCategories = useMemo(() => getFAQCategories(), []);
@@ -394,7 +396,10 @@ export const ChatBot: React.FC = () => {
 
 	useEffect(() => {
 		setIsMounted(true);
-	}, []);
+		// 初回レート制限情報を取得
+		const remaining = getChatRemainingRequests(isAuthenticated);
+		setRemainingRequests(remaining);
+	}, [isAuthenticated]);
 
 	useEffect(() => {
 		if (isOpen) {
@@ -422,7 +427,7 @@ export const ChatBot: React.FC = () => {
 		setError(null);
 
 		try {
-			const reply = await fetchChatReply(currentInput);
+			const reply = await fetchChatReply(currentInput, isAuthenticated);
 			const botMessage: Message = {
 				id: `bot-${Date.now()}`,
 				text: reply,
@@ -431,7 +436,7 @@ export const ChatBot: React.FC = () => {
 			setMessages((prev) => [...prev, botMessage]);
 
 			// レート制限情報を更新
-			const remaining = getChatRemainingRequests();
+			const remaining = getChatRemainingRequests(isAuthenticated);
 			setRemainingRequests(remaining);
 			console.log(
 				`[Chat] 残りのリクエスト数 - 時間: ${remaining.hourly}, 日: ${remaining.daily}`
@@ -577,25 +582,26 @@ export const ChatBot: React.FC = () => {
 					<RateLimitInfo>
 						<span
 							className={
-								remainingRequests.hourly <= 10
+								remainingRequests.hourly <= (isAuthenticated ? 10 : 3)
 									? "danger"
-									: remainingRequests.hourly <= 20
+									: remainingRequests.hourly <= (isAuthenticated ? 20 : 5)
 									? "warning"
 									: ""
 							}
 						>
-							残り: {remainingRequests.hourly}/50 (時間)
+							残り: {remainingRequests.hourly}/{isAuthenticated ? 50 : 10}{" "}
+							(時間)
 						</span>
 						<span
 							className={
-								remainingRequests.daily <= 20
+								remainingRequests.daily <= (isAuthenticated ? 20 : 3)
 									? "danger"
-									: remainingRequests.daily <= 40
+									: remainingRequests.daily <= (isAuthenticated ? 40 : 5)
 									? "warning"
 									: ""
 							}
 						>
-							{remainingRequests.daily}/100 (日)
+							{remainingRequests.daily}/{isAuthenticated ? 100 : 10} (日)
 						</span>
 					</RateLimitInfo>
 				</Wrapper>

@@ -8,8 +8,10 @@ interface RateLimitEntry {
 
 class ChatRateLimiter {
 	private rateLimits: Map<string, RateLimitEntry> = new Map();
-	private maxRequestsPerDay = 100; // 1日あたりの最大リクエスト数
-	private maxRequestsPerHour = 50; // 1時間あたりの最大リクエスト数
+	private maxRequestsPerDay = 100; // 1日あたりの最大リクエスト数（認証済み）
+	private maxRequestsPerHour = 50; // 1時間あたりの最大リクエスト数（認証済み）
+	private maxRequestsPerDayUnauthenticated = 10; // 1日あたりの最大リクエスト数（未認証）
+	private maxRequestsPerHourUnauthenticated = 10; // 1時間あたりの最大リクエスト数（未認証）
 
 	private getClientId(): string {
 		let clientId = localStorage.getItem("chat_client_id");
@@ -45,48 +47,67 @@ class ChatRateLimiter {
 		return true;
 	}
 
-	checkLimits(): { allowed: boolean; message?: string } {
+	checkLimits(isAuthenticated: boolean = true): {
+		allowed: boolean;
+		message?: string;
+	} {
 		const clientId = this.getClientId();
+		const maxHourly = isAuthenticated
+			? this.maxRequestsPerHour
+			: this.maxRequestsPerHourUnauthenticated;
+		const maxDaily = isAuthenticated
+			? this.maxRequestsPerDay
+			: this.maxRequestsPerDayUnauthenticated;
+
 		const hourlyLimit = this.checkRateLimit(
 			60 * 60 * 1000,
-			this.maxRequestsPerHour,
+			maxHourly,
 			`${clientId}:hourly`
 		);
 		const dailyLimit = this.checkRateLimit(
 			24 * 60 * 60 * 1000,
-			this.maxRequestsPerDay,
+			maxDaily,
 			`${clientId}:daily`
 		);
 
 		if (!hourlyLimit) {
 			return {
 				allowed: false,
-				message: `1時間あたりのチャット制限（${this.maxRequestsPerHour}回）を超過しました。しばらく待ってから再度お試しください。`,
+				message: `1時間あたりのチャット制限（${maxHourly}回）を超過しました。しばらく待ってから再度お試しください。`,
 			};
 		}
 
 		if (!dailyLimit) {
 			return {
 				allowed: false,
-				message: `1日あたりのチャット制限（${this.maxRequestsPerDay}回）を超過しました。明日再度お試しください。`,
+				message: `1日あたりのチャット制限（${maxDaily}回）を超過しました。${
+					isAuthenticated ? "明日" : "ログインするか明日"
+				}再度お試しください。`,
 			};
 		}
 
 		return { allowed: true };
 	}
 
-	getRemainingRequests(): { hourly: number; daily: number } {
+	getRemainingRequests(isAuthenticated: boolean = true): {
+		hourly: number;
+		daily: number;
+	} {
 		const clientId = this.getClientId();
 		const hourlyEntry = this.rateLimits.get(`${clientId}:hourly`);
 		const dailyEntry = this.rateLimits.get(`${clientId}:daily`);
+		const maxHourly = isAuthenticated
+			? this.maxRequestsPerHour
+			: this.maxRequestsPerHourUnauthenticated;
+		const maxDaily = isAuthenticated
+			? this.maxRequestsPerDay
+			: this.maxRequestsPerDayUnauthenticated;
 
 		return {
 			hourly: hourlyEntry
-				? Math.max(0, this.maxRequestsPerHour - hourlyEntry.count)
-				: this.maxRequestsPerHour,
-			daily: dailyEntry
-				? Math.max(0, this.maxRequestsPerDay - dailyEntry.count)
-				: this.maxRequestsPerDay,
+				? Math.max(0, maxHourly - hourlyEntry.count)
+				: maxHourly,
+			daily: dailyEntry ? Math.max(0, maxDaily - dailyEntry.count) : maxDaily,
 		};
 	}
 }
@@ -94,13 +115,19 @@ class ChatRateLimiter {
 const rateLimiter = new ChatRateLimiter();
 
 // 残りのリクエスト数を取得
-export function getChatRemainingRequests(): { hourly: number; daily: number } {
-	return rateLimiter.getRemainingRequests();
+export function getChatRemainingRequests(isAuthenticated: boolean = true): {
+	hourly: number;
+	daily: number;
+} {
+	return rateLimiter.getRemainingRequests(isAuthenticated);
 }
 
-export async function fetchChatReply(message: string): Promise<string> {
+export async function fetchChatReply(
+	message: string,
+	isAuthenticated: boolean = true
+): Promise<string> {
 	// レート制限チェック
-	const limitCheck = rateLimiter.checkLimits();
+	const limitCheck = rateLimiter.checkLimits(isAuthenticated);
 	if (!limitCheck.allowed) {
 		throw new Error(limitCheck.message || "レート制限を超過しました。");
 	}

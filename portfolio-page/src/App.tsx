@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, X, ExternalLink, Code, Database, Zap, Users, MessageSquare, ShoppingCart, BarChart3, Star, Search, Package, FileText, Mail, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ExternalLink, Code, Database, Zap, Users, MessageSquare, ShoppingCart, BarChart3, Search, Package, FileText, Mail, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
@@ -50,10 +50,6 @@ const imageGroups = {
     { src: '/showcase/screenshots/frontend/スクリーンショット 2025-11-16 15.55.52.png', title: 'いいね＆お気に入り', description: 'お気に入りアプリの管理' },
     { src: '/showcase/screenshots/frontend/スクリーンショット 2025-11-16 15.56.08.png', title: 'お問い合わせ履歴', description: '問い合わせスレッド一覧' },
     { src: '/showcase/screenshots/frontend/スクリーンショット 2025-11-16 15.52.27.png', title: 'セキュリティ設定', description: 'パスワードとメールアドレス変更' },
-  ],
-  adminReviews: [
-    { src: '/showcase/screenshots/frontend/スクリーンショット 2025-11-16 16.09.50.png', title: 'レビュー管理画面', description: 'すべてのレビューを一元管理' },
-    { src: '/showcase/screenshots/frontend/スクリーンショット 2025-11-16 15.54.25.png', title: 'レビュー返信・編集', description: '管理者による返信とステータス管理' },
   ],
   adminInfo: [
     { src: '/showcase/screenshots/admin/info/スクリーンショット 2025-11-16 16.10.16.png', title: 'お知らせ編集', description: 'リッチテキストエディタ搭載' },
@@ -558,19 +554,6 @@ export default function App() {
                   </CardHeader>
                   <CardContent>
                     <ImageCarousel images={imageGroups.adminBlog} onImageClick={(index) => openLightbox(imageGroups.adminBlog, index)} />
-                  </CardContent>
-                </Card>
-
-                <Card className="border-2 border-green-200 shadow-2xl bg-white/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-green-900">
-                      <Star className="w-6 h-6" />
-                      レビュー管理
-                    </CardTitle>
-                    <CardDescription>レビューへの返信・ステータス変更機能</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ImageCarousel images={imageGroups.adminReviews} onImageClick={(index) => openLightbox(imageGroups.adminReviews, index)} />
                   </CardContent>
                 </Card>
 

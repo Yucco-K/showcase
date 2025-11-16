@@ -12,6 +12,12 @@ export default function YuccoCat() {
 	const dragging = useRef(false);
 	const [jumpPower, setJumpPower] = useState(0);
 	const [isDragging, setIsDragging] = useState(false);
+	const [isVisible, setIsVisible] = useState(false);
+
+	// 初期フェードイン
+	useEffect(() => {
+		setIsVisible(true);
+	}, []);
 
 	// ふわふわアニメーション
 	useEffect(() => {
@@ -95,8 +101,22 @@ export default function YuccoCat() {
 					cursor: isDragging ? "grabbing" : "grab",
 					userSelect: "none",
 				}}
-				animate={isDragging ? { y: 0 } : { ...float, y: float.y - jumpPower }}
-				transition={{ type: "spring", stiffness: 40, damping: 10 }}
+				initial={{ opacity: 0, scale: 0.8 }}
+				animate={
+					isDragging
+						? { opacity: 1, scale: 1, y: 0 }
+						: {
+								opacity: isVisible ? 1 : 0,
+								scale: 1,
+								...float,
+								y: float.y - jumpPower,
+						  }
+				}
+				transition={
+					isVisible && !isDragging
+						? { opacity: { duration: 3 }, scale: { duration: 3 }, type: "spring", stiffness: 40, damping: 10 }
+						: { type: "spring", stiffness: 40, damping: 10 }
+				}
 				whileHover={
 					isDragging
 						? {}

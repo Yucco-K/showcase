@@ -13,27 +13,48 @@ export default function YuccoCat() {
 	const [jumpPower, setJumpPower] = useState(0);
 	const [isDragging, setIsDragging] = useState(false);
 	const [isVisible, setIsVisible] = useState(false);
+	const [animationIntensity, setAnimationIntensity] = useState(0); // 0 → 1 (3秒かけて)
 
-	// 初期フェードイン
+	// 初期フェードイン & スロースタート
 	useEffect(() => {
 		setIsVisible(true);
+
+		// 3秒かけてアニメーションの強度を上げる
+		const startTime = Date.now();
+		const slowStartDuration = 3000; // 3秒
+
+		const updateIntensity = () => {
+			const elapsed = Date.now() - startTime;
+			const progress = Math.min(elapsed / slowStartDuration, 1);
+			// イージング関数（ease-in-out）でスムーズに
+			const eased = progress < 0.5
+				? 2 * progress * progress
+				: 1 - Math.pow(-2 * progress + 2, 2) / 2;
+			setAnimationIntensity(eased);
+
+			if (progress < 1) {
+				requestAnimationFrame(updateIntensity);
+			}
+		};
+
+		requestAnimationFrame(updateIntensity);
 	}, []);
 
-	// ふわふわアニメーション
+	// ふわふわアニメーション（スロースタート対応）
 	useEffect(() => {
 		let frame = 0;
 		let raf: number;
 		const animate = () => {
 			frame += 1;
 			setFloat({
-				y: Math.sin(frame / 60) * 20,
-				x: Math.sin(frame / 90) * 10,
+				y: Math.sin(frame / 60) * 20 * animationIntensity,
+				x: Math.sin(frame / 90) * 10 * animationIntensity,
 			});
 			raf = requestAnimationFrame(animate);
 		};
 		animate();
 		return () => cancelAnimationFrame(raf);
-	}, []);
+	}, [animationIntensity]);
 
 	// たまに回転（ランダム）
 	useEffect(() => {

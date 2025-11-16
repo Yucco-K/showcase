@@ -63,7 +63,7 @@ paths = [
 
 # 特定のパターンを除外（例：ダミーキーやテストキー）
 regexes = [
-  '''(dummy|example|test|your-.*-here|REPLACE_ME|pk_test_dummy|sk_test_dummy)''',
+  '''(dummy|example|test|your-.*-here|your-anon-key|REPLACE_ME|pk_test_dummy|sk_test_dummy)''',
   '''(process\.env\.|import\.meta\.env\.|Deno\.env\.get)''',
   '''(/\*.*\*/|//.*|#.*)''',
 ]

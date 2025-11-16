@@ -10,7 +10,11 @@ interface ImportMeta {
 	main?: boolean;
 }
 
-const API_URL = "https://ljjptkfrdeiktywbbybr.supabase.co/functions/v1/chat";
+// 環境変数から設定を取得
+const SUPABASE_URL =
+	Deno.env.get("VITE_SUPABASE_URL") ||
+	"https://ljjptkfrdeiktywbbybr.supabase.co";
+const API_URL = `${SUPABASE_URL}/functions/v1/chat`;
 
 const testQueries = [
 	"AppBuzz Hiveについて教えて",
@@ -25,7 +29,10 @@ const testQueries = [
 	"プライバシーポリシーはどこに書かれていますか？",
 ];
 
+// 環境変数からANON_KEYを取得（フォールバックとして既存のキーを使用）
 const ANON_KEY =
+	Deno.env.get("VITE_SUPABASE_ANON_KEY") ||
+	Deno.env.get("SUPABASE_ANON_KEY") ||
 	"[REDACTED_SUPABASE_ANON_KEY]";
 
 async function testChatbotAPI() {

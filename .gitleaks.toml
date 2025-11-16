@@ -1,0 +1,82 @@
+title = "Gitleaks Configuration for Showcase Project"
+
+[extend]
+useDefault = true
+
+# カスタムルール
+[[rules]]
+id = "supabase-anon-key"
+description = "Supabase Anon Key detected"
+regex = '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+'''
+tags = ["key", "supabase"]
+
+[[rules]]
+id = "stripe-api-key"
+description = "Stripe API Key detected"
+regex = '''(sk|pk)_(test|live)_[0-9a-zA-Z]{24,}'''
+tags = ["key", "stripe"]
+
+[[rules]]
+id = "vercel-token"
+description = "Vercel Token detected"
+regex = '''vercel_[a-zA-Z0-9]{24,}'''
+tags = ["key", "vercel"]
+
+[[rules]]
+id = "openai-api-key"
+description = "OpenAI API Key detected"
+regex = '''sk-[a-zA-Z0-9]{32,}'''
+tags = ["key", "openai"]
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key detected"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["key", "aws"]
+
+[[rules]]
+id = "github-token"
+description = "GitHub Token detected"
+regex = '''gh[pousr]_[A-Za-z0-9_]{36,255}'''
+tags = ["key", "github"]
+
+[[rules]]
+id = "notion-api-key"
+description = "Notion API Key detected"
+regex = '''secret_[a-zA-Z0-9]{43}'''
+tags = ["key", "notion"]
+
+# ホワイトリスト（誤検知を防ぐ）
+[allowlist]
+description = "Allowlisted files and patterns"
+
+# 特定のファイルパスを除外
+paths = [
+  '''\.env\.example$''',
+  '''\.env\.template$''',
+  '''README\.md$''',
+  '''docs/.*\.md$''',
+  '''/dist/.*''',
+  '''/node_modules/.*''',
+  '''\.git/.*''',
+]
+
+# 特定のパターンを除外（例：ダミーキーやテストキー）
+[[allowlist.regexes]]
+description = "Dummy or example credentials"
+regex = '''(dummy|example|test|your-.*-here|REPLACE_ME|pk_test_dummy|sk_test_dummy)'''
+
+[[allowlist.regexes]]
+description = "Environment variable placeholders"
+regex = '''(process\.env\.|import\.meta\.env\.|Deno\.env\.get)'''
+
+# コメント内の例外
+[[allowlist.regexes]]
+description = "Code comments with examples"
+regex = '''(/\*.*\*/|//.*|#.*)'''
+
+[allowlist.commits]
+description = "Allowlisted commits"
+# 特定のコミットを除外する場合はここに追加
+commits = []
+

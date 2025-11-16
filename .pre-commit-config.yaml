@@ -1,0 +1,76 @@
+repos:
+  # Gitleaksでシークレットスキャン
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.1
+    hooks:
+      - id: gitleaks
+
+  # 基本的なファイルチェック
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # 大きなファイルの追加をチェック
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      
+      # マージコンフリクトマーカーをチェック
+      - id: check-merge-conflict
+      
+      # YAML構文チェック
+      - id: check-yaml
+        args: ['--unsafe']  # カスタムYAMLタグを許可
+      
+      # JSON構文チェック
+      - id: check-json
+      
+      # ファイル末尾の改行を修正
+      - id: end-of-file-fixer
+      
+      # 行末の空白を削除
+      - id: trailing-whitespace
+      
+      # プライベートキーの検出
+      - id: detect-private-key
+      
+      # AWS認証情報の検出
+      - id: detect-aws-credentials
+        args: ['--allow-missing-credentials']
+      
+      # 大文字小文字の競合をチェック
+      - id: check-case-conflict
+      
+      # 実行可能なシェルスクリプトにshebangがあるかチェック
+      - id: check-executables-have-shebangs
+      
+      # シンボリックリンクの整合性チェック
+      - id: check-symlinks
+      
+      # 破損したシンボリックリンクをチェック
+      - id: destroyed-symlinks
+
+  # TypeScript/JavaScript用のlint
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint
+        entry: npx eslint --fix
+        language: system
+        types: [javascript, jsx, ts, tsx]
+        require_serial: true
+
+  # Python用のlint（必要に応じて）
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+        types_or: [python, pyi]
+      - id: ruff-format
+        types_or: [python, pyi]
+
+# 設定
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [commit]
+fail_fast: false
+minimum_pre_commit_version: 2.15.0
+

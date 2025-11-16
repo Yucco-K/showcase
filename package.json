@@ -26,7 +26,12 @@
 		"test": "playwright test",
 		"test:ui": "playwright test --ui",
 		"sync:gorse-products": "ts-node scripts/sync-gorse-products.ts",
-		"ci": "npm run type-check && npm run lint && npm run build && npm run test"
+		"ci": "npm run type-check && npm run lint && npm run build && npm run test",
+		"security:scan": "docker run -v $(pwd):/path zricethezav/gitleaks:latest detect --source /path -v -c /path/.gitleaks.toml",
+		"security:scan-uncommitted": "docker run -v $(pwd):/path zricethezav/gitleaks:latest protect --source /path -v -c /path/.gitleaks.toml",
+		"security:install": "pip install pre-commit && pre-commit install",
+		"security:check": "pre-commit run --all-files",
+		"prepare": "command -v pre-commit > /dev/null && pre-commit install || echo 'pre-commit not installed, skipping hook setup'"
 	},
 	"dependencies": {
 		"@mantine/core": "^8.1.3",

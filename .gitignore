@@ -231,3 +231,10 @@ GITHUB_PUBLIC_RELEASE_CHECKLIST.md
 
 # EC2 IP addresses
 gorse-ec2-ip.txt
+
+# Security scanning reports
+gitleaks-report.json
+gitleaks.log
+trufflehog-report.json
+security-scan-*.json
+.gitleaks/

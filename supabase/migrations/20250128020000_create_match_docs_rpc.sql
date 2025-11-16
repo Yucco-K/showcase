@@ -28,4 +28,4 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql STABLE;
 
-GRANT EXECUTE ON FUNCTION public.match_docs(vector, float, int, text) TO anon, authenticated; 
+GRANT EXECUTE ON FUNCTION public.match_docs(vector, float, int, text) TO anon, authenticated;

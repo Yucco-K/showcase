@@ -10,4 +10,4 @@ from (
   from public.product_reviews
   group by product_id
 ) sub
-where sub.product_id = products.id; 
+where sub.product_id = products.id;

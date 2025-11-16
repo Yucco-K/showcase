@@ -36,7 +36,7 @@ async function setupProductionAdmin() {
 			console.log("Adding role column to profiles table...");
 			const { error: alterError } = await supabase.rpc("exec_sql", {
 				sql: `
-					ALTER TABLE public.profiles 
+					ALTER TABLE public.profiles
 					ADD COLUMN role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin', 'moderator'));
 				`,
 			});
@@ -111,7 +111,7 @@ async function setupProductionAdmin() {
 				RETURNS BOOLEAN AS $$
 				BEGIN
 					RETURN EXISTS (
-						SELECT 1 FROM public.profiles 
+						SELECT 1 FROM public.profiles
 						WHERE id = user_id AND role = 'admin'
 					);
 				END;

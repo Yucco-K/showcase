@@ -23,4 +23,4 @@ CREATE POLICY "Authenticated users can delete contacts" ON public.contacts
 CREATE POLICY "Authenticated users can select contacts" ON public.contacts
   FOR SELECT
   TO authenticated
-  USING (true); 
+  USING (true);

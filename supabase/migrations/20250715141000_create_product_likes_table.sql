@@ -54,4 +54,4 @@ create policy "product_likes_delete_owner_or_admin" on public.product_likes
   for delete using (
     (user_id = auth.uid())
     or (auth.role() = 'authenticated' and auth.jwt() ->> 'email' = ANY ( string_to_array( current_setting('app.admin_emails', true), ',' ) ))
-  ); 
+  );

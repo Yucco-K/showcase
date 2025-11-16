@@ -45,4 +45,4 @@ CREATE POLICY product_reviews_admin_all ON public.product_reviews
       SELECT 1 FROM public.profiles
       WHERE id = auth.uid() AND role = 'admin'
     )
-  ); 
+  );

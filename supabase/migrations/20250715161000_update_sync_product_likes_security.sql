@@ -24,4 +24,4 @@ end;
 $$;
 
 -- Grant EXECUTE on function to authenticated role for safety
-grant execute on function public.sync_product_likes() to authenticated; 
+grant execute on function public.sync_product_likes() to authenticated;

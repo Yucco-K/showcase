@@ -703,7 +703,7 @@ For critical issues outside business hours, email emergency@your-domain.com
 
 ---
 
-**Document Version**: 2.0.0  
-**Last Updated**: January 2025  
-**Next Review**: March 2025  
+**Document Version**: 2.0.0
+**Last Updated**: January 2025
+**Next Review**: March 2025
 **Document Owner**: Customer Success Team

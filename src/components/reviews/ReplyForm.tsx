@@ -80,7 +80,7 @@ const ReplyButton = styled.button<{ $primary?: boolean }>`
 			? `
 		background: linear-gradient(135deg, #3b82f6, #1d4ed8);
 		color: white;
-		
+
 		&:hover {
 			background: linear-gradient(135deg, #2563eb, #1e40af);
 		}
@@ -89,7 +89,7 @@ const ReplyButton = styled.button<{ $primary?: boolean }>`
 		background: rgba(255,255,255,0.15);
 		color: #333;
 		border: 1px solid #ccc;
-		
+
 		&:hover {
 			background: rgba(255,255,255,0.2);
 		}

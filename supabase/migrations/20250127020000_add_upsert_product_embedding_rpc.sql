@@ -12,17 +12,17 @@ CREATE OR REPLACE FUNCTION public.upsert_product_embedding(
 RETURNS VOID AS $$
 BEGIN
   -- 既存のレコードを削除
-  DELETE FROM public.product_embeddings 
+  DELETE FROM public.product_embeddings
   WHERE product_id = p_product_id;
 
   -- 新しいレコードを挿入
   INSERT INTO public.product_embeddings (
-    product_id, 
-    content, 
+    product_id,
+    content,
     embedding
   ) VALUES (
-    p_product_id, 
-    p_content, 
+    p_product_id,
+    p_content,
     p_embedding
   );
 END;

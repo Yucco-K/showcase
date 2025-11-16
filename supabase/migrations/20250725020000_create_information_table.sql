@@ -9,9 +9,9 @@ create table if not exists public.information (
 );
 
 -- 初期データを挿入
-insert into public.information (id, title, content) 
+insert into public.information (id, title, content)
 values (
-  'default', 
+  'default',
   'Information',
   '# Information
 
@@ -65,4 +65,4 @@ create policy "information_insert_admin" on public.information
   for insert with check (
     auth.role() = 'authenticated'
     and auth.jwt() ->> 'email' = ANY ( string_to_array( current_setting('app.admin_emails', true), ',' ) )
-  ); 
+  );

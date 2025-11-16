@@ -418,7 +418,7 @@ const TruncatedDescription = styled.div<{
 		-webkit-line-clamp: 6;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
-		
+
 		-webkit-mask: linear-gradient(
 			to bottom,
 			black 0%,

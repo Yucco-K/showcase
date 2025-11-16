@@ -5,36 +5,36 @@
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'profiles' 
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'profiles'
         AND column_name = 'role'
     ) THEN
-        ALTER TABLE public.profiles 
+        ALTER TABLE public.profiles
         ADD COLUMN role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin', 'moderator'));
     END IF;
 END $$;
 
 -- 2. Update existing profiles to have proper role
-UPDATE public.profiles 
-SET role = 'user' 
+UPDATE public.profiles
+SET role = 'user'
 WHERE role IS NULL;
 
 -- 3. Set specific admin email to admin role
-UPDATE public.profiles 
-SET role = 'admin' 
+UPDATE public.profiles
+SET role = 'admin'
 WHERE email = 'yuki2082710@gmail.com';
 
 -- 4. Ensure product_reviews table has proper foreign key
 -- First, let's check if there are any orphaned records
-DELETE FROM public.product_reviews 
+DELETE FROM public.product_reviews
 WHERE user_id NOT IN (SELECT id FROM public.profiles);
 
 -- 5. Recreate the foreign key constraint to ensure it's properly set
-ALTER TABLE public.product_reviews 
+ALTER TABLE public.product_reviews
 DROP CONSTRAINT IF EXISTS product_reviews_user_id_fkey;
 
-ALTER TABLE public.product_reviews 
-ADD CONSTRAINT product_reviews_user_id_fkey 
+ALTER TABLE public.product_reviews
+ADD CONSTRAINT product_reviews_user_id_fkey
 FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
 
 -- 6. Update RLS policies for profiles table
@@ -50,7 +50,7 @@ CREATE POLICY "Users can view own profile" ON public.profiles
 CREATE POLICY "Admins can view all profiles" ON public.profiles
     FOR SELECT USING (
         EXISTS (
-            SELECT 1 FROM public.profiles 
+            SELECT 1 FROM public.profiles
             WHERE id = auth.uid() AND role = 'admin'
         )
     );
@@ -78,7 +78,7 @@ CREATE POLICY "Users can delete own reviews" ON public.product_reviews
 CREATE POLICY "Admins can manage all reviews" ON public.product_reviews
     FOR ALL USING (
         EXISTS (
-            SELECT 1 FROM public.profiles 
+            SELECT 1 FROM public.profiles
             WHERE id = auth.uid() AND role = 'admin'
         )
     );
@@ -88,7 +88,7 @@ CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID DEFAULT auth.uid())
 RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
-        SELECT 1 FROM public.profiles 
+        SELECT 1 FROM public.profiles
         WHERE id = user_id AND role = 'admin'
     );
 END;
@@ -99,7 +99,7 @@ CREATE OR REPLACE FUNCTION public.is_moderator(user_id UUID DEFAULT auth.uid())
 RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
-        SELECT 1 FROM public.profiles 
+        SELECT 1 FROM public.profiles
         WHERE id = user_id AND role IN ('admin', 'moderator')
     );
 END;
@@ -124,4 +124,4 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS handle_profiles_updated_at ON public.profiles;
 CREATE TRIGGER handle_profiles_updated_at
     BEFORE UPDATE ON public.profiles
-    FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at(); 
+    FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();

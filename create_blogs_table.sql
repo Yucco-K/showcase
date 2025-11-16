@@ -22,4 +22,4 @@ INSERT INTO blogs (title, platform, url, author, read_time, tags) VALUES
 ALTER TABLE blogs ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow public read access" ON blogs
-    FOR SELECT USING (true); 
+    FOR SELECT USING (true);

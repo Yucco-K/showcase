@@ -1,7 +1,7 @@
 -- 既存のRLSポリシーを修正し、ユニーク制約を追加
 
 -- 既存のテーブル定義を変更
-ALTER TABLE public.product_embeddings 
+ALTER TABLE public.product_embeddings
 ADD CONSTRAINT unique_product_embedding UNIQUE (product_id);
 
 -- RLSポリシーを更新
@@ -15,4 +15,4 @@ CREATE POLICY "Allow authenticated users to update their own embeddings" ON publ
     WITH CHECK (true);
 
 -- 既存のデータを削除して再挿入を可能にする
-TRUNCATE TABLE public.product_embeddings; 
+TRUNCATE TABLE public.product_embeddings;

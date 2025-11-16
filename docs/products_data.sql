@@ -58,4 +58,3 @@ f5ca9558-439a-4909-86d1-c5ce04f78ac4	Prosper Path	節約と投資記録をサポ
 --
 -- PostgreSQL database dump complete
 --
-

@@ -4,4 +4,4 @@ langchain
 langchain-openai
 langchain-community
 supabase
-python-dotenv 
+python-dotenv

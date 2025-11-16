@@ -51,4 +51,4 @@ create policy "products_admin_write" on public.products
   for all using (
     auth.role() = 'authenticated'
     and auth.jwt() ->> 'email' = ANY ( string_to_array( current_setting('app.admin_emails', true), ',' ) )
-  ); 
+  );

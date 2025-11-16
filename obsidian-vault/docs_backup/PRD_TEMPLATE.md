@@ -808,8 +808,8 @@ The combination of modern technology, professional design, and comprehensive fun
 
 ---
 
-**Document Version**: 2.0.0  
-**Last Updated**: January 18, 2025  
-**Next Review**: March 2025  
-**Document Owner**: Product Team  
+**Document Version**: 2.0.0
+**Last Updated**: January 18, 2025
+**Next Review**: March 2025
+**Document Owner**: Product Team
 **Approval**: Product Manager

@@ -25,4 +25,4 @@ create policy "contacts_select_admin" on public.contacts
 -- 既存のポリシーを削除して再作成（修正用）
 drop policy if exists "contacts_insert_public" on public.contacts;
 create policy "contacts_insert_public" on public.contacts
-  for insert with check (true); 
+  for insert with check (true);

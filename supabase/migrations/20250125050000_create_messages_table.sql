@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     session_id UUID DEFAULT gen_random_uuid(),
-    
+
     -- Add constraints
     CONSTRAINT messages_content_length CHECK (char_length(content) <= 10000)
 );
@@ -24,7 +24,7 @@ ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 -- Users can view their own messages or public messages (no user_id)
 CREATE POLICY "Users can view their own messages" ON public.messages
     FOR SELECT USING (
-        user_id = auth.uid() OR 
+        user_id = auth.uid() OR
         user_id IS NULL OR
         auth.role() = 'service_role'
     );
@@ -32,7 +32,7 @@ CREATE POLICY "Users can view their own messages" ON public.messages
 -- Users can insert their own messages or anonymous messages
 CREATE POLICY "Users can insert messages" ON public.messages
     FOR INSERT WITH CHECK (
-        user_id = auth.uid() OR 
+        user_id = auth.uid() OR
         user_id IS NULL OR
         auth.role() = 'service_role'
     );
@@ -48,4 +48,4 @@ CREATE POLICY "Users can delete their own messages" ON public.messages
 GRANT ALL ON public.messages TO authenticated;
 GRANT ALL ON public.messages TO anon;
 GRANT USAGE, SELECT ON SEQUENCE public.messages_id_seq TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE public.messages_id_seq TO anon; 
+GRANT USAGE, SELECT ON SEQUENCE public.messages_id_seq TO anon;

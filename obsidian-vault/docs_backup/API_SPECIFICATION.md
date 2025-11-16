@@ -2,9 +2,9 @@
 
 ## Version 2.0
 
-**Document Version:** 2.0  
-**Last Updated:** January 2025  
-**Base URL:** `https://your-domain.vercel.app`  
+**Document Version:** 2.0
+**Last Updated:** January 2025
+**Base URL:** `https://your-domain.vercel.app`
 **API Version:** v1
 
 ---

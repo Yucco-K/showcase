@@ -42,4 +42,4 @@ CREATE POLICY "Allow public insert doc embeddings" ON public.doc_embeddings
     FOR INSERT WITH CHECK (true);
 
 -- Grant permissions
-GRANT SELECT, INSERT ON public.doc_embeddings TO anon, authenticated; 
+GRANT SELECT, INSERT ON public.doc_embeddings TO anon, authenticated;

@@ -28,4 +28,4 @@ CREATE POLICY "Users can delete avatars" ON storage.objects
   );
 
 CREATE POLICY "Anyone can view avatars" ON storage.objects
-  FOR SELECT USING (bucket_id = 'avatars'); 
+  FOR SELECT USING (bucket_id = 'avatars');

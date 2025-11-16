@@ -111,4 +111,3 @@ DEBUG=false
 ### Notion
 1. [Notion Integrations](https://www.notion.so/my-integrations)にアクセス
 2. 新しいIntegrationを作成してAPIキーを取得
-

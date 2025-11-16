@@ -6,4 +6,4 @@ create table if not exists contact_reply_threads (
   sender_id uuid references profiles(id),
   message text not null,
   created_at timestamptz not null default now()
-); 
+);

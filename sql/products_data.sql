@@ -205,7 +205,7 @@ INSERT INTO public.products (
 ) ON CONFLICT DO NOTHING;
 
 -- データ確認用クエリ
--- SELECT 
+-- SELECT
 --     id,
 --     name,
 --     description,
@@ -221,11 +221,11 @@ INSERT INTO public.products (
 --     last_updated,
 --     created_at,
 --     updated_at
--- FROM public.products 
+-- FROM public.products
 -- ORDER BY created_at;
 
 -- 統計情報
--- SELECT 
+-- SELECT
 --     COUNT(*) as total_products,
 --     COUNT(CASE WHEN is_featured = true THEN 1 END) as featured_products,
 --     COUNT(CASE WHEN is_popular = true THEN 1 END) as popular_products,
@@ -234,11 +234,11 @@ INSERT INTO public.products (
 -- FROM public.products;
 
 -- カテゴリ別統計
--- SELECT 
+-- SELECT
 --     category,
 --     COUNT(*) as product_count,
 --     AVG(price) as average_price,
 --     SUM(price) as total_value
--- FROM public.products 
--- GROUP BY category 
--- ORDER BY product_count DESC; 
+-- FROM public.products
+-- GROUP BY category
+-- ORDER BY product_count DESC;

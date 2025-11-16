@@ -25,4 +25,4 @@ CREATE POLICY "Users can delete own avatar" ON storage.objects
 
 -- 全ユーザーはアバターを閲覧可能（公開バケット）
 CREATE POLICY "Anyone can view avatars" ON storage.objects
-  FOR SELECT USING (bucket_id = 'avatars'); 
+  FOR SELECT USING (bucket_id = 'avatars');

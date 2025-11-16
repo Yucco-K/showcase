@@ -29,7 +29,7 @@ echo "フロントエンドテストユーティリティを作成中..."
 cat > scripts/test-gorse-frontend-connection.ts << EOF
 /**
  * Gorse API接続テストスクリプト
- * 
+ *
  * 使用方法: npx ts-node scripts/test-gorse-frontend-connection.ts
  */
 
@@ -49,7 +49,7 @@ async function runTests() {
     printHeader('Gorse API設定');
     console.log('Endpoint:', (gorse as any).config.endpoint);
     console.log('API Key:', (gorse as any).config.secret ? '設定済み' : '未設定');
-    
+
     // サーバー接続テスト
     printHeader('サーバー接続テスト');
     try {
@@ -59,7 +59,7 @@ async function runTests() {
     } catch (err) {
       console.error('❌ サーバー接続エラー:', err);
     }
-    
+
     // 類似アイテムテスト
     printHeader('類似アイテムテスト');
     try {
@@ -68,7 +68,7 @@ async function runTests() {
       if (items.length > 0) {
         const firstItemId = items[0].ItemId;
         console.log('テスト対象アイテムID:', firstItemId);
-        
+
         const similarItems = await getSimilarItems(firstItemId, 5);
         console.log('類似アイテム:', similarItems);
       } else {
@@ -77,7 +77,7 @@ async function runTests() {
     } catch (err) {
       console.error('❌ 類似アイテムテストエラー:', err);
     }
-    
+
     // レコメンデーションテスト
     printHeader('レコメンデーションテスト');
     try {
@@ -86,7 +86,7 @@ async function runTests() {
       if (users.length > 0) {
         const firstUserId = users[0].UserId;
         console.log('テスト対象ユーザーID:', firstUserId);
-        
+
         const recommendations = await getRecommendations(firstUserId, 5);
         console.log('レコメンデーション:', recommendations);
       } else {
@@ -95,7 +95,7 @@ async function runTests() {
     } catch (err) {
       console.error('❌ レコメンデーションテストエラー:', err);
     }
-    
+
     printHeader('テスト完了');
   } catch (err) {
     console.error('テスト実行中にエラーが発生しました:', err);
@@ -124,4 +124,4 @@ echo "2. Supabaseとの連携を設定"
 echo "3. フロントエンドに推薦システムを統合"
 echo "4. Vercel環境変数を設定"
 echo ""
-echo "これでGorse推薦システムの導入が完了しました！" 
+echo "これでGorse推薦システムの導入が完了しました！"

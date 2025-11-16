@@ -55,7 +55,7 @@ services:
     ports:
       - "8087:8087" # 推薦API
     command: >
-      --master-host gorse-master --master-port 8086 
+      --master-host gorse-master --master-port 8086
       --http-host 0.0.0.0 --http-port 8087
     environment:
       GORSE_CACHE_STORE: redis://redis:6379/0
@@ -76,7 +76,7 @@ services:
     image: zhenghaoz/gorse-worker:latest
     container_name: gorse-worker
     command: >
-      --master-host gorse-master --master-port 8086 
+      --master-host gorse-master --master-port 8086
       --http-host 0.0.0.0 --http-port 8089
     environment:
       GORSE_CACHE_STORE: redis://redis:6379/0

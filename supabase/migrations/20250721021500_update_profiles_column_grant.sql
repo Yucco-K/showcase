@@ -12,4 +12,4 @@ GRANT SELECT (id, avatar_url, full_name, biography, role)
 -- keep update grant unchanged
 GRANT UPDATE (avatar_url, full_name, biography)
   ON TABLE public.profiles
-  TO authenticated; 
+  TO authenticated;

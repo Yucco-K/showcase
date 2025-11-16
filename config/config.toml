@@ -5,7 +5,7 @@ default_n = 10
 api_key = ""
 
 [recommend.data_source]
-positive_feedback_types = ["purchase", "like"] 
+positive_feedback_types = ["purchase", "like"]
 read_feedback_types = ["view"]
 
 [recommend.popular]
@@ -14,7 +14,7 @@ popular_window = "720h"
 [recommend.collaborative]
 model_fit_period = "60m"  # モデルを訓練する間隔
 
-[recommend.offline] 
+[recommend.offline]
 check_recommend_period = "30m"
 refresh_recommend_period = "60m"
 enable_latest_recommend = true
@@ -29,4 +29,4 @@ host = "0.0.0.0"
 dashboard_port = 8088
 
 [log]
-level = "info" 
+level = "info"

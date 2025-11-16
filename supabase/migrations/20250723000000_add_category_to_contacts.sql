@@ -12,8 +12,8 @@ CREATE TYPE contact_category AS ENUM (
 );
 
 -- contactsテーブルにcategoryカラムを追加
-ALTER TABLE public.contacts 
+ALTER TABLE public.contacts
 ADD COLUMN category contact_category DEFAULT 'other' NOT NULL;
 
 -- 既存のレコードにデフォルト値を設定（もしあれば）
-UPDATE public.contacts SET category = 'other' WHERE category IS NULL; 
+UPDATE public.contacts SET category = 'other' WHERE category IS NULL;

@@ -12,13 +12,13 @@ CREATE TABLE IF NOT EXISTS public.product_embeddings (
 );
 
 -- Create index for vector similarity search
-CREATE INDEX IF NOT EXISTS product_embeddings_embedding_idx 
-ON public.product_embeddings 
+CREATE INDEX IF NOT EXISTS product_embeddings_embedding_idx
+ON public.product_embeddings
 USING ivfflat (embedding vector_cosine_ops)
 WITH (lists = 100);
 
 -- Create index for product_id lookups
-CREATE INDEX IF NOT EXISTS product_embeddings_product_id_idx 
+CREATE INDEX IF NOT EXISTS product_embeddings_product_id_idx
 ON public.product_embeddings (product_id);
 
 -- Create function to update updated_at timestamp
@@ -31,9 +31,9 @@ END;
 $$ language 'plpgsql';
 
 -- Create trigger to automatically update updated_at
-CREATE TRIGGER update_product_embeddings_updated_at 
-    BEFORE UPDATE ON public.product_embeddings 
-    FOR EACH ROW 
+CREATE TRIGGER update_product_embeddings_updated_at
+    BEFORE UPDATE ON public.product_embeddings
+    FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Enable RLS (Row Level Security)
@@ -68,7 +68,7 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT 
+    SELECT
         pe.id,
         pe.product_id,
         pe.content,
@@ -83,4 +83,4 @@ $$;
 -- Grant necessary permissions
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON public.product_embeddings TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION match_products TO anon, authenticated; 
+GRANT EXECUTE ON FUNCTION match_products TO anon, authenticated;

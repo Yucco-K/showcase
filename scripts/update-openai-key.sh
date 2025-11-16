@@ -36,25 +36,25 @@ echo "🚀 Vercel環境変数を更新中..."
 # Vercel CLIがインストールされているか確認
 if command -v vercel &> /dev/null; then
     echo "Vercel CLIが見つかりました。環境変数を更新します..."
-    
+
     # 既存の環境変数を削除（エラーを無視）
     echo "既存の環境変数を削除中..."
     vercel env rm OPENAI_API_KEY production 2>/dev/null || true
     vercel env rm OPENAI_API_KEY development 2>/dev/null || true
     vercel env rm OPENAI_API_KEY preview 2>/dev/null || true
-    
+
     # 本番環境
     echo "本番環境を更新中..."
     echo -n "$NEW_API_KEY" | vercel env add OPENAI_API_KEY production
-    
+
     # 開発環境
     echo "開発環境を更新中..."
     echo -n "$NEW_API_KEY" | vercel env add OPENAI_API_KEY development
-    
+
     # プレビュー環境
     echo "プレビュー環境を更新中..."
     echo -n "$NEW_API_KEY" | vercel env add OPENAI_API_KEY preview
-    
+
     echo "✅ Vercel環境変数を更新しました"
 else
     echo "⚠️  Vercel CLIがインストールされていません"

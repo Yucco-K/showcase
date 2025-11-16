@@ -21,4 +21,4 @@ CREATE POLICY "Allow authenticated users all operations" ON public.contacts
   FOR ALL
   TO authenticated
   USING (true)
-  WITH CHECK (true); 
+  WITH CHECK (true);

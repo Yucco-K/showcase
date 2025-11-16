@@ -12,4 +12,4 @@ CREATE POLICY "Allow public insert doc embeddings" ON public.doc_embeddings
 CREATE POLICY "Allow public update doc embeddings" ON public.doc_embeddings
     FOR UPDATE USING (true) WITH CHECK (true);
 
--- すべてのユーザーがINSERT/UPDATE/SELECT可能 
+-- すべてのユーザーがINSERT/UPDATE/SELECT可能

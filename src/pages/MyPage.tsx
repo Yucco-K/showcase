@@ -483,7 +483,7 @@ const Button = styled.button<{ $variant?: "primary" | "secondary" | "danger" }>`
 					background: linear-gradient(135deg, #f7fafc, #edf2f7);
 					color: #4a5568;
 					border: 2px solid #e2e8f0;
-					
+
 					&:hover {
 						background: linear-gradient(135deg, #edf2f7, #e2e8f0);
 						transform: translateY(-2px);
@@ -494,7 +494,7 @@ const Button = styled.button<{ $variant?: "primary" | "secondary" | "danger" }>`
 				return `
 					background: linear-gradient(135deg, #f56565, #e53e3e);
 					color: white;
-					
+
 					&:hover {
 						background: linear-gradient(135deg, #e53e3e, #c53030);
 						transform: translateY(-2px);
@@ -506,7 +506,7 @@ const Button = styled.button<{ $variant?: "primary" | "secondary" | "danger" }>`
 					background: linear-gradient(135deg, #667eea, #764ba2);
 					color: white;
 					box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-					
+
 					&:hover {
 						background: linear-gradient(135deg, #5a67d8, #6b46c1);
 						transform: translateY(-3px);

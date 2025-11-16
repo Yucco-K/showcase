@@ -31,4 +31,4 @@ begin
 end;
 $$;
 
-grant execute on function public.sync_product_stars() to authenticated; 
+grant execute on function public.sync_product_stars() to authenticated;

@@ -196,10 +196,10 @@ export function getPopularFAQs(limit: number = 5): FAQ[] {
 
 ## Version 2.0 - 実用版
 
-**ドキュメントバージョン:** 2.0  
-**最終更新:** 2025 年 7 月  
-**プロジェクト状況:** 本番稼働準備完了  
-**対象読者:** 実用的なクライアント、技術チーム  
+**ドキュメントバージョン:** 2.0
+**最終更新:** 2025 年 7 月
+**プロジェクト状況:** 本番稼働準備完了
+**対象読者:** 実用的なクライアント、技術チーム
 **実装状況:** ⚠️ 部分的実装（基本機能実装済み）
 
 ---
@@ -229,7 +229,7 @@ Portfolio Showcase Version 2.0 は、Version 1.0 からの大幅な進化を遂�
 #### Version 1.0 (yucco-k.github.io)
 
 **リポジトリ:** https://github.com/Yucco-K/yucco-k.github.io ※公開中
-**技術スタック:** React + TypeScript + Vite + GitHub Pages  
+**技術スタック:** React + TypeScript + Vite + GitHub Pages
 **特徴:**
 
 - 静的ポートフォリオサイト
@@ -241,7 +241,7 @@ Portfolio Showcase Version 2.0 は、Version 1.0 からの大幅な進化を遂�
 #### Version 2.0 (showcase) - 現在のバージョン
 
 **リポジトリ:** https://github.com/Yucco-K/showcase ※非公開リポジトリ
-**技術スタック:** React + TypeScript + Vite + Supabase + Stripe + Vercel  
+**技術スタック:** React + TypeScript + Vite + Supabase + Stripe + Vercel
 **特徴:**
 
 - フルスタック E コマースプラットフォーム
@@ -1423,6 +1423,6 @@ Portfolio Showcase Version 2.0 は、Version 1.0 からの大幅な進化を遂�
 
 ---
 
-**ドキュメントバージョン:** 2.0  
-**最終更新:** 2025 年 7 月  
+**ドキュメントバージョン:** 2.0
+**最終更新:** 2025 年 7 月
 **次回更新予定:** 機能追加時

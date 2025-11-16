@@ -33,7 +33,7 @@ if aws sts get-caller-identity &> /dev/null; then
     echo "現在の設定："
     aws sts get-caller-identity
     echo ""
-    
+
     read -p "設定を変更しますか？(y/n): " change_config
     if [ "$change_config" != "y" ]; then
         echo "設定を変更しません。"
@@ -75,30 +75,30 @@ if aws sts get-caller-identity &> /dev/null; then
     echo ""
     echo "リージョン: $aws_region"
     echo ""
-    
+
     # 必要な権限の確認
     echo "権限の確認中..."
-    
+
     # EC2権限の確認
     if aws ec2 describe-regions &> /dev/null; then
         echo "✅ EC2権限: OK"
     else
         echo "❌ EC2権限: 不足"
     fi
-    
+
     # 予算権限の確認
     if aws budgets describe-budgets &> /dev/null; then
         echo "✅ 予算権限: OK"
     else
         echo "⚠️ 予算権限: 不足（費用制限機能が利用できません）"
     fi
-    
+
     echo ""
     echo "設定が完了しました！"
     echo "次に './scripts/deploy-gorse-master.sh' を実行してください。"
-    
+
 else
     echo "❌ AWS認証情報の設定に失敗しました"
     echo "アクセスキーとシークレットキーを確認してください。"
     exit 1
-fi 
+fi

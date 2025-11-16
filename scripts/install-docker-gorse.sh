@@ -57,4 +57,4 @@ scp -i $KEY_NAME.pem docker-compose.gorse.yml $SSH_USER@$EC2_IP:~/gorse-project/
 scp -i $KEY_NAME.pem gorse-config.toml $SSH_USER@$EC2_IP:~/gorse-project/
 
 echo "Dockerのインストールが完了しました。"
-echo "次のステップ: Gorse設定ファイルを本番環境用に更新してください。" 
+echo "次のステップ: Gorse設定ファイルを本番環境用に更新してください。"

@@ -56,4 +56,4 @@ echo "2. テストデータと類似性の生成:"
 echo "   cd ~/gorse-project && npx ts-node generate-gorse-similarities.ts"
 
 echo ""
-echo "次のステップ: Gorse APIの動作を確認してください。" 
+echo "次のステップ: Gorse APIの動作を確認してください。"

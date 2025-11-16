@@ -46,4 +46,4 @@ for VAR in "${VARS[@]}"; do
 
 done
 
-echo "[INFO] すべての環境変数を設定しました。Vercel の再デプロイを実行してください。" 
+echo "[INFO] すべての環境変数を設定しました。Vercel の再デプロイを実行してください。"

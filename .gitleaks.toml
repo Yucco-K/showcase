@@ -62,21 +62,11 @@ paths = [
 ]
 
 # 特定のパターンを除外（例：ダミーキーやテストキー）
-[[allowlist.regexes]]
-description = "Dummy or example credentials"
-regex = '''(dummy|example|test|your-.*-here|REPLACE_ME|pk_test_dummy|sk_test_dummy)'''
+regexes = [
+  '''(dummy|example|test|your-.*-here|REPLACE_ME|pk_test_dummy|sk_test_dummy)''',
+  '''(process\.env\.|import\.meta\.env\.|Deno\.env\.get)''',
+  '''(/\*.*\*/|//.*|#.*)''',
+]
 
-[[allowlist.regexes]]
-description = "Environment variable placeholders"
-regex = '''(process\.env\.|import\.meta\.env\.|Deno\.env\.get)'''
-
-# コメント内の例外
-[[allowlist.regexes]]
-description = "Code comments with examples"
-regex = '''(/\*.*\*/|//.*|#.*)'''
-
-[allowlist.commits]
-description = "Allowlisted commits"
 # 特定のコミットを除外する場合はここに追加
 commits = []
-

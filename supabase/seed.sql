@@ -47,7 +47,7 @@ ON CONFLICT (url) DO NOTHING;
 
 INSERT INTO public.blogs (title, platform, url, published_at, updated_at, read_time, tags, author) VALUES
 ('ドラッグ＆ドロップでリスト並び替え！@dnd-kitを使った実装の工夫', 'Zenn', 'https://zenn.dev/yukkie/articles/f3a093b1e9d16a', '2025-06-24', NULL, 9, '{"React","TypeScript","@dnd-kit","UI"}', NULL)
-ON CONFLICT (url) DO NOTHING; 
+ON CONFLICT (url) DO NOTHING;
 
 -- Seed products table ---------------------------------------------------
 INSERT INTO public.products (name, description, long_desc, price, category, image_url, tags, is_featured, is_popular)
@@ -126,4 +126,4 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO public.contacts (name, email, message, status, is_checked, is_replied) VALUES
 ('山田次郎', 'yamada@example.com', 'サービスについて質問があります。', 'pending', false, false)
-ON CONFLICT DO NOTHING; 
+ON CONFLICT DO NOTHING;

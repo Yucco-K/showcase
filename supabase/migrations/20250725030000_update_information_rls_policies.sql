@@ -31,4 +31,4 @@ create policy information_select_anon
 on public.information
 for select
 to anon
-using ( true ); 
+using ( true );

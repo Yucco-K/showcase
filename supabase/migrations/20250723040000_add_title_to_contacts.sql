@@ -5,6 +5,6 @@ ALTER TABLE public.contacts
 ADD COLUMN title text;
 
 -- 既存のレコードにデフォルトのタイトルを設定
-UPDATE public.contacts 
+UPDATE public.contacts
 SET title = 'お問い合わせ'
-WHERE title IS NULL; 
+WHERE title IS NULL;

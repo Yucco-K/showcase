@@ -79,7 +79,7 @@ path = "/var/log/gorse/gorse.log"
 max_size = 4096
 max_age = 168
 max_backups = 10
-level = "info" 
+level = "info"
 EOF
 
 # 設定ファイルを転送
@@ -95,4 +95,4 @@ echo "Gorse設定が本番環境用に更新されました。"
 echo "Supabase接続URL: ${SUPABASE_URL}"
 echo "Gorse API Key: ${GORSE_API_KEY}"
 echo ""
-echo "次のステップ: Gorseサーバーを起動してください。" 
+echo "次のステップ: Gorseサーバーを起動してください。"

@@ -15,4 +15,4 @@ update public.products
   where requirements is null;
 
 update public.products
-  set last_updated = coalesce(last_updated, current_date) ; 
+  set last_updated = coalesce(last_updated, current_date) ;

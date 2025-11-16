@@ -28,17 +28,17 @@ mainSteps:
     - |
       #!/bin/bash
       set -e
-      
+
       # Update system
       apt update
       apt install -y nginx certbot python3-certbot-nginx
-      
+
       # Create Nginx config
       cat > /etc/nginx/sites-available/gorse <<EOF
       server {
           listen 80;
           server_name gorse.showcase.example.com;
-          
+
           location / {
               proxy_pass http://localhost:8086;
               proxy_set_header Host \$host;
@@ -48,19 +48,19 @@ mainSteps:
           }
       }
       EOF
-      
+
       # Enable site
       ln -sf /etc/nginx/sites-available/gorse /etc/nginx/sites-enabled/
       nginx -t
       systemctl reload nginx
-      
+
       # Get SSL certificate
       certbot --nginx -d gorse.showcase.example.com --non-interactive --agree-tos --email admin@showcase.example.com || true
-      
+
       # Configure firewall
       ufw allow 'Nginx Full' || true
       ufw delete allow 8086/tcp || true
-      
+
       echo "✅ HTTPS setup completed!"
 DOC
 }
@@ -77,4 +77,4 @@ resource "aws_ssm_association" "gorse_https_execution" {
 
 output "https_setup_status" {
   value = "HTTPS setup initiated for Gorse server"
-} 
+}

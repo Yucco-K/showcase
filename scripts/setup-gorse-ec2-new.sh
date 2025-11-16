@@ -77,7 +77,7 @@ if ! aws ec2 describe-key-pairs --key-names $KEY_NAME &> /dev/null; then
     --key-name $KEY_NAME \
     --query 'KeyMaterial' \
     --output text > $KEY_NAME.pem
-  
+
   # パーミッション設定
   chmod 400 $KEY_NAME.pem
   echo "キーペアが作成され、$KEY_NAME.pemとして保存されました"
@@ -128,4 +128,4 @@ echo ""
 echo "次のステップ: スクリプトを使ってDockerとGorseをインストールしてください"
 
 # IPアドレスをファイルに保存（後続のスクリプトで使用）
-echo $PUBLIC_IP > gorse-ec2-ip.txt 
+echo $PUBLIC_IP > gorse-ec2-ip.txt

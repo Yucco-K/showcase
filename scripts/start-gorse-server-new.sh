@@ -54,4 +54,4 @@ NEXT_PUBLIC_GORSE_ENDPOINT=http://${EC2_IP}:8087
 GORSE_API_KEY=${GORSE_API_KEY:-}
 EOF
 
-echo "環境変数情報を vercel-env-vars.txt に保存しました。" 
+echo "環境変数情報を vercel-env-vars.txt に保存しました。"

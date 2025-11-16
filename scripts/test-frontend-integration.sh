@@ -38,29 +38,29 @@ print_header() {
 # 環境変数チェック
 check_environment() {
     log_info "環境変数の確認中..."
-    
+
     # デフォルト値を設定
     export VITE_GORSE_ENDPOINT=${VITE_GORSE_ENDPOINT:-"http://localhost:8087"}
     export GORSE_API_KEY=${GORSE_API_KEY:-""}
     export VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-"https://your-project.supabase.co"}
     export VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-"your-anon-key"}
-    
+
     log_info "環境変数をデフォルト値で設定しました:"
     echo "  - VITE_GORSE_ENDPOINT: $VITE_GORSE_ENDPOINT"
     echo "  - GORSE_API_KEY: ${GORSE_API_KEY:0:20}..."
     echo "  - VITE_SUPABASE_URL: $VITE_SUPABASE_URL"
     echo "  - VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:0:20}..."
-    
+
     log_success "環境変数の確認完了"
 }
 
 # Gorse API接続テスト
 test_gorse_api() {
     log_info "Gorse API接続テスト中..."
-    
+
     local endpoint="$VITE_GORSE_ENDPOINT"
     local api_key="$GORSE_API_KEY"
-    
+
     # ヘルスチェック
     if curl -s -f "$endpoint/api/health" > /dev/null; then
         log_success "Gorse API接続成功"
@@ -68,7 +68,7 @@ test_gorse_api() {
         log_error "Gorse API接続失敗"
         return 1
     fi
-    
+
     # アイテム取得テスト
     local items_response=$(curl -s -H "X-API-Key: $api_key" "$endpoint/api/item")
     if [ $? -eq 0 ]; then
@@ -82,7 +82,7 @@ test_gorse_api() {
 # Supabase接続テスト
 test_supabase_connection() {
     log_info "Supabase接続テスト中..."
-    
+
     # TypeScriptテストスクリプトを実行
     if npx ts-node scripts/test-frontend-connection.ts; then
         log_success "Supabase接続テスト完了"
@@ -95,13 +95,13 @@ test_supabase_connection() {
 # フロントエンドビルドテスト
 test_frontend_build() {
     log_info "フロントエンドビルドテスト中..."
-    
+
     # 依存関係のインストール確認
     if [ ! -d "node_modules" ]; then
         log_info "依存関係をインストール中..."
         npm install
     fi
-    
+
     # ビルドテスト
     if npm run build; then
         log_success "フロントエンドビルド成功"
@@ -114,18 +114,18 @@ test_frontend_build() {
 # 開発サーバー起動テスト
 test_dev_server() {
     log_info "開発サーバー起動テスト中..."
-    
+
     # バックグラウンドで開発サーバーを起動
     npm run dev &
     local dev_pid=$!
-    
+
     # サーバー起動を待機
     sleep 10
-    
+
     # サーバーが起動しているかチェック
     if curl -s -f "http://localhost:5173" > /dev/null 2>&1; then
         log_success "開発サーバー起動成功"
-        
+
         # プロセスを終了
         kill $dev_pid 2>/dev/null || true
     else
@@ -138,7 +138,7 @@ test_dev_server() {
 # 推薦システム統合テスト
 test_recommendation_integration() {
     log_info "推薦システム統合テスト中..."
-    
+
     # TypeScriptテストスクリプトを作成
     cat > scripts/test-recommendation-integration.ts << 'EOF'
 // 環境変数を設定
@@ -157,7 +157,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function testRecommendationIntegration() {
     console.log('=== 推薦システム統合テスト ===\n');
-    
+
     try {
         // 1. Supabaseから製品データを取得
         console.log('1. Supabaseから製品データを取得中...');
@@ -165,33 +165,33 @@ async function testRecommendationIntegration() {
             .from('products')
             .select('*')
             .limit(5);
-            
+
         if (error) {
             console.error('❌ 製品データ取得エラー:', error);
             return;
         }
-        
+
         if (!products || products.length === 0) {
             console.log('❌ 製品データがありません');
             return;
         }
-        
+
         console.log(`✅ 製品データ取得成功 (${products.length}件)`);
-        
+
         // 2. Gorse接続テスト（モック）
         console.log('\n2. Gorse接続テスト（モック）...');
         console.log('✅ Gorse接続テスト完了（テスト環境ではスキップ）');
-        
+
         // 3. 推薦システム統合テスト（モック）
         console.log('\n3. 推薦システム統合テスト（モック）...');
         console.log('✅ 推薦システム統合テスト完了（テスト環境ではスキップ）');
-        
+
         // 4. フロントエンド連携テスト
         console.log('\n4. フロントエンド連携テスト...');
         console.log('✅ フロントエンド連携テスト完了');
-        
+
         console.log('\n=== 統合テスト完了 ===');
-        
+
     } catch (error) {
         console.error('❌ 統合テストエラー:', error);
     }
@@ -211,7 +211,7 @@ EOF
 # エンドツーエンドテスト
 test_end_to_end() {
     log_info "エンドツーエンドテスト中..."
-    
+
     # テスト用のHTMLファイルを作成
     cat > test-e2e.html << 'EOF'
 <!DOCTYPE html>
@@ -230,22 +230,22 @@ test_end_to_end() {
 </head>
 <body>
     <h1>フロントエンド連携テスト</h1>
-    
+
     <div class="test-section">
         <h3>環境変数テスト</h3>
         <div id="env-test"></div>
     </div>
-    
+
     <div class="test-section">
         <h3>Supabase接続テスト</h3>
         <div id="supabase-test"></div>
     </div>
-    
+
     <div class="test-section">
         <h3>Gorse API接続テスト</h3>
         <div id="gorse-test"></div>
     </div>
-    
+
     <script type="module">
         // 環境変数テスト
         const envTest = document.getElementById('env-test');
@@ -254,7 +254,7 @@ test_end_to_end() {
             'VITE_SUPABASE_ANON_KEY',
             'VITE_GORSE_ENDPOINT'
         ];
-        
+
         let envSuccess = true;
         requiredEnvVars.forEach(varName => {
             const value = import.meta.env[varName];
@@ -265,9 +265,9 @@ test_end_to_end() {
                 envSuccess = false;
             }
         });
-        
+
         envTest.parentElement.className = envSuccess ? 'test-section success' : 'test-section error';
-        
+
         // Supabase接続テスト
         const supabaseTest = document.getElementById('supabase-test');
         try {
@@ -276,7 +276,7 @@ test_end_to_end() {
                 import.meta.env.VITE_SUPABASE_URL,
                 import.meta.env.VITE_SUPABASE_ANON_KEY
             );
-            
+
             const { data, error } = await supabase.from('products').select('count').limit(1);
             if (error) {
                 supabaseTest.innerHTML = `<p>❌ Supabase接続エラー: ${error.message}</p>`;
@@ -289,7 +289,7 @@ test_end_to_end() {
             supabaseTest.innerHTML = `<p>❌ Supabase接続エラー: ${err.message}</p>`;
             supabaseTest.parentElement.className = 'test-section error';
         }
-        
+
         // Gorse API接続テスト
         const gorseTest = document.getElementById('gorse-test');
         try {
@@ -317,10 +317,10 @@ EOF
 # メイン実行関数
 main() {
     print_header
-    
+
     local tests_passed=0
     local tests_failed=0
-    
+
     # テスト関数の配列
     test_functions=(
         "check_environment"
@@ -331,7 +331,7 @@ main() {
         "test_recommendation_integration"
         "test_end_to_end"
     )
-    
+
     # 各テストを実行
     for test_func in "${test_functions[@]}"; do
         log_info "実行中: $test_func"
@@ -344,7 +344,7 @@ main() {
         fi
         echo
     done
-    
+
     # 結果サマリー
     echo -e "${BLUE}================================${NC}"
     echo -e "${BLUE}  テスト結果サマリー${NC}"
@@ -352,7 +352,7 @@ main() {
     echo -e "成功: ${GREEN}$tests_passed${NC}"
     echo -e "失敗: ${RED}$tests_failed${NC}"
     echo -e "合計: $((tests_passed + tests_failed))"
-    
+
     if [ $tests_failed -eq 0 ]; then
         log_success "すべてのテストが成功しました！"
         echo
@@ -366,4 +366,4 @@ main() {
 }
 
 # スクリプト実行
-main "$@" 
+main "$@"

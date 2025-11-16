@@ -32,7 +32,7 @@ if [ -f /var/log/nginx/access.log ]; then
   LAST_REQUEST=\$(tail -n 100 /var/log/nginx/access.log | grep -v "health" | tail -n 1 | awk '{print \$4}')
   LAST_REQUEST_TIME=\$(date -d "\${LAST_REQUEST}" +%s 2>/dev/null)
   CURRENT_TIME=\$(date +%s)
-  
+
   # 最後のリクエストから6時間以上経過していたら停止
   if [ ! -z "\$LAST_REQUEST_TIME" ] && [ \$((\$CURRENT_TIME - \$LAST_REQUEST_TIME)) -gt 21600 ]; then
     sudo shutdown -h now
@@ -44,12 +44,12 @@ CPU_USAGE=\$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | aw
 if (( \$(echo "\$CPU_USAGE < 5" | bc -l) )); then
   # 低CPU使用率カウンターファイル
   COUNTER_FILE="/tmp/low_cpu_counter"
-  
+
   if [ -f \$COUNTER_FILE ]; then
     COUNT=\$(cat \$COUNTER_FILE)
     COUNT=\$((COUNT + 1))
     echo \$COUNT > \$COUNTER_FILE
-    
+
     # 12回（1時間）以上低CPU使用率が続いたら停止
     if [ \$COUNT -gt 12 ]; then
       sudo shutdown -h now
@@ -83,7 +83,7 @@ if [ -z "$INSTANCE_ID" ]; then
 else
   # 予算名を設定
   BUDGET_NAME="Gorse-EC2-Budget-${INSTANCE_ID}"
-  
+
   # 予算設定JSONファイルを作成
   cat > budget.json << EOF
 {
@@ -152,10 +152,10 @@ EOF
   # 通知先メールアドレスを設定
   read -p "予算アラート通知先のメールアドレスを入力してください: " EMAIL
   sed -i "s/@example.com/@${EMAIL#*@}/g" budget.json
-  
+
   # 予算を作成
   aws budgets create-budget --account-id $(aws sts get-caller-identity --query 'Account' --output text) --budget file://budget.json
-  
+
   echo "予算アラート「${BUDGET_NAME}」を設定しました。"
   echo "月額$25（約83%）に達すると通知が届きます。"
 fi
@@ -188,4 +188,4 @@ echo "2. AWS予算アラートが設定されました（月額$25で通知）"
 echo "3. インスタンスタイプ変更のガイダンスが表示されました"
 
 # 一時ファイルの削除
-rm -f auto-shutdown.sh budget.json 
+rm -f auto-shutdown.sh budget.json

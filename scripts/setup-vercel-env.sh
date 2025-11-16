@@ -70,4 +70,4 @@ Vercelダッシュボードで以下の環境変数を設定してください�
 6. プロジェクトを再デプロイ
 EOF
 
-echo "手動設定用のガイドを vercel-env-setup.md に保存しました。" 
+echo "手動設定用のガイドを vercel-env-setup.md に保存しました。"

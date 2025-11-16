@@ -35,12 +35,12 @@ INSERT INTO gorse_health_check (status) VALUES ('initialized');
 -- 注意: これらのSQLはGorseのREST APIまたはSDK経由で実行する必要があります
 
 -- サンプルユーザー
--- INSERT INTO users (user_id, labels) VALUES 
+-- INSERT INTO users (user_id, labels) VALUES
 -- ('user1', '{}'),
 -- ('user2', '{}'),
 -- ('user3', '{}');
 
--- サンプルアイテム  
+-- サンプルアイテム
 -- INSERT INTO items (item_id, labels, categories, is_hidden, timestamp) VALUES
 -- ('item1', '{}', '{"electronics"}', false, NOW()),
 -- ('item2', '{}', '{"books"}', false, NOW()),
@@ -53,4 +53,4 @@ INSERT INTO gorse_health_check (status) VALUES ('initialized');
 -- ('purchase', 'user2', 'item1', NOW());
 
 -- データベース統計情報の更新
-ANALYZE; 
+ANALYZE;

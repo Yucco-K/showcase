@@ -345,7 +345,7 @@ export const ProductCardComponent: React.FC<ProductCardProps> = ({
 					to={`/products/${product.id}`}
 					onClick={() => {
 						if (import.meta.env.DEV) {
-							 
+
 							console.debug(
 								`🔗 詳細ボタンクリック: ${product.name} (ID: ${product.id})`
 							);

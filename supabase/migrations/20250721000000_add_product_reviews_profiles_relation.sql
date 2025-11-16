@@ -6,13 +6,13 @@ DO $$
 BEGIN
     -- Add foreign key constraint if it doesn't exist
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.table_constraints 
-        WHERE constraint_name = 'product_reviews_user_id_fkey' 
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'product_reviews_user_id_fkey'
         AND table_name = 'product_reviews'
     ) THEN
         -- Add foreign key constraint to profiles table
-        ALTER TABLE public.product_reviews 
-        ADD CONSTRAINT product_reviews_user_id_fkey 
+        ALTER TABLE public.product_reviews
+        ADD CONSTRAINT product_reviews_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
     END IF;
 END $$;
@@ -28,4 +28,4 @@ CREATE POLICY "profiles_select_public" ON public.profiles
 -- Update the existing policy to be more specific
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 CREATE POLICY "Users can view own profile" ON public.profiles
-    FOR SELECT USING (auth.uid() = id); 
+    FOR SELECT USING (auth.uid() = id);

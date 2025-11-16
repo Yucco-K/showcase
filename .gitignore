@@ -235,17 +235,17 @@ vercel-env-vars.txt
 *.env-vars.txt
 env-vars.txt
 
-# Security audit and internal documentation
-SECURITY_AUDIT_REPORT.md
-GITHUB_PUBLIC_RELEASE_CHECKLIST.md
-
 # EC2 IP addresses
 gorse-ec2-ip.txt
 
-# Security scanning reports
+# Security scanning reports and documentation
 gitleaks-report.json
 gitleaks.log
 trufflehog-report.json
 security-scan-*.json
 .gitleaks/
-SECURITY_SCAN_REPORT.md
+SECURITY_SCAN_REPORT*.md
+SECURITY_AUDIT_REPORT.md
+SECURITY_GUIDE.md
+GITHUB_PUBLIC_RELEASE_CHECKLIST.md
+# Note: docs/SECURITY_SCANNING.md is user documentation and should be tracked

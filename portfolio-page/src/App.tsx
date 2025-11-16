@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { ImageWithFallback } from './components/figma/ImageWithFallback';
 import { ChevronLeft, ChevronRight, X, ExternalLink, Code, Database, Zap, Users, MessageSquare, ShoppingCart, BarChart3, Star, Search, Package, FileText, Mail, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './components/ui/button';
@@ -98,33 +97,39 @@ const imageGroups = {
 
 function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageClick: (index: number) => void }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const nextImage = () => {
+    setIsLoaded(false);
     setCurrentIndex((prev) => (prev + 1) % images.length);
   };
 
   const prevImage = () => {
+    setIsLoaded(false);
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
   return (
     <div className="relative">
       {/* Carousel */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-blue-50">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-blue-50 min-h-[400px]">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isLoaded ? 1 : 0.5 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
             onClick={() => onImageClick(currentIndex)}
             className="cursor-pointer"
           >
-            <ImageWithFallback
+            <img
               src={images[currentIndex].src}
               alt={images[currentIndex].title}
+              loading="lazy"
+              onLoad={() => setIsLoaded(true)}
               className="w-full h-auto object-cover"
+              style={{ maxHeight: '600px' }}
             />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6 text-white">
               <h3 className="text-xl mb-1">{images[currentIndex].title}</h3>
@@ -169,12 +174,15 @@ function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageC
 
 function Lightbox({ images, initialIndex, onClose }: { images: ImageData[]; initialIndex: number; onClose: () => void }) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const nextImage = () => {
+    setIsLoaded(false);
     setCurrentIndex((prev) => (prev + 1) % images.length);
   };
 
   const prevImage = () => {
+    setIsLoaded(false);
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
@@ -183,12 +191,13 @@ function Lightbox({ images, initialIndex, onClose }: { images: ImageData[]; init
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 text-white hover:text-purple-400 transition-colors"
+        className="absolute top-4 right-4 text-white hover:text-purple-400 transition-colors z-10"
         aria-label="閉じる"
       >
         <X className="w-8 h-8" />
@@ -198,15 +207,18 @@ function Lightbox({ images, initialIndex, onClose }: { images: ImageData[]; init
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isLoaded ? 1 : 0.5 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: 'easeInOut' }}
           >
-            <ImageWithFallback
+            <img
               src={images[currentIndex].src}
               alt={images[currentIndex].title}
+              loading="lazy"
+              onLoad={() => setIsLoaded(true)}
               className="w-full h-auto rounded-2xl shadow-2xl"
+              style={{ maxHeight: '85vh', objectFit: 'contain' }}
             />
             <div className="mt-4 text-center text-white">
               <h3 className="text-2xl mb-2">{images[currentIndex].title}</h3>
@@ -642,12 +654,12 @@ export default function App() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Badge variant="secondary" className="mr-2">React 18</Badge>
-                <Badge variant="secondary" className="mr-2">Vite 6</Badge>
+                <Badge variant="secondary" className="mr-2">React 19</Badge>
+                <Badge variant="secondary" className="mr-2">Vite</Badge>
                 <Badge variant="secondary" className="mr-2">TypeScript</Badge>
-                <Badge variant="secondary" className="mr-2">Tailwind CSS</Badge>
+                <Badge variant="secondary" className="mr-2">Styled Components</Badge>
                 <Badge variant="secondary" className="mr-2">Framer Motion</Badge>
-                <Badge variant="secondary" className="mr-2">shadcn/ui</Badge>
+                <Badge variant="secondary" className="mr-2">Mantine UI</Badge>
               </CardContent>
             </Card>
 
@@ -661,9 +673,9 @@ export default function App() {
               <CardContent className="space-y-2">
                 <Badge variant="secondary" className="mr-2">Supabase</Badge>
                 <Badge variant="secondary" className="mr-2">PostgreSQL</Badge>
-                <Badge variant="secondary" className="mr-2">Python / FastAPI</Badge>
+                <Badge variant="secondary" className="mr-2">FastAPI (Python)</Badge>
                 <Badge variant="secondary" className="mr-2">Supabase Auth</Badge>
-                <Badge variant="secondary" className="mr-2">RLS</Badge>
+                <Badge variant="secondary" className="mr-2">Supabase Storage</Badge>
               </CardContent>
             </Card>
 
@@ -671,15 +683,15 @@ export default function App() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-pink-900">
                   <MessageSquare className="w-6 h-6" />
-                  AI / レコメンド
+                  AI / 外部サービス
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
+                <Badge variant="secondary" className="mr-2">OpenAI GPT-4o-mini</Badge>
                 <Badge variant="secondary" className="mr-2">LangChain</Badge>
-                <Badge variant="secondary" className="mr-2">OpenAI GPT-4</Badge>
-                <Badge variant="secondary" className="mr-2">RAG</Badge>
                 <Badge variant="secondary" className="mr-2">pgvector</Badge>
                 <Badge variant="secondary" className="mr-2">Gorse</Badge>
+                <Badge variant="secondary" className="mr-2">Stripe</Badge>
               </CardContent>
             </Card>
 
@@ -691,12 +703,12 @@ export default function App() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Badge variant="secondary" className="mr-2">Cursor AI</Badge>
-                <Badge variant="secondary" className="mr-2">Playwright</Badge>
-                <Badge variant="secondary" className="mr-2">Stripe</Badge>
                 <Badge variant="secondary" className="mr-2">Vercel</Badge>
                 <Badge variant="secondary" className="mr-2">GitHub Actions</Badge>
                 <Badge variant="secondary" className="mr-2">Docker</Badge>
+                <Badge variant="secondary" className="mr-2">Playwright</Badge>
+                <Badge variant="secondary" className="mr-2">ESLint</Badge>
+                <Badge variant="secondary" className="mr-2">Cursor AI</Badge>
               </CardContent>
             </Card>
           </div>

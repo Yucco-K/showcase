@@ -123,15 +123,3 @@ npm run preview
 - レート制限
 
 詳細は [セキュリティスキャンガイド](./docs/SECURITY_SCANNING.md) を参照してください。
-
-## 📝 License
-
-ISC
-
-## 🙏 Acknowledgments
-
-このプロジェクトは以下のオープンソースプロジェクトを使用しています：
-
-- [Gorse](https://github.com/gorse-io/gorse) - 推薦システム
-- [LangChain](https://github.com/langchain-ai/langchain) - AI フレームワーク
-- [Supabase](https://github.com/supabase/supabase) - バックエンドプラットフォーム

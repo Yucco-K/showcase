@@ -811,7 +811,7 @@ export default function App() {
           <p className="text-purple-200">Portfolio Showcase Project - 2025</p>
           <div className="flex justify-center gap-4">
             <Button className="bg-white/10 backdrop-blur-sm text-white border-2 border-white hover:bg-white hover:text-purple-600 transition-all" asChild>
-              <a href="https://showcase-yucco.vercel.app/" target="_blank" rel="noopener noreferrer">
+              <a href="https://showcase-topaz.vercel.app/" target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Live Demo
               </a>

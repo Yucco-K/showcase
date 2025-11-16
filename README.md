@@ -47,7 +47,7 @@
 
 ## 🛠️ 技術スタック
 
-**総合構成**: `Cursor × TaskMaster × Playwright × React × Vite × TypeScript × Stripe × Supabase × Vercel × GitHub Actions × Python × FastAPI × LangChain × OpenAI API × RAG × Gorse API × AWS × Lambda`
+**総合構成**: `Cursor × TaskMaster × Playwright × React × Vite × TypeScript × Stripe × Supabase × Vercel × GitHub Actions × Python × FastAPI × LangChain × OpenAI API × RAG × Gorse API × AWS × AWS EC2 × Lambda`
 
 ### フロントエンド
 - React 19 + TypeScript

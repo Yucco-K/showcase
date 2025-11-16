@@ -17,7 +17,7 @@ interface ImageData {
 // Image groups with actual file paths
 const imageGroups = {
   frontend: [
-    { src: '/showcase/screenshots/frontend/frontend-hero-welcome.png', title: 'トップページ', description: '泡アニメーション付きのヒーローセクション' },
+    { src: '/showcase/screenshots/frontend/frontend-hero-welcome.png', title: 'トップページ', description: '泡アニメーションとゆるキャラが迎えるウェルカム画面' },
     { src: '/showcase/screenshots/frontend/frontend-portfolio-links.png', title: 'ポートフォリオリンク', description: '保有サービスをカードで素早く案内' },
     { src: '/showcase/screenshots/frontend/frontend-products-featured.png', title: '注目アプリ', description: '検索・フィルターとともにおすすめを表示' },
     { src: '/showcase/screenshots/frontend/frontend-product-detail-myrecipenote.png', title: 'アプリ詳細（MyRecipeNote）', description: '価格・タグ・バージョン・レビューをまとめて確認' },

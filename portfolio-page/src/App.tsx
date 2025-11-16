@@ -93,16 +93,20 @@ const imageGroups = {
 
 function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageClick: (index: number) => void }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([0]));
 
   const nextImage = () => {
-    setIsLoaded(false);
-    setCurrentIndex((prev) => (prev + 1) % images.length);
+    const newIndex = (currentIndex + 1) % images.length;
+    setCurrentIndex(newIndex);
   };
 
   const prevImage = () => {
-    setIsLoaded(false);
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+    const newIndex = (currentIndex - 1 + images.length) % images.length;
+    setCurrentIndex(newIndex);
+  };
+
+  const handleImageLoad = (index: number) => {
+    setLoadedImages(prev => new Set([...prev, index]));
   };
 
   return (
@@ -113,7 +117,7 @@ function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageC
           <motion.div
             key={currentIndex}
             initial={{ opacity: 0 }}
-            animate={{ opacity: isLoaded ? 1 : 0.5 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
             onClick={() => onImageClick(currentIndex)}
@@ -122,10 +126,14 @@ function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageC
             <img
               src={images[currentIndex].src}
               alt={images[currentIndex].title}
-              loading="lazy"
-              onLoad={() => setIsLoaded(true)}
+              loading="eager"
+              onLoad={() => handleImageLoad(currentIndex)}
               className="w-full h-auto object-cover"
-              style={{ maxHeight: '600px' }}
+              style={{
+                maxHeight: '600px',
+                opacity: loadedImages.has(currentIndex) ? 1 : 0.7,
+                transition: 'opacity 0.3s ease-in-out'
+              }}
             />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6 text-white">
               <h3 className="text-xl mb-1">{images[currentIndex].title}</h3>
@@ -170,16 +178,20 @@ function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageC
 
 function Lightbox({ images, initialIndex, onClose }: { images: ImageData[]; initialIndex: number; onClose: () => void }) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([initialIndex]));
 
   const nextImage = () => {
-    setIsLoaded(false);
-    setCurrentIndex((prev) => (prev + 1) % images.length);
+    const newIndex = (currentIndex + 1) % images.length;
+    setCurrentIndex(newIndex);
   };
 
   const prevImage = () => {
-    setIsLoaded(false);
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+    const newIndex = (currentIndex - 1 + images.length) % images.length;
+    setCurrentIndex(newIndex);
+  };
+
+  const handleImageLoad = (index: number) => {
+    setLoadedImages(prev => new Set([...prev, index]));
   };
 
   return (
@@ -204,17 +216,22 @@ function Lightbox({ images, initialIndex, onClose }: { images: ImageData[]; init
           <motion.div
             key={currentIndex}
             initial={{ opacity: 0 }}
-            animate={{ opacity: isLoaded ? 1 : 0.5 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15, ease: 'easeInOut' }}
           >
             <img
               src={images[currentIndex].src}
               alt={images[currentIndex].title}
-              loading="lazy"
-              onLoad={() => setIsLoaded(true)}
+              loading="eager"
+              onLoad={() => handleImageLoad(currentIndex)}
               className="w-full h-auto rounded-2xl shadow-2xl"
-              style={{ maxHeight: '85vh', objectFit: 'contain' }}
+              style={{
+                maxHeight: '85vh',
+                objectFit: 'contain',
+                opacity: loadedImages.has(currentIndex) ? 1 : 0.7,
+                transition: 'opacity 0.3s ease-in-out'
+              }}
             />
             <div className="mt-4 text-center text-white">
               <h3 className="text-2xl mb-2">{images[currentIndex].title}</h3>

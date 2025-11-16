@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, X, ExternalLink, Code, Database, Zap, Users, MessageSquare, ShoppingCart, BarChart3, Star, Search, Package, FileText, Mail, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, X, ExternalLink, Code, Database, Zap, Users, MessageSquare, ShoppingCart, BarChart3, Star, Search, Package, FileText, Mail, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
@@ -85,7 +85,7 @@ const imageGroups = {
   ],
 };
 
-function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageClick: (index: number) => void }) {
+function ImageCarousel({ images, onImageClick, groupId }: { images: ImageData[]; onImageClick: (index: number) => void; groupId?: string }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([0]));
 
@@ -102,6 +102,8 @@ function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageC
   const handleImageLoad = (index: number) => {
     setLoadedImages(prev => new Set([...prev, index]));
   };
+
+  const showScrollHint = groupId === 'adminProducts';
 
   return (
     <div className="relative hidden md:block">
@@ -133,6 +135,24 @@ function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageC
               <h3 className="text-base md:text-xl mb-1">{images[currentIndex].title}</h3>
               <p className="text-xs md:text-sm text-gray-200">{images[currentIndex].description}</p>
             </div>
+
+            {/* Scroll Hint for Admin Products */}
+            {showScrollHint && (
+              <motion.div
+                className="absolute bottom-16 left-1/2 -translate-x-1/2"
+                animate={{
+                  opacity: [0.3, 0.8, 0.3],
+                  y: [0, 8, 0]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <ChevronDown className="w-8 h-8 text-white drop-shadow-lg" />
+              </motion.div>
+            )}
           </motion.div>
         </AnimatePresence>
 
@@ -170,12 +190,14 @@ function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageC
   );
 }
 
-function MobileImageScroller({ images, onImageClick }: { images: ImageData[]; onImageClick: (index: number) => void }) {
+function MobileImageScroller({ images, onImageClick, groupId }: { images: ImageData[]; onImageClick: (index: number) => void; groupId?: string }) {
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
 
   const handleLoad = (index: number) => {
     setLoadedImages(prev => new Set([...prev, index]));
   };
+
+  const showScrollHint = groupId === 'adminProducts';
 
   return (
     <div className="md:hidden -mx-4 px-4">
@@ -203,6 +225,24 @@ function MobileImageScroller({ images, onImageClick }: { images: ImageData[]; on
               <h3 className="text-base mb-1">{image.title}</h3>
               <p className="text-xs text-gray-200">{image.description}</p>
             </div>
+
+            {/* Scroll Hint for Admin Products */}
+            {showScrollHint && (
+              <motion.div
+                className="absolute bottom-16 left-1/2 -translate-x-1/2"
+                animate={{
+                  opacity: [0.3, 0.8, 0.3],
+                  y: [0, 8, 0]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <ChevronDown className="w-7 h-7 text-white drop-shadow-lg" />
+              </motion.div>
+            )}
           </div>
         ))}
       </div>
@@ -597,8 +637,8 @@ export default function App() {
                     <CardDescription>商品の作成・編集・削除・検索機能</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <MobileImageScroller images={imageGroups.adminProducts} onImageClick={(index) => openLightbox(imageGroups.adminProducts, index)} />
-                    <ImageCarousel images={imageGroups.adminProducts} onImageClick={(index) => openLightbox(imageGroups.adminProducts, index)} />
+                    <MobileImageScroller images={imageGroups.adminProducts} onImageClick={(index) => openLightbox(imageGroups.adminProducts, index)} groupId="adminProducts" />
+                    <ImageCarousel images={imageGroups.adminProducts} onImageClick={(index) => openLightbox(imageGroups.adminProducts, index)} groupId="adminProducts" />
                   </CardContent>
                 </Card>
 

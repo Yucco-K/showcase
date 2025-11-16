@@ -22,7 +22,7 @@ repos:
 
       # JSON構文チェック
       - id: check-json
-        exclude: '^tsconfig.*\.json$'  # TypeScriptの設定ファイルはコメントを含むため除外
+        exclude: 'tsconfig.*\.json$'  # TypeScriptの設定ファイルはコメントを含むため除外
 
       # ファイル末尾の改行を修正
       - id: end-of-file-fixer

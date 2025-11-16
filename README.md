@@ -31,6 +31,20 @@
 - Stripe - 決済処理
 - Gorse - 推薦エンジン
 
+## 📸 ポートフォリオページ
+
+このプロジェクトには、**独立したポートフォリオ紹介ページ**が含まれています。
+
+```bash
+cd portfolio-page
+npm install
+npm run dev  # http://localhost:3100 で起動
+```
+
+詳細は [`portfolio-page/README.md`](./portfolio-page/README.md) をご覧ください。
+
+スクリーンショットを追加するには、`portfolio-page/public/screenshots/` ディレクトリに画像を配置してください。
+
 ## 📚 ドキュメント
 
 詳細なドキュメントは [`docs/`](./docs/) ディレクトリにあります：

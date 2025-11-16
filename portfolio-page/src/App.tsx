@@ -104,7 +104,7 @@ function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageC
   };
 
   return (
-    <div className="relative">
+    <div className="relative hidden md:block">
       {/* Carousel */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-blue-50" style={{ minHeight: '300px' }}>
         <AnimatePresence mode="wait">
@@ -139,17 +139,17 @@ function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageC
         {/* Navigation */}
         <button
           onClick={prevImage}
-          className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg transition-all hover:scale-110"
+          className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/60 backdrop-blur-sm hover:bg-white/80 p-2 rounded-full shadow-lg transition-all hover:scale-105"
           aria-label="前の画像"
         >
-          <ChevronLeft className="w-6 h-6 text-purple-600" />
+          <ChevronLeft className="w-5 h-5 text-purple-700" />
         </button>
         <button
           onClick={nextImage}
-          className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg transition-all hover:scale-110"
+          className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/60 backdrop-blur-sm hover:bg-white/80 p-2 rounded-full shadow-lg transition-all hover:scale-105"
           aria-label="次の画像"
         >
-          <ChevronRight className="w-6 h-6 text-purple-600" />
+          <ChevronRight className="w-5 h-5 text-purple-700" />
         </button>
 
         {/* Dots */}
@@ -165,6 +165,45 @@ function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageC
             />
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileImageScroller({ images, onImageClick }: { images: ImageData[]; onImageClick: (index: number) => void }) {
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+
+  const handleLoad = (index: number) => {
+    setLoadedImages(prev => new Set([...prev, index]));
+  };
+
+  return (
+    <div className="md:hidden -mx-4 px-4">
+      <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory pb-6">
+        {images.map((image, idx) => (
+          <div
+            key={image.src}
+            className="min-w-[85%] snap-center relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-blue-50 shadow-lg"
+            onClick={() => onImageClick(idx)}
+          >
+            <img
+              src={image.src}
+              alt={image.title}
+              className="w-full h-auto object-contain mx-auto"
+              style={{
+                maxHeight: '320px',
+                opacity: loadedImages.has(idx) ? 1 : 0.7,
+                transition: 'opacity 0.3s ease-in-out'
+              }}
+              loading="lazy"
+              onLoad={() => handleLoad(idx)}
+            />
+            <div className="absolute left-0 right-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
+              <h3 className="text-base mb-1">{image.title}</h3>
+              <p className="text-xs text-gray-200">{image.description}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -522,6 +561,7 @@ export default function App() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <MobileImageScroller images={imageGroups.frontend} onImageClick={(index) => openLightbox(imageGroups.frontend, index)} />
                   <ImageCarousel images={imageGroups.frontend} onImageClick={(index) => openLightbox(imageGroups.frontend, index)} />
                 </CardContent>
               </Card>
@@ -539,6 +579,7 @@ export default function App() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <MobileImageScroller images={imageGroups.mypage} onImageClick={(index) => openLightbox(imageGroups.mypage, index)} />
                   <ImageCarousel images={imageGroups.mypage} onImageClick={(index) => openLightbox(imageGroups.mypage, index)} />
                 </CardContent>
               </Card>
@@ -555,6 +596,7 @@ export default function App() {
                     <CardDescription>商品の作成・編集・削除・検索機能</CardDescription>
                   </CardHeader>
                   <CardContent>
+                    <MobileImageScroller images={imageGroups.adminProducts} onImageClick={(index) => openLightbox(imageGroups.adminProducts, index)} />
                     <ImageCarousel images={imageGroups.adminProducts} onImageClick={(index) => openLightbox(imageGroups.adminProducts, index)} />
                   </CardContent>
                 </Card>
@@ -568,6 +610,7 @@ export default function App() {
                     <CardDescription>ブログ記事の作成・編集・ステータス管理</CardDescription>
                   </CardHeader>
                   <CardContent>
+                    <MobileImageScroller images={imageGroups.adminBlog} onImageClick={(index) => openLightbox(imageGroups.adminBlog, index)} />
                     <ImageCarousel images={imageGroups.adminBlog} onImageClick={(index) => openLightbox(imageGroups.adminBlog, index)} />
                   </CardContent>
                 </Card>
@@ -580,9 +623,10 @@ export default function App() {
                     </CardTitle>
                     <CardDescription>リッチテキストエディタでお知らせを作成</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ImageCarousel images={imageGroups.adminInfo} onImageClick={(index) => openLightbox(imageGroups.adminInfo, index)} />
-                  </CardContent>
+                <CardContent>
+                  <MobileImageScroller images={imageGroups.adminInfo} onImageClick={(index) => openLightbox(imageGroups.adminInfo, index)} />
+                  <ImageCarousel images={imageGroups.adminInfo} onImageClick={(index) => openLightbox(imageGroups.adminInfo, index)} />
+                </CardContent>
                 </Card>
 
                 <Card className="border-2 border-orange-200 shadow-2xl bg-white/50 backdrop-blur-sm">
@@ -594,6 +638,7 @@ export default function App() {
                     <CardDescription>ステータス別フィルタリング・スレッド表示・返信機能</CardDescription>
                   </CardHeader>
                   <CardContent>
+                    <MobileImageScroller images={imageGroups.adminContact} onImageClick={(index) => openLightbox(imageGroups.adminContact, index)} />
                     <ImageCarousel images={imageGroups.adminContact} onImageClick={(index) => openLightbox(imageGroups.adminContact, index)} />
                   </CardContent>
                 </Card>
@@ -607,6 +652,7 @@ export default function App() {
                     <CardDescription>売上・訪問者数・コンバージョン率・レコメンデーション分析などのKPI可視化</CardDescription>
                   </CardHeader>
                   <CardContent>
+                    <MobileImageScroller images={imageGroups.adminMarketing} onImageClick={(index) => openLightbox(imageGroups.adminMarketing, index)} />
                     <ImageCarousel images={imageGroups.adminMarketing} onImageClick={(index) => openLightbox(imageGroups.adminMarketing, index)} />
                   </CardContent>
                 </Card>
@@ -625,6 +671,7 @@ export default function App() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <MobileImageScroller images={imageGroups.chatbot} onImageClick={(index) => openLightbox(imageGroups.chatbot, index)} />
                   <ImageCarousel images={imageGroups.chatbot} onImageClick={(index) => openLightbox(imageGroups.chatbot, index)} />
                 </CardContent>
               </Card>

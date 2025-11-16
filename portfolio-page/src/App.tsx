@@ -179,6 +179,7 @@ function MobileImageScroller({ images, onImageClick }: { images: ImageData[]; on
 
   return (
     <div className="md:hidden -mx-4 px-4">
+      <p className="text-center text-xs text-slate-500 mb-4">横にスクロールし、タップすると拡大表示できます</p>
       <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory pb-6">
         {images.map((image, idx) => (
           <div

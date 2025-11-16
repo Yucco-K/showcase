@@ -12,16 +12,19 @@
 
 ### 1. 環境変数の設定
 
-`.env.local` ファイルを作成し、以下の環境変数を設定してください：
+`.env` ファイルに以下の環境変数を追加してください：
 
 ```env
 # Gorse推薦システム設定
-NEXT_PUBLIC_GORSE_ENDPOINT=http://localhost:8087
-GORSE_API_KEY=
+VITE_GORSE_API_URL=http://localhost:8087
+VITE_GORSE_API_KEY=
 
-# Supabase Edge Function用（本番環境のみ）
-GORSE_ENDPOINT=http://localhost:8087
+# サーバーサイド用（オプション）
+GORSE_API_URL=http://localhost:8087
+GORSE_API_KEY=
 ```
+
+**注意**: このプロジェクトはVite + Reactを使用しているため、クライアント側で使用する環境変数には `VITE_` プレフィックスが必要です。
 
 ### 2. Gorse 環境の起動
 

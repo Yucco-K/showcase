@@ -66,10 +66,12 @@ Information ページ（`/information`）でこれらのドキュメントを表
 
 ### 更新履歴
 
-- **2025 年 1 月 25 日**: 初回作成
+- **2025 年 1 月 16 日**: 初回作成
   - FAQ.md: 8 つのよくある質問を追加
   - TERMS_OF_SERVICE.md: 14 条の利用規約を作成
   - PRIVACY_POLICY.md: 包括的なプライバシーポリシーを作成
+  - SECURITY_SCANNING.md: セキュリティスキャンガイドを追加
+  - ENVIRONMENT_VARIABLES.md: 環境変数設定ガイドを追加
 
 ## 注意事項
 

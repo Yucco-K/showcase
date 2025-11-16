@@ -643,6 +643,9 @@ export default function App() {
           <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600">
             🛠️ 技術スタック
           </h2>
+          <p className="text-center text-sm md:text-base text-slate-600 max-w-4xl mx-auto mb-12 leading-relaxed">
+            Cursor × TaskMaster × Playwright × React × Vite × TypeScript × Stripe × Supabase × Vercel × GitHub Actions × Python × FastAPI × LangChain × OpenAI API × RAG × Gorse API × AWS × Lambda
+          </p>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             <Card className="border-2 border-purple-200 shadow-xl hover:shadow-2xl transition-shadow bg-white/80 backdrop-blur-sm">
               <CardHeader>

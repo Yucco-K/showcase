@@ -112,6 +112,9 @@ const imageGroups = {
 
 ## 🛠️ Tech Stack
 
+**Full Stack Overview**
+`Cursor × TaskMaster × Playwright × React × Vite × TypeScript × Stripe × Supabase × Vercel × GitHub Actions × Python × FastAPI × LangChain × OpenAI API × RAG × Gorse API × AWS × Lambda`
+
 - **React 18** - UI Framework
 - **TypeScript** - Type Safety
 - **Vite 6** - Build Tool

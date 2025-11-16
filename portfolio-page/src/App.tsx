@@ -131,7 +131,7 @@ function ImageCarousel({ images, onImageClick, groupId }: { images: ImageData[];
                 transition: 'opacity 0.3s ease-in-out'
               }}
             />
-            <div className="absolute left-0 right-0 bottom-3 md:bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 md:p-6 text-white">
+            <div className="absolute left-0 right-0 bottom-3 md:bottom-1 bg-gradient-to-t from-black/70 to-transparent p-4 md:p-6 text-white">
               <h3 className="text-base md:text-xl mb-1">{images[currentIndex].title}</h3>
               <p className="text-xs md:text-sm text-gray-200">{images[currentIndex].description}</p>
             </div>

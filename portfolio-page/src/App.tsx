@@ -56,7 +56,6 @@ const imageGroups = {
     { src: '/showcase/screenshots/admin/info/スクリーンショット 2025-11-16 16.10.24.png', title: 'お知らせ詳細表示', description: '公開されたお知らせページ' },
   ],
   adminProducts: [
-    { src: '/showcase/screenshots/admin/product-edit-form.png', title: '商品編集フォーム', description: '商品情報の詳細編集' },
     { src: '/showcase/screenshots/admin/products/スクリーンショット 2025-11-16 16.10.37.png', title: '商品管理一覧', description: '全商品の編集・削除・検索' },
     { src: '/showcase/screenshots/admin/products/スクリーンショット 2025-11-16 16.10.45.png', title: '新規商品作成', description: '商品情報の詳細入力フォーム' },
     { src: '/showcase/screenshots/admin/products/スクリーンショット 2025-11-16 16.11.06.png', title: '商品詳細管理', description: '商品ステータス・特徴管理' },

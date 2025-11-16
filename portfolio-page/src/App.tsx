@@ -45,11 +45,11 @@ const imageGroups = {
     { src: '/showcase/screenshots/frontend/スクリーンショット 2025-11-16 17.45.04.png', title: 'チャットボット統合', description: 'AIアシスタントによるサポート' },
   ],
   mypage: [
-    { src: '/showcase/screenshots/frontend/スクリーンショット 2025-11-16 15.56.00.png', title: '購入したアプリ', description: 'ユーザーの購入履歴一覧' },
-    { src: '/showcase/screenshots/frontend/スクリーンショット 2025-11-16 15.56.27.png', title: 'プロフィール編集', description: 'ユーザー情報とパスワード管理' },
-    { src: '/showcase/screenshots/frontend/スクリーンショット 2025-11-16 15.55.52.png', title: 'いいね＆お気に入り', description: 'お気に入りアプリの管理' },
-    { src: '/showcase/screenshots/frontend/スクリーンショット 2025-11-16 15.56.08.png', title: 'お問い合わせ履歴', description: '問い合わせスレッド一覧' },
-    { src: '/showcase/screenshots/frontend/スクリーンショット 2025-11-16 15.52.27.png', title: 'セキュリティ設定', description: 'パスワードとメールアドレス変更' },
+    { src: '/showcase/screenshots/mypage/スクリーンショット 2025-11-16 15.56.27.png', title: 'プロフィール編集', description: 'ユーザー情報とパスワード管理' },
+    { src: '/showcase/screenshots/mypage/スクリーンショット 2025-11-16 15.56.39.png', title: 'お知らせページ', description: '重要なお知らせの一覧' },
+    { src: '/showcase/screenshots/mypage/スクリーンショット 2025-11-16 15.56.47.png', title: 'お知らせ詳細', description: 'リッチコンテンツ表示' },
+    { src: '/showcase/screenshots/mypage/スクリーンショット 2025-11-16 15.57.03.png', title: 'ブログ記事詳細', description: 'Markdown形式の記事表示' },
+    { src: '/showcase/screenshots/mypage/スクリーンショット 2025-11-16 16.09.50.png', title: 'レビューフィルタ', description: '評価・カテゴリ別フィルタリング' },
   ],
   adminInfo: [
     { src: '/showcase/screenshots/admin/info/スクリーンショット 2025-11-16 16.10.16.png', title: 'お知らせ編集', description: 'リッチテキストエディタ搭載' },
@@ -112,7 +112,7 @@ function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageC
   return (
     <div className="relative">
       {/* Carousel */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-blue-50 min-h-[400px]">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-blue-50" style={{ minHeight: '300px' }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
@@ -128,16 +128,16 @@ function ImageCarousel({ images, onImageClick }: { images: ImageData[]; onImageC
               alt={images[currentIndex].title}
               loading="eager"
               onLoad={() => handleImageLoad(currentIndex)}
-              className="w-full h-auto object-cover"
+              className="w-full h-auto object-contain mx-auto"
               style={{
-                maxHeight: '600px',
+                maxHeight: '500px',
                 opacity: loadedImages.has(currentIndex) ? 1 : 0.7,
                 transition: 'opacity 0.3s ease-in-out'
               }}
             />
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6 text-white">
-              <h3 className="text-xl mb-1">{images[currentIndex].title}</h3>
-              <p className="text-sm text-gray-200">{images[currentIndex].description}</p>
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 md:p-6 text-white">
+              <h3 className="text-base md:text-xl mb-1">{images[currentIndex].title}</h3>
+              <p className="text-xs md:text-sm text-gray-200">{images[currentIndex].description}</p>
             </div>
           </motion.div>
         </AnimatePresence>
@@ -494,21 +494,25 @@ export default function App() {
           </h2>
           <Tabs defaultValue="frontend" className="max-w-6xl mx-auto">
             <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-2 bg-white/80 backdrop-blur-sm p-2 rounded-2xl shadow-lg mb-8">
-              <TabsTrigger value="frontend" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-blue-500 data-[state=active]:text-white rounded-xl">
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                フロントエンド
+              <TabsTrigger value="frontend" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-blue-500 data-[state=active]:text-white rounded-xl flex items-center justify-center gap-2">
+                <ShoppingCart className="w-4 h-4" />
+                <span className="hidden sm:inline">フロントエンド</span>
+                <span className="sm:hidden">Frontend</span>
               </TabsTrigger>
-              <TabsTrigger value="mypage" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-500 data-[state=active]:text-white rounded-xl">
-                <Users className="w-4 h-4 mr-2" />
-                マイページ
+              <TabsTrigger value="mypage" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-500 data-[state=active]:text-white rounded-xl flex items-center justify-center gap-2">
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">マイページ</span>
+                <span className="sm:hidden">MyPage</span>
               </TabsTrigger>
-              <TabsTrigger value="admin" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-xl">
-                <Settings className="w-4 h-4 mr-2" />
-                管理画面
+              <TabsTrigger value="admin" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-xl flex items-center justify-center gap-2">
+                <Settings className="w-4 h-4" />
+                <span className="hidden sm:inline">管理画面</span>
+                <span className="sm:hidden">Admin</span>
               </TabsTrigger>
-              <TabsTrigger value="chatbot" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white rounded-xl">
-                <MessageSquare className="w-4 h-4 mr-2" />
-                チャットボット
+              <TabsTrigger value="chatbot" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white rounded-xl flex items-center justify-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                <span className="hidden sm:inline">チャットボット</span>
+                <span className="sm:hidden">Chatbot</span>
               </TabsTrigger>
             </TabsList>
 

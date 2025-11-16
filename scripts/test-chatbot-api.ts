@@ -29,11 +29,14 @@ const testQueries = [
 	"プライバシーポリシーはどこに書かれていますか？",
 ];
 
-// 環境変数からANON_KEYを取得（フォールバックとして既存のキーを使用）
+// 環境変数からANON_KEYを取得（必須）
 const ANON_KEY =
 	Deno.env.get("VITE_SUPABASE_ANON_KEY") ||
-	Deno.env.get("SUPABASE_ANON_KEY") ||
-	"[REDACTED_SUPABASE_ANON_KEY]";
+	Deno.env.get("SUPABASE_ANON_KEY");
+
+if (!ANON_KEY) {
+	throw new Error("Missing SUPABASE anon key in environment variables");
+}
 
 async function testChatbotAPI() {
 	for (const query of testQueries) {

@@ -79,8 +79,6 @@ const imageGroups = {
     { src: '/showcase/screenshots/chatbot/chatbot-suggest-products.png', title: 'チャットボット（おすすめ紹介）', description: '複数商品をまとめて提示' },
     { src: '/showcase/screenshots/chatbot/chatbot-appbuzz-detail.png', title: 'チャットボット（詳細説明）', description: 'AppBuzz Hive の概要を会話で案内' },
     { src: '/showcase/screenshots/chatbot/chatbot-cheapest-app.png', title: 'チャットボット（最安値検索）', description: '価格ベースの質問に即応' },
-    { src: '/showcase/screenshots/chatbot/chatbot-widget-pinned.png', title: 'チャットボット（ウィジェット）', description: '画面右下に固定表示できるUI' },
-    { src: '/showcase/screenshots/chatbot/chatbot-floating-panel.png', title: 'チャットボット（フローティング）', description: 'ドラッグで位置を変えられる独立パネル' },
     { src: '/showcase/screenshots/chatbot/chatbot-quick-topics.png', title: 'チャットボット（クイック質問）', description: 'プリセット質問をタップしてすぐ相談' },
   ],
 };

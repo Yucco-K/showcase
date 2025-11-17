@@ -1,4 +1,4 @@
-# Portfolio Showcase
+# App Showcase
 
 モダンなポートフォリオ・ショーケースサイト。Supabase、Stripe、Gorse 推薦システム、AI チャットボットを統合したフルスタックアプリケーションです。
 

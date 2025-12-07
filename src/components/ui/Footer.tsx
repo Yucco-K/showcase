@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import styled from "styled-components";
-import { FaGithub } from "react-icons/fa";
 
 const FooterContainer = styled.footer`
 	background: rgba(20, 26, 42, 0.4);
@@ -84,30 +83,6 @@ const ExternalLink = styled.a`
 	&:focus {
 		outline: 2px solid #ffd700;
 		outline-offset: 2px;
-		color: #ffd700;
-		border-radius: 4px;
-	}
-`;
-
-const SocialLinks = styled.div`
-	display: flex;
-	gap: 1rem;
-	margin-top: 0.5rem;
-`;
-
-const SocialIcon = styled.a`
-	color: rgba(255, 255, 255, 0.7);
-	font-size: 1.5rem;
-	transition: all 0.3s;
-
-	&:hover {
-		color: #ffd700;
-		transform: translateY(-3px);
-	}
-
-	&:focus {
-		outline: 2px solid #ffd700;
-		outline-offset: 4px;
 		color: #ffd700;
 		border-radius: 4px;
 	}
@@ -215,20 +190,6 @@ export default function Footer() {
 					</ExternalLink>
 				</FooterSection>
 
-				<FooterSection>
-					<FooterTitle>リポジトリ</FooterTitle>
-					<FooterText>GitHubでソースコードを公開中</FooterText>
-					<SocialLinks>
-						<SocialIcon
-							href="https://github.com/Yucco-K/showcase"
-							target="_blank"
-							rel="noopener noreferrer"
-							aria-label="GitHub"
-						>
-							<FaGithub />
-						</SocialIcon>
-					</SocialLinks>
-				</FooterSection>
 			</FooterContent>
 
 			<FooterBottom>

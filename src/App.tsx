@@ -8,6 +8,7 @@ import {
 import { createGlobalStyle } from "styled-components";
 import { useBgColor } from "./hooks/useBgColor";
 import NavBar from "./components/ui/NavBar";
+import Footer from "./components/ui/Footer";
 import Top from "./pages/Top";
 import Information from "./pages/Information";
 import Portfolio from "./pages/Portfolio";
@@ -102,6 +103,7 @@ function AppRoutes() {
 				<Route path="/reset-password" element={<ResetPassword />} />
 				<Route path="*" element={<Navigate to="/" replace />} />
 			</Routes>
+			<Footer />
 		</>
 	);
 }

@@ -1,9 +1,11 @@
 import { motion, useAnimation } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import yuccoCat from "../assets/yucco-cat.png";
 
 export default function YuccoCat() {
 	const controls = useAnimation();
+	const location = useLocation();
 	const [float, setFloat] = useState({ y: 0, x: 0 });
 	const [pos, setPos] = useState({
 		left: window.innerWidth - 152,
@@ -14,31 +16,43 @@ export default function YuccoCat() {
 	const [isDragging, setIsDragging] = useState(false);
 	const [isVisible, setIsVisible] = useState(false);
 	const [animationIntensity, setAnimationIntensity] = useState(0); // 0 → 1 (3秒かけて)
+	const [fadeKey, setFadeKey] = useState(0); // フェードイン再トリガー用
 
-	// 初期フェードイン & スロースタート
+	// ページ遷移・リロード時にフェードインをリトリガー
 	useEffect(() => {
-		setIsVisible(true);
+		// フェードイン状態をリセット
+		setIsVisible(false);
+		setAnimationIntensity(0);
+		setFadeKey((prev) => prev + 1);
 
-		// 3秒かけてアニメーションの強度を上げる
-		const startTime = Date.now();
-		const slowStartDuration = 3000; // 3秒
+		// 少し遅延を入れてからフェードイン開始
+		const timer = setTimeout(() => {
+			setIsVisible(true);
 
-		const updateIntensity = () => {
-			const elapsed = Date.now() - startTime;
-			const progress = Math.min(elapsed / slowStartDuration, 1);
-			// イージング関数（ease-in-out）でスムーズに
-			const eased = progress < 0.5
-				? 2 * progress * progress
-				: 1 - Math.pow(-2 * progress + 2, 2) / 2;
-			setAnimationIntensity(eased);
+			// 3秒かけてアニメーションの強度を上げる
+			const startTime = Date.now();
+			const slowStartDuration = 3000; // 3秒
 
-			if (progress < 1) {
-				requestAnimationFrame(updateIntensity);
-			}
-		};
+			const updateIntensity = () => {
+				const elapsed = Date.now() - startTime;
+				const progress = Math.min(elapsed / slowStartDuration, 1);
+				// イージング関数（ease-in-out）でスムーズに
+				const eased =
+					progress < 0.5
+						? 2 * progress * progress
+						: 1 - Math.pow(-2 * progress + 2, 2) / 2;
+				setAnimationIntensity(eased);
 
-		requestAnimationFrame(updateIntensity);
-	}, []);
+				if (progress < 1) {
+					requestAnimationFrame(updateIntensity);
+				}
+			};
+
+			requestAnimationFrame(updateIntensity);
+		}, 50);
+
+		return () => clearTimeout(timer);
+	}, [location.pathname]);
 
 	// ふわふわアニメーション（スロースタート対応）
 	useEffect(() => {
@@ -105,6 +119,7 @@ export default function YuccoCat() {
 	return (
 		<>
 			<motion.img
+				key={fadeKey}
 				src={yuccoCat}
 				alt="Yucco Cat"
 				style={{

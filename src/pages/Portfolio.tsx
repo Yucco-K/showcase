@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useProjects } from "../hooks/useProjects";
 import {
 	PortfolioGrid,
@@ -6,6 +7,7 @@ import {
 	PortfolioCardTitle,
 	PortfolioCardDescription,
 	ReadMoreButton,
+	ViewOnGitHub,
 } from "../styles/commonStyles";
 
 const Portfolio: React.FC = () => {
@@ -80,6 +82,11 @@ const Portfolio: React.FC = () => {
 					const isExpanded = expandedCards.has(project.id);
 					const hasLongDescription =
 						project.description && project.description.length > 100;
+					const linkType = project.github_url
+						? "github"
+						: project.demo_url
+							? "demo"
+							: null;
 
 					return (
 						<PortfolioCard
@@ -102,6 +109,21 @@ const Portfolio: React.FC = () => {
 										</ReadMoreButton>
 									)}
 								</>
+							)}
+							{linkType && (
+								<ViewOnGitHub>
+									{linkType === "github" ? (
+										<>
+											<FaGithub />
+											<span>GitHubで見る</span>
+										</>
+									) : (
+										<>
+											<FaExternalLinkAlt />
+											<span>デモを見る</span>
+										</>
+									)}
+								</ViewOnGitHub>
 							)}
 						</PortfolioCard>
 					);

@@ -18,12 +18,39 @@ export const PortfolioGrid = styled.div`
 	}
 `;
 
+export const ViewOnGitHub = styled.div`
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: auto;
+	padding-top: 1rem;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #4a90e2;
+	transition: color 0.2s;
+
+	svg {
+		width: 18px;
+		height: 18px;
+	}
+
+	@media (max-width: 768px) {
+		font-size: 0.8rem;
+		padding-top: 0.75rem;
+
+		svg {
+			width: 16px;
+			height: 16px;
+		}
+	}
+`;
+
 export const PortfolioCard = styled.a`
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
 	justify-content: flex-start;
-	min-height: 200px;
+	min-height: 220px;
 	padding: 2rem;
 	background: rgba(255, 255, 255, 0.12);
 	border-radius: 1.5rem;
@@ -37,6 +64,10 @@ export const PortfolioCard = styled.a`
 		transform: translateY(-4px);
 		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 		background: rgba(255, 255, 255, 0.18);
+
+		${ViewOnGitHub} {
+			color: #357abd;
+		}
 	}
 
 	&:focus {
@@ -45,7 +76,7 @@ export const PortfolioCard = styled.a`
 	}
 
 	@media (max-width: 768px) {
-		min-height: 170px;
+		min-height: 190px;
 		padding: 1.5rem;
 	}
 `;

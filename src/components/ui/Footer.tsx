@@ -38,13 +38,6 @@ const FooterTitle = styled.h3`
 	letter-spacing: 0.5px;
 `;
 
-const FooterText = styled.p`
-	margin: 0;
-	line-height: 1.6;
-	color: rgba(255, 255, 255, 0.7);
-	font-size: 0.95rem;
-`;
-
 const FooterLink = styled(Link)`
 	color: rgba(255, 255, 255, 0.7);
 	text-decoration: none;
@@ -98,43 +91,12 @@ const FooterBottom = styled.div`
 	font-size: 0.9rem;
 `;
 
-const TechStack = styled.div`
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-	margin-top: 0.5rem;
-`;
-
-const TechBadge = styled.span`
-	background: rgba(255, 215, 0, 0.1);
-	color: #ffd700;
-	padding: 0.3rem 0.8rem;
-	border-radius: 12px;
-	font-size: 0.85rem;
-	font-weight: 500;
-	border: 1px solid rgba(255, 215, 0, 0.2);
-`;
-
 export default function Footer() {
 	const currentYear = new Date().getFullYear();
 
 	return (
 		<FooterContainer>
 			<FooterContent>
-				<FooterSection>
-					<FooterTitle>App Showcase</FooterTitle>
-					<FooterText>
-						架空のアプリストアを通じてポートフォリオを紹介するフルスタックWebアプリケーション
-					</FooterText>
-					<TechStack>
-						<TechBadge>React</TechBadge>
-						<TechBadge>TypeScript</TechBadge>
-						<TechBadge>Supabase</TechBadge>
-						<TechBadge>Stripe</TechBadge>
-						<TechBadge>AI</TechBadge>
-					</TechStack>
-				</FooterSection>
-
 				<FooterSection>
 					<FooterTitle>クイックリンク</FooterTitle>
 					<FooterLink to="/products">製品一覧</FooterLink>
@@ -193,11 +155,7 @@ export default function Footer() {
 			</FooterContent>
 
 			<FooterBottom>
-				<p>
-					© {currentYear} App Showcase. All rights reserved.
-					<br />
-					Built with ❤️ using React, TypeScript, Supabase & AI
-				</p>
+				<p>© {currentYear} App Showcase. All rights reserved.</p>
 			</FooterBottom>
 		</FooterContainer>
 	);

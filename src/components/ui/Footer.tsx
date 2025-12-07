@@ -167,7 +167,6 @@ export default function Footer() {
 					<FooterLink to="/portfolio">ポートフォリオ</FooterLink>
 					<FooterLink to="/information">インフォメーション</FooterLink>
 					<FooterLink to="/contact">お問い合わせ</FooterLink>
-					<FooterLink to="/mypage">マイページ</FooterLink>
 				</FooterSection>
 
 				<FooterSection>

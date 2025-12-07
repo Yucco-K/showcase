@@ -180,6 +180,13 @@ export default function Footer() {
 						📚 ドキュメント
 					</ExternalLink>
 					<ExternalLink
+						href="https://github.com/Yucco-K/showcase/blob/main/docs/%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC%E3%82%AC%E3%82%A4%E3%83%89_JA.md"
+						target="_blank"
+						rel="noopener noreferrer"
+					>
+						📖 ユーザーガイド
+					</ExternalLink>
+					<ExternalLink
 						href="https://github.com/Yucco-K/showcase/blob/main/docs/FAQ.md"
 						target="_blank"
 						rel="noopener noreferrer"
@@ -199,6 +206,13 @@ export default function Footer() {
 						rel="noopener noreferrer"
 					>
 						🔒 プライバシーポリシー
+					</ExternalLink>
+					<ExternalLink
+						href="https://github.com/Yucco-K/showcase/blob/main/docs/%E5%80%8B%E4%BA%BA%E6%83%85%E5%A0%B1%E4%BF%9D%E8%AD%B7%E8%A6%8F%E5%AE%9A_JA.md"
+						target="_blank"
+						rel="noopener noreferrer"
+					>
+						🛡️ 個人情報保護規定
 					</ExternalLink>
 				</FooterSection>
 

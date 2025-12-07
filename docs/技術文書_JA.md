@@ -1,3 +1,22 @@
+# セキュリティと機能強化アップデート（2025 年 7 月 21 日〜27 日）
+
+## 🆕 2025 年 7 月 27 日 チャットボット API のリアーキテクチャ (Python + LangChain)
+
+- **概要**: 従来の Deno ベースの Supabase Edge Function を、メンテナンス性と拡張性を目的として Python + FastAPI + LangChain ベースの Vercel Serverless Function に刷新しました。
+- **技術スタック**:
+  - **言語・フレームワーク**: `Deno` + `TypeScript` から `Python` + `FastAPI` へ全面移行。
+  - **AI/LLM ライブラリ**: `LangChain`を導入し、プロンプト管理、RAG パイプライン、外部ツール連携の基盤を構築。
+  - **デプロイ環境**: `Vercel Serverless Functions` の Python ランタイムを利用。
+- **RAG (Retrieval-Augmented Generation) の実装**:
+  - `Supabase` (`pgvector`) のベクトル検索を利用し、ドキュメントの埋め込み情報を基に関連情報を高速検索。
+  - 複数の Markdown ドキュメントを知識源として一括で取り込めるように拡張。
+- **API と開発環境の安定化**:
+  - `FastAPI`のルーターを導入し、Vercel の`rewrites`設定と連携してフロントエンドとのルーティング競合を解消。
+  - CORS 対応、非同期シングルトンパターンによる環境変数管理、構造化ロギングなどを実装。
+- **API エンドポイント**: フロントエンドからは `/api/chat` を参照するように変更。
+
+---
+
 # セキュリティと機能強化アップデート（2025 年 7 月 21 日〜26 日）
 
 ---
@@ -6,7 +25,7 @@
 
 ### 高機能 FAQ チャットボットの実装
 
-- **OpenAI API 統合**: ChatGPT-4 を使用した AI アシスタント機能
+- **OpenAI API 統合**: GPT-4o-mini を使用した AI アシスタント機能
 - **Supabase Edge Functions**: サーバーレス実装による安全な API 統合
 - **自動タイムアウト機能**: 5 分間の非活動でチャット自動クローズ、30 秒前警告表示
 - **人気 FAQ タグ**: 15 個の FAQ 質問データベース、人気度による自動ソート

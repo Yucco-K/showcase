@@ -71,7 +71,7 @@ sequenceDiagram
 
 ```mermaid
 erDiagram
-    auth.users ||--|| profiles : "1:1"
+    users ||--|| profiles : "1:1"
     profiles ||--o{ product_purchases : "1:N"
     profiles ||--o{ blogs : "1:N"
     products ||--o{ product_purchases : "1:N"
@@ -81,7 +81,7 @@ erDiagram
     profiles ||--o{ product_likes : "1:N"
     profiles ||--o{ contacts : "1:N"
 
-    auth.users {
+    users {
         uuid id PK
         string email
         string encrypted_password
@@ -235,8 +235,10 @@ classDiagram
 
 ## 📝 編集履歴
 
-- **2025-01-18**: 初期版作成
+- **2025-07-18**: 初期版作成
 - **次回更新**: 図の調整・追加時
+
+> **注記**: ERD図の `users` テーブルは、実際には Supabase の `auth.users` スキーマです。Mermaid の制限によりドット記法が使用できないため、簡略表記しています。
 
 ---
 

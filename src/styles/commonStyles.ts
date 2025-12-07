@@ -20,18 +20,16 @@ export const PortfolioGrid = styled.div`
 
 export const PortfolioCard = styled.a`
 	display: flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 120px;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: flex-start;
+	min-height: 180px;
 	padding: 2rem;
 	background: rgba(255, 255, 255, 0.12);
 	border-radius: 1.5rem;
 	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 	color: #222;
-	font-weight: 600;
-	font-size: 1.1rem;
 	text-decoration: none;
-	text-align: center;
 	transition: all 0.3s ease;
 
 	&:hover {
@@ -46,8 +44,37 @@ export const PortfolioCard = styled.a`
 	}
 
 	@media (max-width: 768px) {
-		min-height: 100px;
+		min-height: 150px;
 		padding: 1.5rem;
-		font-size: 1rem;
+	}
+`;
+
+export const PortfolioCardTitle = styled.h3`
+	margin: 0 0 1rem 0;
+	font-size: 1.2rem;
+	font-weight: 600;
+	color: #222;
+
+	@media (max-width: 768px) {
+		font-size: 1.1rem;
+		margin: 0 0 0.75rem 0;
+	}
+`;
+
+export const PortfolioCardDescription = styled.p`
+	margin: 0;
+	font-size: 0.95rem;
+	font-weight: 400;
+	line-height: 1.6;
+	color: rgba(34, 34, 34, 0.8);
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+
+	@media (max-width: 768px) {
+		font-size: 0.9rem;
+		-webkit-line-clamp: 2;
 	}
 `;

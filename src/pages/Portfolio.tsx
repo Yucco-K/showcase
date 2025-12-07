@@ -1,5 +1,10 @@
 import { useProjects } from "../hooks/useProjects";
-import { PortfolioGrid, PortfolioCard } from "../styles/commonStyles";
+import {
+	PortfolioGrid,
+	PortfolioCard,
+	PortfolioCardTitle,
+	PortfolioCardDescription,
+} from "../styles/commonStyles";
 
 const Portfolio: React.FC = () => {
 	const { projects, loading, error } = useProjects();
@@ -61,7 +66,12 @@ const Portfolio: React.FC = () => {
 						target="_blank"
 						rel="noopener noreferrer"
 					>
-						{project.title}
+						<PortfolioCardTitle>{project.title}</PortfolioCardTitle>
+						{project.description && (
+							<PortfolioCardDescription>
+								{project.description}
+							</PortfolioCardDescription>
+						)}
 					</PortfolioCard>
 				))}
 			</PortfolioGrid>

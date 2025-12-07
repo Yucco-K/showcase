@@ -238,14 +238,13 @@ env-vars.txt
 # EC2 IP addresses
 gorse-ec2-ip.txt
 
-# Security scanning reports and documentation
-gitleaks-report.json
-gitleaks.log
-trufflehog-report.json
-security-scan-*.json
-.gitleaks/
-SECURITY_SCAN_REPORT*.md
-SECURITY_AUDIT_REPORT.md
-SECURITY_GUIDE.md
-GITHUB_PUBLIC_RELEASE_CHECKLIST.md
+# Security scanning reports and documentation (ルートディレクトリのみ無視)
+/gitleaks-report.json
+/gitleaks.log
+/trufflehog-report.json
+/security-scan-*.json
+/.gitleaks/
+/SECURITY_SCAN_REPORT*.md
+/SECURITY_AUDIT_REPORT.md
+/SECURITY_GUIDE.md
 # Note: docs/SECURITY_SCANNING.md is user documentation and should be tracked

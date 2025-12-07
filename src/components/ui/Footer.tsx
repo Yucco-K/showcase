@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import styled from "styled-components";
-import { FaGithub, FaTwitter, FaLinkedin } from "react-icons/fa";
+import { FaGithub } from "react-icons/fa";
 
 const FooterContainer = styled.footer`
 	background: rgba(20, 26, 42, 0.4);
@@ -217,8 +217,8 @@ export default function Footer() {
 				</FooterSection>
 
 				<FooterSection>
-					<FooterTitle>フォロー</FooterTitle>
-					<FooterText>ソーシャルメディアで最新情報をチェック</FooterText>
+					<FooterTitle>リポジトリ</FooterTitle>
+					<FooterText>GitHubでソースコードを公開中</FooterText>
 					<SocialLinks>
 						<SocialIcon
 							href="https://github.com/Yucco-K/showcase"
@@ -227,22 +227,6 @@ export default function Footer() {
 							aria-label="GitHub"
 						>
 							<FaGithub />
-						</SocialIcon>
-						<SocialIcon
-							href="https://twitter.com"
-							target="_blank"
-							rel="noopener noreferrer"
-							aria-label="Twitter"
-						>
-							<FaTwitter />
-						</SocialIcon>
-						<SocialIcon
-							href="https://linkedin.com"
-							target="_blank"
-							rel="noopener noreferrer"
-							aria-label="LinkedIn"
-						>
-							<FaLinkedin />
 						</SocialIcon>
 					</SocialLinks>
 				</FooterSection>

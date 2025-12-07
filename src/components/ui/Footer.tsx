@@ -103,7 +103,6 @@ export default function Footer() {
 					<FooterLink to="/blog">ブログ</FooterLink>
 					<FooterLink to="/portfolio">ポートフォリオ</FooterLink>
 					<FooterLink to="/information">インフォメーション</FooterLink>
-					<FooterLink to="/contact">お問い合わせ</FooterLink>
 				</FooterSection>
 
 				<FooterSection>

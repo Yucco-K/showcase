@@ -23,7 +23,7 @@ export const PortfolioCard = styled.a`
 	flex-direction: column;
 	align-items: flex-start;
 	justify-content: flex-start;
-	min-height: 180px;
+	min-height: 200px;
 	padding: 2rem;
 	background: rgba(255, 255, 255, 0.12);
 	border-radius: 1.5rem;
@@ -31,6 +31,7 @@ export const PortfolioCard = styled.a`
 	color: #222;
 	text-decoration: none;
 	transition: all 0.3s ease;
+	position: relative;
 
 	&:hover {
 		transform: translateY(-4px);
@@ -44,7 +45,7 @@ export const PortfolioCard = styled.a`
 	}
 
 	@media (max-width: 768px) {
-		min-height: 150px;
+		min-height: 170px;
 		padding: 1.5rem;
 	}
 `;
@@ -61,20 +62,48 @@ export const PortfolioCardTitle = styled.h3`
 	}
 `;
 
-export const PortfolioCardDescription = styled.p`
+export const PortfolioCardDescription = styled.p<{ $expanded?: boolean }>`
 	margin: 0;
 	font-size: 0.95rem;
 	font-weight: 400;
 	line-height: 1.6;
 	color: rgba(34, 34, 34, 0.8);
-	display: -webkit-box;
-	-webkit-line-clamp: 3;
+	display: ${({ $expanded }) => ($expanded ? "block" : "-webkit-box")};
+	-webkit-line-clamp: ${({ $expanded }) => ($expanded ? "unset" : "3")};
 	-webkit-box-orient: vertical;
 	overflow: hidden;
 	text-overflow: ellipsis;
 
 	@media (max-width: 768px) {
 		font-size: 0.9rem;
-		-webkit-line-clamp: 2;
+		-webkit-line-clamp: ${({ $expanded }) => ($expanded ? "unset" : "2")};
+	}
+`;
+
+export const ReadMoreButton = styled.button`
+	background: none;
+	border: none;
+	color: #4a90e2;
+	font-size: 0.9rem;
+	font-weight: 600;
+	padding: 0.5rem 0 0 0;
+	cursor: pointer;
+	text-align: left;
+	transition: color 0.2s;
+	margin-top: 0.5rem;
+
+	&:hover {
+		color: #357abd;
+		text-decoration: underline;
+	}
+
+	&:focus {
+		outline: 2px solid #ffd700;
+		outline-offset: 2px;
+		border-radius: 4px;
+	}
+
+	@media (max-width: 768px) {
+		font-size: 0.85rem;
 	}
 `;

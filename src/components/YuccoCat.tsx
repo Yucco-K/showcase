@@ -269,6 +269,7 @@ export default function MagicOrb() {
 			cancelAnimationFrame(rafRef.current);
 			window.clearTimeout(comboTimer.current);
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	return (

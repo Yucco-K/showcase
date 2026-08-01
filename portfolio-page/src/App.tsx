@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, ChevronDown, X, ExternalLink, Code, Database
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
 
@@ -271,7 +271,7 @@ function Lightbox({ images, initialIndex, onClose }: { images: ImageData[]; init
   const handleTouchEnd = (e: React.TouchEvent) => {
     const diff = touchStartX.current - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 40) {
-      diff > 0 ? nextImage() : prevImage();
+      if (diff > 0) nextImage(); else prevImage();
     }
   };
 

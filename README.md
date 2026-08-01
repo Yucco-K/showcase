@@ -2,15 +2,22 @@
 
 モダンなポートフォリオ・ショーケースサイト。Supabase、Stripe、Gorse 推薦システム、AI チャットボットを統合したフルスタックアプリケーションです。
 
+<div align="center">
+
+[![Portfolio Page](https://img.shields.io/badge/🖼️%20%E3%83%9D%E3%83%BC%E3%83%88%E3%83%95%E3%82%A9%E3%83%AA%E3%82%AA%E3%83%9A%E3%83%BC%E3%82%B8%E3%82%92%E8%A6%8B%E3%82%8B-7c3aed?style=for-the-badge&logo=github&logoColor=white)](https://yucco-k.github.io/showcase/)
+[![Live Demo](https://img.shields.io/badge/🚀%20Live%20Demo-showcase--topaz.vercel.app-0ea5e9?style=for-the-badge&logo=vercel&logoColor=white)](https://showcase-topaz.vercel.app/)
+
+<br/>
+
+[<img src="https://yucco-k.github.io/showcase/screenshots/frontend/frontend-hero-welcome.png" width="640" alt="App Showcase スクリーンショット" />](https://yucco-k.github.io/showcase/)
+
+**▲ 画像をクリックするとポートフォリオページへ移動します**
+
+</div>
+
 ## 📱 プロジェクト概要
 
 「App Showcase」は、**架空のアプリストアを通じてポートフォリオを紹介するフルスタックWebアプリケーション**です。ECサイトのようなUI/UXを持ちながら、ユーザー管理、レビューシステム、AIチャットボット、マーケティング分析ダッシュボードなど、**多彩な機能**を実装しています。
-
-<div align="center">
-
-### 👉 [詳しくはこちら](https://yucco-k.github.io/showcase/)
-
-</div>
 
 <table>
   <tr>

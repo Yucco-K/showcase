@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, X, ExternalLink, Code, Database, Zap, Users, MessageSquare, ShoppingCart, BarChart3, Star, Search, Package, FileText, Mail, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './components/ui/button';
@@ -250,19 +250,29 @@ function MobileImageScroller({ images, onImageClick, groupId }: { images: ImageD
 function Lightbox({ images, initialIndex, onClose }: { images: ImageData[]; initialIndex: number; onClose: () => void }) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([initialIndex]));
+  const touchStartX = useRef<number>(0);
 
   const nextImage = () => {
-    const newIndex = (currentIndex + 1) % images.length;
-    setCurrentIndex(newIndex);
+    setCurrentIndex(prev => (prev + 1) % images.length);
   };
 
   const prevImage = () => {
-    const newIndex = (currentIndex - 1 + images.length) % images.length;
-    setCurrentIndex(newIndex);
+    setCurrentIndex(prev => (prev - 1 + images.length) % images.length);
   };
 
   const handleImageLoad = (index: number) => {
     setLoadedImages(prev => new Set([...prev, index]));
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      diff > 0 ? nextImage() : prevImage();
+    }
   };
 
   return (
@@ -273,6 +283,8 @@ function Lightbox({ images, initialIndex, onClose }: { images: ImageData[]; init
       transition={{ duration: 0.2 }}
       className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
       onClick={onClose}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       <button
         onClick={onClose}
@@ -314,21 +326,24 @@ function Lightbox({ images, initialIndex, onClose }: { images: ImageData[]; init
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation */}
+        {/* PC のみ矢印ナビゲーション表示、スマホはスワイプ操作 */}
         <button
-          onClick={prevImage}
-          className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-sm hover:bg-white/20 p-4 rounded-full transition-all"
+          onClick={(e) => { e.stopPropagation(); prevImage(); }}
+          className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-sm hover:bg-white/20 p-4 rounded-full transition-all items-center justify-center"
           aria-label="前の画像"
         >
           <ChevronLeft className="w-8 h-8 text-white" />
         </button>
         <button
-          onClick={nextImage}
-          className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-sm hover:bg-white/20 p-4 rounded-full transition-all"
+          onClick={(e) => { e.stopPropagation(); nextImage(); }}
+          className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-sm hover:bg-white/20 p-4 rounded-full transition-all items-center justify-center"
           aria-label="次の画像"
         >
           <ChevronRight className="w-8 h-8 text-white" />
         </button>
+
+        {/* スマホ用スワイプヒント */}
+        <p className="md:hidden text-center text-xs text-gray-500 mt-3">← スワイプで切替 →</p>
       </div>
     </motion.div>
   );

@@ -106,7 +106,7 @@ function ImageCarousel({ images, onImageClick, groupId }: { images: ImageData[];
   return (
     <div className="relative hidden md:block">
       {/* Carousel */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-blue-50" style={{ minHeight: '300px' }}>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-blue-50" style={{ aspectRatio: '16/9' }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
@@ -115,16 +115,15 @@ function ImageCarousel({ images, onImageClick, groupId }: { images: ImageData[];
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
             onClick={() => onImageClick(currentIndex)}
-            className="cursor-pointer"
+            className="cursor-pointer absolute inset-0"
           >
             <img
               src={images[currentIndex].src}
               alt={images[currentIndex].title}
               loading="eager"
               onLoad={() => handleImageLoad(currentIndex)}
-              className="w-full h-auto object-contain mx-auto"
+              className="w-full h-full object-contain"
               style={{
-                maxHeight: '500px',
                 opacity: loadedImages.has(currentIndex) ? 1 : 0.7,
                 transition: 'opacity 0.3s ease-in-out'
               }}
@@ -205,14 +204,14 @@ function MobileImageScroller({ images, onImageClick, groupId }: { images: ImageD
           <div
             key={image.src}
             className="min-w-[85%] snap-center relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-blue-50 shadow-lg"
+            style={{ aspectRatio: '16/9' }}
             onClick={() => onImageClick(idx)}
           >
             <img
               src={image.src}
               alt={image.title}
-              className="w-full h-auto object-contain mx-auto"
+              className="absolute inset-0 w-full h-full object-contain"
               style={{
-                maxHeight: '320px',
                 opacity: loadedImages.has(idx) ? 1 : 0.7,
                 transition: 'opacity 0.3s ease-in-out'
               }}
@@ -565,26 +564,26 @@ export default function App() {
             🖼️ スクリーンショット
           </h2>
           <Tabs defaultValue="frontend" className="max-w-6xl mx-auto">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-2 bg-white/80 backdrop-blur-sm p-2 rounded-2xl shadow-lg mb-8">
-              <TabsTrigger value="frontend" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-blue-500 data-[state=active]:text-white rounded-xl flex items-center justify-center gap-2">
-                <ShoppingCart className="w-4 h-4" />
-                <span className="hidden sm:inline">フロントエンド</span>
-                <span className="sm:hidden">Frontend</span>
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-2 bg-white/80 backdrop-blur-sm p-2 rounded-2xl shadow-lg mb-8 h-auto">
+              <TabsTrigger value="frontend" className="h-auto min-h-[52px] py-2.5 px-2 text-sm font-medium rounded-xl flex items-center justify-center gap-1.5 bg-white/60 border border-slate-200/80 text-slate-600 hover:bg-white/90 hover:border-slate-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-sm transition-all">
+                <ShoppingCart className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline leading-tight">フロントエンド</span>
+                <span className="sm:hidden leading-tight">Frontend</span>
               </TabsTrigger>
-              <TabsTrigger value="mypage" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-500 data-[state=active]:text-white rounded-xl flex items-center justify-center gap-2">
-                <Users className="w-4 h-4" />
-                <span className="hidden sm:inline">マイページ</span>
-                <span className="sm:hidden">MyPage</span>
+              <TabsTrigger value="mypage" className="h-auto min-h-[52px] py-2.5 px-2 text-sm font-medium rounded-xl flex items-center justify-center gap-1.5 bg-white/60 border border-slate-200/80 text-slate-600 hover:bg-white/90 hover:border-slate-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-sm transition-all">
+                <Users className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline leading-tight">マイページ</span>
+                <span className="sm:hidden leading-tight">MyPage</span>
               </TabsTrigger>
-              <TabsTrigger value="admin" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-xl flex items-center justify-center gap-2">
-                <Settings className="w-4 h-4" />
-                <span className="hidden sm:inline">管理画面</span>
-                <span className="sm:hidden">Admin</span>
+              <TabsTrigger value="admin" className="h-auto min-h-[52px] py-2.5 px-2 text-sm font-medium rounded-xl flex items-center justify-center gap-1.5 bg-white/60 border border-slate-200/80 text-slate-600 hover:bg-white/90 hover:border-slate-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-sm transition-all">
+                <Settings className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline leading-tight">管理画面</span>
+                <span className="sm:hidden leading-tight">Admin</span>
               </TabsTrigger>
-              <TabsTrigger value="chatbot" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white rounded-xl flex items-center justify-center gap-2">
-                <MessageSquare className="w-4 h-4" />
-                <span className="hidden sm:inline">チャットボット</span>
-                <span className="sm:hidden">Chatbot</span>
+              <TabsTrigger value="chatbot" className="h-auto min-h-[52px] py-2.5 px-2 text-sm font-medium rounded-xl flex items-center justify-center gap-1.5 bg-white/60 border border-slate-200/80 text-slate-600 hover:bg-white/90 hover:border-slate-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-sm transition-all">
+                <MessageSquare className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline leading-tight">チャットボット</span>
+                <span className="sm:hidden leading-tight">Chatbot</span>
               </TabsTrigger>
             </TabsList>
 

@@ -337,6 +337,7 @@ function Lightbox({ images, initialIndex, onClose }: { images: ImageData[]; init
 export default function App() {
   const [lightboxImages, setLightboxImages] = useState<ImageData[] | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [screenshotTab, setScreenshotTab] = useState('frontend');
 
   const openLightbox = (images: ImageData[], index: number) => {
     setLightboxImages(images);
@@ -563,7 +564,7 @@ export default function App() {
           <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600">
             🖼️ スクリーンショット
           </h2>
-          <Tabs defaultValue="frontend" className="max-w-6xl mx-auto">
+          <Tabs value={screenshotTab} onValueChange={setScreenshotTab} className="max-w-6xl mx-auto">
             <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-2 bg-white/80 backdrop-blur-sm p-2 rounded-2xl shadow-lg mb-8 h-auto">
               <TabsTrigger value="frontend" className="h-auto min-h-[52px] py-2.5 px-2 text-sm font-medium rounded-xl flex items-center justify-center gap-1.5 bg-white/60 border border-slate-200/80 text-slate-600 hover:bg-white/90 hover:border-slate-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-sm transition-all">
                 <ShoppingCart className="w-4 h-4 shrink-0" />
@@ -587,133 +588,143 @@ export default function App() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="frontend">
-              <Card className="border-2 border-purple-200 shadow-2xl bg-white/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-purple-900">
-                    <ShoppingCart className="w-6 h-6" />
-                    フロントエンド（公開ページ）
-                  </CardTitle>
-                  <CardDescription>
-                    検索・フィルタ・商品詳細・レビュー・ブログ・お問い合わせなど、ユーザー向けの全機能
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <MobileImageScroller images={imageGroups.frontend} onImageClick={(index) => openLightbox(imageGroups.frontend, index)} />
-                  <ImageCarousel images={imageGroups.frontend} onImageClick={(index) => openLightbox(imageGroups.frontend, index)} />
-                </CardContent>
-              </Card>
-            </TabsContent>
+            <AnimatePresence mode="sync" initial={false}>
+              <motion.div
+                key={screenshotTab}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
+              >
+                {screenshotTab === 'frontend' && (
+                  <Card className="border-2 border-purple-200 shadow-2xl bg-white/50 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-purple-900">
+                        <ShoppingCart className="w-6 h-6" />
+                        フロントエンド（公開ページ）
+                      </CardTitle>
+                      <CardDescription>
+                        検索・フィルタ・商品詳細・レビュー・ブログ・お問い合わせなど、ユーザー向けの全機能
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <MobileImageScroller images={imageGroups.frontend} onImageClick={(index) => openLightbox(imageGroups.frontend, index)} />
+                      <ImageCarousel images={imageGroups.frontend} onImageClick={(index) => openLightbox(imageGroups.frontend, index)} />
+                    </CardContent>
+                  </Card>
+                )}
 
-            <TabsContent value="mypage">
-              <Card className="border-2 border-pink-200 shadow-2xl bg-white/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-pink-900">
-                    <Users className="w-6 h-6" />
-                    マイページ
-                  </CardTitle>
-                  <CardDescription>
-                    購入履歴・お気に入り・プロフィール編集・問い合わせ履歴などの個人管理機能
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <MobileImageScroller images={imageGroups.mypage} onImageClick={(index) => openLightbox(imageGroups.mypage, index)} />
-                  <ImageCarousel images={imageGroups.mypage} onImageClick={(index) => openLightbox(imageGroups.mypage, index)} />
-                </CardContent>
-              </Card>
-            </TabsContent>
+                {screenshotTab === 'mypage' && (
+                  <Card className="border-2 border-pink-200 shadow-2xl bg-white/50 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-pink-900">
+                        <Users className="w-6 h-6" />
+                        マイページ
+                      </CardTitle>
+                      <CardDescription>
+                        購入履歴・お気に入り・プロフィール編集・問い合わせ履歴などの個人管理機能
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <MobileImageScroller images={imageGroups.mypage} onImageClick={(index) => openLightbox(imageGroups.mypage, index)} />
+                      <ImageCarousel images={imageGroups.mypage} onImageClick={(index) => openLightbox(imageGroups.mypage, index)} />
+                    </CardContent>
+                  </Card>
+                )}
 
-            <TabsContent value="admin">
-              <div className="space-y-8">
-                <Card className="border-2 border-blue-200 shadow-2xl bg-white/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-blue-900">
-                      <Package className="w-6 h-6" />
-                      商品管理
-                    </CardTitle>
-                    <CardDescription>商品の作成・編集・削除・検索機能</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <MobileImageScroller images={imageGroups.adminProducts} onImageClick={(index) => openLightbox(imageGroups.adminProducts, index)} groupId="adminProducts" />
-                    <ImageCarousel images={imageGroups.adminProducts} onImageClick={(index) => openLightbox(imageGroups.adminProducts, index)} groupId="adminProducts" />
-                  </CardContent>
-                </Card>
+                {screenshotTab === 'admin' && (
+                  <div className="space-y-8">
+                    <Card className="border-2 border-blue-200 shadow-2xl bg-white/50 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-blue-900">
+                          <Package className="w-6 h-6" />
+                          商品管理
+                        </CardTitle>
+                        <CardDescription>商品の作成・編集・削除・検索機能</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <MobileImageScroller images={imageGroups.adminProducts} onImageClick={(index) => openLightbox(imageGroups.adminProducts, index)} groupId="adminProducts" />
+                        <ImageCarousel images={imageGroups.adminProducts} onImageClick={(index) => openLightbox(imageGroups.adminProducts, index)} groupId="adminProducts" />
+                      </CardContent>
+                    </Card>
 
-                <Card className="border-2 border-purple-200 shadow-2xl bg-white/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-purple-900">
-                      <FileText className="w-6 h-6" />
-                      ブログ管理
-                    </CardTitle>
-                    <CardDescription>ブログ記事の作成・編集・ステータス管理</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <MobileImageScroller images={imageGroups.adminBlog} onImageClick={(index) => openLightbox(imageGroups.adminBlog, index)} />
-                    <ImageCarousel images={imageGroups.adminBlog} onImageClick={(index) => openLightbox(imageGroups.adminBlog, index)} />
-                  </CardContent>
-                </Card>
+                    <Card className="border-2 border-purple-200 shadow-2xl bg-white/50 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-purple-900">
+                          <FileText className="w-6 h-6" />
+                          ブログ管理
+                        </CardTitle>
+                        <CardDescription>ブログ記事の作成・編集・ステータス管理</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <MobileImageScroller images={imageGroups.adminBlog} onImageClick={(index) => openLightbox(imageGroups.adminBlog, index)} />
+                        <ImageCarousel images={imageGroups.adminBlog} onImageClick={(index) => openLightbox(imageGroups.adminBlog, index)} />
+                      </CardContent>
+                    </Card>
 
-                <Card className="border-2 border-pink-200 shadow-2xl bg-white/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-pink-900">
-                      <FileText className="w-6 h-6" />
-                      お知らせ管理
-                    </CardTitle>
-                    <CardDescription>リッチテキストエディタでお知らせを作成</CardDescription>
-                  </CardHeader>
-                <CardContent>
-                  <MobileImageScroller images={imageGroups.adminInfo} onImageClick={(index) => openLightbox(imageGroups.adminInfo, index)} />
-                  <ImageCarousel images={imageGroups.adminInfo} onImageClick={(index) => openLightbox(imageGroups.adminInfo, index)} />
-                </CardContent>
-                </Card>
+                    <Card className="border-2 border-pink-200 shadow-2xl bg-white/50 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-pink-900">
+                          <FileText className="w-6 h-6" />
+                          お知らせ管理
+                        </CardTitle>
+                        <CardDescription>リッチテキストエディタでお知らせを作成</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <MobileImageScroller images={imageGroups.adminInfo} onImageClick={(index) => openLightbox(imageGroups.adminInfo, index)} />
+                        <ImageCarousel images={imageGroups.adminInfo} onImageClick={(index) => openLightbox(imageGroups.adminInfo, index)} />
+                      </CardContent>
+                    </Card>
 
-                <Card className="border-2 border-orange-200 shadow-2xl bg-white/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-orange-900">
-                      <Mail className="w-6 h-6" />
-                      お問い合わせ管理
-                    </CardTitle>
-                    <CardDescription>ステータス別フィルタリング・スレッド表示・返信機能</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <MobileImageScroller images={imageGroups.adminContact} onImageClick={(index) => openLightbox(imageGroups.adminContact, index)} />
-                    <ImageCarousel images={imageGroups.adminContact} onImageClick={(index) => openLightbox(imageGroups.adminContact, index)} />
-                  </CardContent>
-                </Card>
+                    <Card className="border-2 border-orange-200 shadow-2xl bg-white/50 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-orange-900">
+                          <Mail className="w-6 h-6" />
+                          お問い合わせ管理
+                        </CardTitle>
+                        <CardDescription>ステータス別フィルタリング・スレッド表示・返信機能</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <MobileImageScroller images={imageGroups.adminContact} onImageClick={(index) => openLightbox(imageGroups.adminContact, index)} />
+                        <ImageCarousel images={imageGroups.adminContact} onImageClick={(index) => openLightbox(imageGroups.adminContact, index)} />
+                      </CardContent>
+                    </Card>
 
-                <Card className="border-2 border-cyan-200 shadow-2xl bg-white/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-cyan-900">
-                      <BarChart3 className="w-6 h-6" />
-                      マーケティングダッシュボード
-                    </CardTitle>
-                    <CardDescription>売上・訪問者数・コンバージョン率・レコメンデーション分析などのKPI可視化</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <MobileImageScroller images={imageGroups.adminMarketing} onImageClick={(index) => openLightbox(imageGroups.adminMarketing, index)} />
-                    <ImageCarousel images={imageGroups.adminMarketing} onImageClick={(index) => openLightbox(imageGroups.adminMarketing, index)} />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+                    <Card className="border-2 border-cyan-200 shadow-2xl bg-white/50 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-cyan-900">
+                          <BarChart3 className="w-6 h-6" />
+                          マーケティングダッシュボード
+                        </CardTitle>
+                        <CardDescription>売上・訪問者数・コンバージョン率・レコメンデーション分析などのKPI可視化</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <MobileImageScroller images={imageGroups.adminMarketing} onImageClick={(index) => openLightbox(imageGroups.adminMarketing, index)} />
+                        <ImageCarousel images={imageGroups.adminMarketing} onImageClick={(index) => openLightbox(imageGroups.adminMarketing, index)} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
 
-            <TabsContent value="chatbot">
-              <Card className="border-2 border-green-200 shadow-2xl bg-white/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-green-900">
-                    <MessageSquare className="w-6 h-6" />
-                    AIチャットボット機能
-                  </CardTitle>
-                  <CardDescription>
-                    FAQ対応・商品推薦・ポートフォリオ案内などのインテリジェントサポート
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <MobileImageScroller images={imageGroups.chatbot} onImageClick={(index) => openLightbox(imageGroups.chatbot, index)} />
-                  <ImageCarousel images={imageGroups.chatbot} onImageClick={(index) => openLightbox(imageGroups.chatbot, index)} />
-                </CardContent>
-              </Card>
-            </TabsContent>
+                {screenshotTab === 'chatbot' && (
+                  <Card className="border-2 border-green-200 shadow-2xl bg-white/50 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-green-900">
+                        <MessageSquare className="w-6 h-6" />
+                        AIチャットボット機能
+                      </CardTitle>
+                      <CardDescription>
+                        FAQ対応・商品推薦・ポートフォリオ案内などのインテリジェントサポート
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <MobileImageScroller images={imageGroups.chatbot} onImageClick={(index) => openLightbox(imageGroups.chatbot, index)} />
+                      <ImageCarousel images={imageGroups.chatbot} onImageClick={(index) => openLightbox(imageGroups.chatbot, index)} />
+                    </CardContent>
+                  </Card>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </Tabs>
         </motion.div>
       </section>

@@ -40,7 +40,7 @@
 		"@notionhq/client": "^4.0.1",
 		"@react-three/drei": "^10.5.0",
 		"@react-three/fiber": "^9.2.0",
-		"@stripe/stripe-js": "^7.4.0",
+		"@stripe/stripe-js": "^9.12.1",
 		"@supabase/supabase-js": "^2.52.1",
 		"@tabler/icons-react": "^3.35.0",
 		"@tiptap/extension-placeholder": "^3.0.7",

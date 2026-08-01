@@ -1,4 +1,5 @@
 import {
+	AnimatePresence,
 	animate,
 	motion,
 	useMotionValue,
@@ -32,8 +33,117 @@ const BURST_COLORS = [
 	"#818cf8",
 ];
 
+// 宝珠のセリフ
+const GREETING_MESSAGES = [
+	"ようこそ！ぼくは Magic Orb ✨",
+	"やあ！遊びに来てくれたんだね！",
+];
+const IDLE_MESSAGES = [
+	"クリックしてみて！",
+	"ドラッグして投げられるよ〜",
+	"ここのアプリ、ぜんぶ触れるよ！",
+	"シャボン玉きれいだね…",
+	"連打するとコンボになるよ！",
+	"Portfolio も見ていってね！",
+];
+const CLICK_MESSAGES = ["わっ！", "くすぐったい！", "えへへ", "もっと！", "きゃっ"];
+const COMBO_MESSAGES = [
+	"コンボすごい！！",
+	"その調子！",
+	"クリックマスターだ！",
+	"とまらない〜！",
+];
+const THROW_MESSAGES = ["うわ〜〜っ！", "飛ぶよ〜！", "ひゅ〜ん！", "とんでけ〜！"];
+const BOUNCE_MESSAGES = ["いてっ！", "ぽよん！", "あいたっ", "ぼよ〜ん"];
+
+const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+
 type Burst = { id: number; x: number; y: number; big: boolean };
 type Popup = { id: number; combo: number };
+
+// タイプライター演出付き吹き出し
+function SpeechBubble({ text, below }: { text: string; below: boolean }) {
+	const chars = useMemo(() => Array.from(text), [text]);
+	const [shown, setShown] = useState(0);
+
+	useEffect(() => {
+		setShown(0);
+		const iv = window.setInterval(() => {
+			setShown((s) => {
+				if (s >= chars.length) {
+					window.clearInterval(iv);
+					return s;
+				}
+				return s + 1;
+			});
+		}, 45);
+		return () => window.clearInterval(iv);
+	}, [chars]);
+
+	const typing = shown < chars.length;
+
+	return (
+		<motion.div
+			initial={{ opacity: 0, scale: 0.6, y: below ? -8 : 8 }}
+			animate={{ opacity: 1, scale: 1, y: 0 }}
+			exit={{ opacity: 0, scale: 0.7, y: below ? -6 : 6 }}
+			transition={{ type: "spring", stiffness: 380, damping: 22 }}
+			style={{
+				position: "absolute",
+				...(below
+					? { top: ORB_SIZE + 16 }
+					: { bottom: ORB_SIZE + 16 }),
+				right: -8,
+				maxWidth: 230,
+				padding: "9px 14px",
+				borderRadius: 16,
+				...(below
+					? { borderTopRightRadius: 4 }
+					: { borderBottomRightRadius: 4 }),
+				background: "rgba(255,255,255,0.88)",
+				backdropFilter: "blur(8px)",
+				WebkitBackdropFilter: "blur(8px)",
+				border: "1px solid rgba(196,132,252,0.5)",
+				boxShadow:
+					"0 4px 20px rgba(139,92,246,0.25), 0 0 12px rgba(196,132,252,0.15)",
+				color: "#4c1d95",
+				fontSize: 13,
+				fontWeight: 700,
+				lineHeight: 1.5,
+				whiteSpace: "nowrap",
+				pointerEvents: "none",
+				transformOrigin: below ? "top right" : "bottom right",
+			}}
+		>
+			{chars.slice(0, shown).join("")}
+			{typing && (
+				<motion.span
+					animate={{ opacity: [1, 0, 1] }}
+					transition={{ repeat: Infinity, duration: 0.7 }}
+					style={{ marginLeft: 1 }}
+				>
+					▌
+				</motion.span>
+			)}
+			{/* 吹き出しのしっぽ */}
+			<div
+				style={{
+					position: "absolute",
+					...(below ? { top: -5 } : { bottom: -5 }),
+					right: 22,
+					width: 10,
+					height: 10,
+					background: "rgba(255,255,255,0.88)",
+					borderRight: "1px solid rgba(196,132,252,0.5)",
+					...(below
+						? { borderTop: "1px solid rgba(196,132,252,0.5)" }
+						: { borderBottom: "1px solid rgba(196,132,252,0.5)" }),
+					transform: "rotate(45deg)",
+				}}
+			/>
+		</motion.div>
+	);
+}
 
 // 衝突・クリック時のパーティクル爆発
 function ParticleBurst({ x, y, big }: { x: number; y: number; big: boolean }) {
@@ -106,6 +216,12 @@ export default function MagicOrb() {
 	const [popups, setPopups] = useState<Popup[]>([]);
 	const [combo, setCombo] = useState(0);
 
+	// 吹き出しメッセージ
+	const [message, setMessage] = useState<string | null>(null);
+	const [bubbleBelow, setBubbleBelow] = useState(false);
+	const msgTimer = useRef<number | undefined>(undefined);
+	const sayRef = useRef<(text: string, duration?: number) => void>(() => {});
+
 	// マウス反応 3D チルト
 	const mouseX = useMotionValue(0);
 	const mouseY = useMotionValue(0);
@@ -117,6 +233,32 @@ export default function MagicOrb() {
 		stiffness: 80,
 		damping: 18,
 	});
+
+	const say = (text: string, duration = 3200) => {
+		window.clearTimeout(msgTimer.current);
+		// 宝珠が画面上部にいるときは吹き出しを下側に出す
+		setBubbleBelow(y.get() < 150);
+		setMessage(text);
+		msgTimer.current = window.setTimeout(() => setMessage(null), duration);
+	};
+	sayRef.current = say;
+
+	// 登場時の挨拶 + 放置中のランダムつぶやき
+	useEffect(() => {
+		const greet = window.setTimeout(() => {
+			sayRef.current(pick(GREETING_MESSAGES), 4000);
+		}, 1400);
+		const idle = window.setInterval(() => {
+			if (!dragging.current && Math.random() > 0.35) {
+				sayRef.current(pick(IDLE_MESSAGES));
+			}
+		}, 9000);
+		return () => {
+			window.clearTimeout(greet);
+			window.clearInterval(idle);
+			window.clearTimeout(msgTimer.current);
+		};
+	}, []);
 
 	const spawnBurst = (bx: number, by: number, big: boolean) => {
 		const id = ++idCounter.current;
@@ -174,6 +316,9 @@ export default function MagicOrb() {
 
 			if (bounced && speed > 5) {
 				spawnBurst(nx + ORB_SIZE / 2, ny + ORB_SIZE / 2, false);
+				if (speed > 9) {
+					sayRef.current(pick(BOUNCE_MESSAGES), 1200);
+				}
 			}
 
 			x.set(nx);
@@ -233,6 +378,11 @@ export default function MagicOrb() {
 						y.get() + ORB_SIZE / 2,
 						next % 5 === 0
 					);
+					if (next % 5 === 0) {
+						sayRef.current(`×${next} ${pick(COMBO_MESSAGES)}`, 2200);
+					} else if (Math.random() > 0.4) {
+						sayRef.current(pick(CLICK_MESSAGES), 1400);
+					}
 					return next;
 				});
 				// クリックの弾み
@@ -256,6 +406,9 @@ export default function MagicOrb() {
 					// px/ms → px/frame(16.7ms) に換算
 					vel.current.x = ((last.x - first.x) / dt) * 16.7;
 					vel.current.y = ((last.y - first.y) / dt) * 16.7;
+					if (Math.hypot(vel.current.x, vel.current.y) > 8) {
+						sayRef.current(pick(THROW_MESSAGES), 1600);
+					}
 					startPhysics();
 				}
 			}
@@ -317,6 +470,13 @@ export default function MagicOrb() {
 					document.body.style.userSelect = "none";
 				}}
 			>
+				{/* 吹き出しメッセージ */}
+				<AnimatePresence>
+					{message && (
+						<SpeechBubble key={message} text={message} below={bubbleBelow} />
+					)}
+				</AnimatePresence>
+
 				{/* コンボ表示ポップアップ */}
 				{popups.map((p) => (
 					<motion.div

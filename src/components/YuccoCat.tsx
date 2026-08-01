@@ -188,7 +188,7 @@ export default function MagicOrb() {
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: MotionValue と ref は安定参照。リスナーはマウント時に一度だけ登録する
 	useEffect(() => {
-		const handleMouseMove = (e: MouseEvent) => {
+		const handlePointerMove = (e: PointerEvent) => {
 			if (dragging.current) {
 				const prev = samples.current[samples.current.length - 1];
 				if (prev) {
@@ -213,7 +213,7 @@ export default function MagicOrb() {
 			}
 		};
 
-		const handleMouseUp = () => {
+		const handlePointerUp = () => {
 			if (!dragging.current) return;
 			dragging.current = false;
 			setIsDragging(false);
@@ -261,11 +261,13 @@ export default function MagicOrb() {
 			}
 		};
 
-		document.addEventListener("mousemove", handleMouseMove);
-		document.addEventListener("mouseup", handleMouseUp);
+		document.addEventListener("pointermove", handlePointerMove);
+		document.addEventListener("pointerup", handlePointerUp);
+		document.addEventListener("pointercancel", handlePointerUp);
 		return () => {
-			document.removeEventListener("mousemove", handleMouseMove);
-			document.removeEventListener("mouseup", handleMouseUp);
+			document.removeEventListener("pointermove", handlePointerMove);
+			document.removeEventListener("pointerup", handlePointerUp);
+			document.removeEventListener("pointercancel", handlePointerUp);
 			cancelAnimationFrame(rafRef.current);
 			window.clearTimeout(comboTimer.current);
 		};
@@ -296,8 +298,9 @@ export default function MagicOrb() {
 					cursor: isDragging ? "grabbing" : "grab",
 					perspective: 500,
 					userSelect: "none",
+					touchAction: "none",
 				}}
-				onMouseDown={(e) => {
+				onPointerDown={(e) => {
 					e.preventDefault();
 					cancelAnimationFrame(rafRef.current);
 					vel.current = { x: 0, y: 0 };

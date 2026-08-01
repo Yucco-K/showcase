@@ -222,9 +222,8 @@ export default function MagicOrb() {
 	const msgTimer = useRef<number | undefined>(undefined);
 	const sayRef = useRef<(text: string, duration?: number) => void>(() => {});
 
-	// 吹き出しは宝珠をゆったり追従（高速移動中でも読みやすく）
-	const bubbleX = useSpring(x, { stiffness: 90, damping: 20 });
-	const bubbleY = useSpring(y, { stiffness: 90, damping: 20 });
+	// 吹き出しはセリフ発話時の位置に固定（宝珠が飛び回っても読める）
+	const [bubblePos, setBubblePos] = useState({ left: 0, top: 0 });
 
 	// マウス反応 3D チルト
 	const mouseX = useMotionValue(0);
@@ -240,6 +239,8 @@ export default function MagicOrb() {
 
 	const say = (text: string, duration = 4500) => {
 		window.clearTimeout(msgTimer.current);
+		// 発話時の宝珠の位置に吹き出しを固定
+		setBubblePos({ left: x.get(), top: y.get() });
 		// 宝珠が画面上部にいるときは吹き出しを下側に出す
 		setBubbleBelow(y.get() < 150);
 		setMessage(text);
@@ -723,14 +724,12 @@ export default function MagicOrb() {
 				</motion.div>
 			</motion.div>
 
-			{/* 吹き出しメッセージ（スプリングで宝珠をゆったり追従） */}
-			<motion.div
+			{/* 吹き出しメッセージ（発話時の位置に固定表示） */}
+			<div
 				style={{
 					position: "fixed",
-					left: 0,
-					top: 0,
-					x: bubbleX,
-					y: bubbleY,
+					left: bubblePos.left,
+					top: bubblePos.top,
 					width: ORB_SIZE,
 					height: ORB_SIZE,
 					zIndex: 11,
@@ -742,7 +741,7 @@ export default function MagicOrb() {
 						<SpeechBubble key={message} text={message} below={bubbleBelow} />
 					)}
 				</AnimatePresence>
-			</motion.div>
+			</div>
 
 			{/* パーティクル爆発（画面座標に描画） */}
 			{bursts.map((b) => (

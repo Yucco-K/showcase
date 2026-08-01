@@ -222,6 +222,10 @@ export default function MagicOrb() {
 	const msgTimer = useRef<number | undefined>(undefined);
 	const sayRef = useRef<(text: string, duration?: number) => void>(() => {});
 
+	// 吹き出しは宝珠をゆったり追従（高速移動中でも読みやすく）
+	const bubbleX = useSpring(x, { stiffness: 90, damping: 20 });
+	const bubbleY = useSpring(y, { stiffness: 90, damping: 20 });
+
 	// マウス反応 3D チルト
 	const mouseX = useMotionValue(0);
 	const mouseY = useMotionValue(0);
@@ -234,7 +238,7 @@ export default function MagicOrb() {
 		damping: 18,
 	});
 
-	const say = (text: string, duration = 3200) => {
+	const say = (text: string, duration = 4500) => {
 		window.clearTimeout(msgTimer.current);
 		// 宝珠が画面上部にいるときは吹き出しを下側に出す
 		setBubbleBelow(y.get() < 150);
@@ -246,7 +250,7 @@ export default function MagicOrb() {
 	// 登場時の挨拶 + 放置中のランダムつぶやき
 	useEffect(() => {
 		const greet = window.setTimeout(() => {
-			sayRef.current(pick(GREETING_MESSAGES), 4000);
+			sayRef.current(pick(GREETING_MESSAGES), 5000);
 		}, 1400);
 		const idle = window.setInterval(() => {
 			if (!dragging.current && Math.random() > 0.35) {
@@ -317,7 +321,7 @@ export default function MagicOrb() {
 			if (bounced && speed > 5) {
 				spawnBurst(nx + ORB_SIZE / 2, ny + ORB_SIZE / 2, false);
 				if (speed > 9) {
-					sayRef.current(pick(BOUNCE_MESSAGES), 1200);
+					sayRef.current(pick(BOUNCE_MESSAGES), 2000);
 				}
 			}
 
@@ -379,9 +383,9 @@ export default function MagicOrb() {
 						next % 5 === 0
 					);
 					if (next % 5 === 0) {
-						sayRef.current(`×${next} ${pick(COMBO_MESSAGES)}`, 2200);
+						sayRef.current(`×${next} ${pick(COMBO_MESSAGES)}`, 3000);
 					} else if (Math.random() > 0.4) {
-						sayRef.current(pick(CLICK_MESSAGES), 1400);
+						sayRef.current(pick(CLICK_MESSAGES), 2200);
 					}
 					return next;
 				});
@@ -407,7 +411,7 @@ export default function MagicOrb() {
 					vel.current.x = ((last.x - first.x) / dt) * 16.7;
 					vel.current.y = ((last.y - first.y) / dt) * 16.7;
 					if (Math.hypot(vel.current.x, vel.current.y) > 8) {
-						sayRef.current(pick(THROW_MESSAGES), 1600);
+						sayRef.current(pick(THROW_MESSAGES), 2500);
 					}
 					startPhysics();
 				}
@@ -470,13 +474,6 @@ export default function MagicOrb() {
 					document.body.style.userSelect = "none";
 				}}
 			>
-				{/* 吹き出しメッセージ */}
-				<AnimatePresence>
-					{message && (
-						<SpeechBubble key={message} text={message} below={bubbleBelow} />
-					)}
-				</AnimatePresence>
-
 				{/* コンボ表示ポップアップ */}
 				{popups.map((p) => (
 					<motion.div
@@ -724,6 +721,27 @@ export default function MagicOrb() {
 						</motion.div>
 					</motion.div>
 				</motion.div>
+			</motion.div>
+
+			{/* 吹き出しメッセージ（スプリングで宝珠をゆったり追従） */}
+			<motion.div
+				style={{
+					position: "fixed",
+					left: 0,
+					top: 0,
+					x: bubbleX,
+					y: bubbleY,
+					width: ORB_SIZE,
+					height: ORB_SIZE,
+					zIndex: 11,
+					pointerEvents: "none",
+				}}
+			>
+				<AnimatePresence>
+					{message && (
+						<SpeechBubble key={message} text={message} below={bubbleBelow} />
+					)}
+				</AnimatePresence>
 			</motion.div>
 
 			{/* パーティクル爆発（画面座標に描画） */}

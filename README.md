@@ -9,7 +9,7 @@
 
 <br/>
 
-[<img src="https://yucco-k.github.io/showcase/screenshots/frontend/frontend-hero-welcome.png" width="640" alt="App Showcase スクリーンショット" />](https://yucco-k.github.io/showcase/)
+[<img src="https://yucco-k.github.io/showcase/screenshots/frontend/frontend-hero-welcome.png?v=2" width="640" alt="App Showcase スクリーンショット" />](https://yucco-k.github.io/showcase/)
 
 **▲ 画像をクリックするとポートフォリオページへ移動します**
 

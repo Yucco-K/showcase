@@ -1,97 +1,21 @@
-import { motion, useAnimation } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import yuccoCat from "../assets/yucco-cat.png";
 
 export default function YuccoCat() {
-	const controls = useAnimation();
 	const location = useLocation();
-	const [float, setFloat] = useState({ y: 0, x: 0 });
 	const [pos, setPos] = useState({
 		left: window.innerWidth - 152,
 		top: window.innerHeight - 152,
 	});
 	const dragging = useRef(false);
-	const [jumpPower, setJumpPower] = useState(0);
 	const [isDragging, setIsDragging] = useState(false);
-	const [isVisible, setIsVisible] = useState(false);
-	const [animationIntensity, setAnimationIntensity] = useState(0); // 0 → 1 (3秒かけて)
-	const [fadeKey, setFadeKey] = useState(0); // フェードイン再トリガー用
 
-	// ページ遷移・リロード時にフェードインをリトリガー
-	useEffect(() => {
-		// フェードイン状態をリセット
-		setIsVisible(false);
-		setAnimationIntensity(0);
-		setFadeKey((prev) => prev + 1);
-
-		// 少し遅延を入れてからフェードイン開始
-		const timer = setTimeout(() => {
-			setIsVisible(true);
-
-			// 3秒かけてアニメーションの強度を上げる
-			const startTime = Date.now();
-			const slowStartDuration = 3000; // 3秒
-
-			const updateIntensity = () => {
-				const elapsed = Date.now() - startTime;
-				const progress = Math.min(elapsed / slowStartDuration, 1);
-				// イージング関数（ease-in-out）でスムーズに
-				const eased =
-					progress < 0.5
-						? 2 * progress * progress
-						: 1 - Math.pow(-2 * progress + 2, 2) / 2;
-				setAnimationIntensity(eased);
-
-				if (progress < 1) {
-					requestAnimationFrame(updateIntensity);
-				}
-			};
-
-			requestAnimationFrame(updateIntensity);
-		}, 50);
-
-		return () => clearTimeout(timer);
-	}, [location.pathname]);
-
-	// ふわふわアニメーション（スロースタート対応）
-	useEffect(() => {
-		let frame = 0;
-		let raf: number;
-		const animate = () => {
-			frame += 1;
-			setFloat({
-				y: Math.sin(frame / 60) * 20 * animationIntensity,
-				x: Math.sin(frame / 90) * 10 * animationIntensity,
-			});
-			raf = requestAnimationFrame(animate);
-		};
-		animate();
-		return () => cancelAnimationFrame(raf);
-	}, [animationIntensity]);
-
-	// たまに回転（ランダム）
-	useEffect(() => {
-		const interval = setInterval(() => {
-			if (Math.random() > 0.7) {
-				controls.start({
-					rotate: [0, 20, -20, 0],
-					transition: { duration: 0.8 },
-				});
-			}
-		}, 4000);
-		return () => clearInterval(interval);
-	}, [controls]);
-
-	// ドラッグイベント
 	useEffect(() => {
 		const handleMouseMove = (e: MouseEvent) => {
 			if (!dragging.current) return;
-			// ドラッグ中はマウス座標にピタッと一致
-			setPos({
-				left: e.clientX,
-				top: e.clientY,
-			});
+			setPos({ left: e.clientX, top: e.clientY });
 		};
 		const handleMouseUp = () => {
 			dragging.current = false;
@@ -106,66 +30,56 @@ export default function YuccoCat() {
 		};
 	}, []);
 
-	const handleMouseDown = () => {
-		dragging.current = true;
-		setIsDragging(true);
-		document.body.style.userSelect = "none";
-	};
-
-	const handleJump = () => {
-		setJumpPower((prev) => prev + 60); // クリックごとにどんどん上昇
-	};
-
 	return (
-		<>
-			<motion.img
-				key={fadeKey}
-				src={yuccoCat}
-				alt="Yucco Cat"
-				style={{
-					position: "fixed",
-					right: undefined,
-					bottom: undefined,
-					left: pos.left,
-					top: pos.top,
-					width: 120,
-					height: 120,
-					zIndex: 10,
-					borderRadius: "50%",
-					boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
-					background: "rgba(255,255,255,0.05)",
-					cursor: isDragging ? "grabbing" : "grab",
-					userSelect: "none",
-				}}
-				initial={{ opacity: 0, scale: 0.8 }}
-				animate={
-					isDragging
-						? { opacity: 1, scale: 1, y: 0 }
-						: {
-								opacity: isVisible ? 1 : 0,
-								scale: 1,
-								...float,
-								y: float.y - jumpPower,
-						  }
-				}
-				transition={
-					isVisible && !isDragging
-						? { opacity: { duration: 3 }, scale: { duration: 3 }, type: "spring", stiffness: 40, damping: 10 }
-						: { type: "spring", stiffness: 40, damping: 10 }
-				}
-				whileHover={
-					isDragging
-						? {}
-						: {
-								y: -40 - jumpPower,
-								scale: 1.12,
-								rotate: 0,
-								transition: { type: "spring", stiffness: 300 },
-						  }
-				}
-				onMouseDown={handleMouseDown}
-				onClick={handleJump}
-			/>
-		</>
+		<motion.img
+			key={location.pathname}
+			src={yuccoCat}
+			alt="Yucco Cat"
+			initial={{ opacity: 0, scale: 0.8 }}
+			animate={
+				isDragging
+					? { opacity: 1, scale: 1.05, y: 0, x: 0 }
+					: {
+							opacity: 1,
+							scale: 1,
+							y: [0, -18, -22, -18, 0],
+							x: [0, 7, 0, -7, 0],
+					  }
+			}
+			transition={
+				isDragging
+					? { duration: 0.1 }
+					: {
+							opacity: { duration: 0.6 },
+							scale: { duration: 0.6 },
+							y: { repeat: Infinity, duration: 4, ease: "easeInOut" },
+							x: { repeat: Infinity, duration: 6, ease: "easeInOut" },
+					  }
+			}
+			style={{
+				position: "fixed",
+				left: pos.left,
+				top: pos.top,
+				width: 120,
+				height: 120,
+				zIndex: 10,
+				borderRadius: "50%",
+				boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
+				background: "rgba(255,255,255,0.05)",
+				cursor: isDragging ? "grabbing" : "grab",
+				userSelect: "none",
+			}}
+			whileHover={
+				isDragging
+					? {}
+					: { scale: 1.12, transition: { type: "spring", stiffness: 300 } }
+			}
+			whileTap={!isDragging ? { scale: 0.85, y: -50 } : {}}
+			onMouseDown={() => {
+				dragging.current = true;
+				setIsDragging(true);
+				document.body.style.userSelect = "none";
+			}}
+		/>
 	);
 }

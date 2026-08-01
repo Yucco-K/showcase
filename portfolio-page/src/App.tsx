@@ -107,13 +107,13 @@ function ImageCarousel({ images, onImageClick, groupId }: { images: ImageData[];
     <div className="relative hidden md:block">
       {/* Carousel */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-blue-50" style={{ aspectRatio: '16/9' }}>
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync">
           <motion.div
             key={currentIndex}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
             onClick={() => onImageClick(currentIndex)}
             className="cursor-pointer absolute inset-0"
           >

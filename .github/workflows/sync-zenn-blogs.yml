@@ -1,0 +1,30 @@
+name: Sync Zenn Blogs
+
+# Zenn(@yucco)の公開記事を定期的に取得し、Supabaseのblogsテーブルへ反映する
+on:
+  schedule:
+    - cron: "0 18 * * *" # 毎日 03:00 JST
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync Zenn articles to Supabase
+        run: npx tsx scripts/sync-zenn-blogs.ts

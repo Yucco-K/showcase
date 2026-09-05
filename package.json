@@ -13,6 +13,7 @@
 		"vercel-build": "npm run build",
 		"vercel-deploy": "vercel --prod",
 		"db:seed": "tsx --env-file=.env scripts/seed.ts",
+		"sync:zenn-blogs": "tsx --env-file=.env scripts/sync-zenn-blogs.ts",
 		"test:setup-admin": "tsx --env-file=.env scripts/setup-test-admin.ts",
 		"export:notion": "tsx --env-file=.env scripts/export-to-notion.ts",
 		"export:notion:template": "tsx --env-file=.env scripts/export-to-notion-with-template.ts",

@@ -95,6 +95,7 @@ function SpeechBubble({ text, below }: { text: string; below: boolean }) {
 					? { top: ORB_SIZE + 16 }
 					: { bottom: ORB_SIZE + 16 }),
 				right: -8,
+				width: "max-content",
 				maxWidth: 230,
 				padding: "9px 14px",
 				borderRadius: 16,
@@ -111,7 +112,7 @@ function SpeechBubble({ text, below }: { text: string; below: boolean }) {
 				fontSize: 13,
 				fontWeight: 700,
 				lineHeight: 1.5,
-				whiteSpace: "nowrap",
+				overflowWrap: "break-word",
 				pointerEvents: "none",
 				transformOrigin: below ? "top right" : "bottom right",
 			}}

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ChevronDown, X, ExternalLink, Code, Database, Zap, Users, MessageSquare, ShoppingCart, BarChart3, Star, Search, Package, FileText, Mail, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, X, ExternalLink, Code, Database, Zap, Users, MessageSquare, ShoppingCart, BarChart3, Star, Search, Package, FileText, Mail, Settings, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
@@ -563,6 +563,18 @@ export default function App() {
               </AccordionTrigger>
               <AccordionContent className="text-gray-700">
                 ユーザーからの問い合わせをステータス別に管理。会話形式のスレッド表示で、履歴を追いながらスムーズに対応できます。
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-9" className="border-2 border-purple-200 rounded-xl px-6 bg-white/80 backdrop-blur-sm shadow-lg">
+              <AccordionTrigger className="hover:text-purple-600">
+                <div className="flex items-center gap-3">
+                  <RefreshCw className="w-5 h-5 text-purple-600" />
+                  <span className="font-semibold">ブログ記事の自動同期（Zenn連携）</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="text-gray-700">
+                Zenn（zenn.dev/yucco）に公開した技術記事を、GitHub Actionsが毎日自動取得しSupabaseへ反映。タイトル・タグ・読了時間・公開日を手作業なしで最新の状態に保ちます。
               </AccordionContent>
             </AccordionItem>
           </Accordion>

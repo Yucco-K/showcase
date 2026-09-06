@@ -51,6 +51,7 @@
 - 👤 **ユーザー認証**: Supabase Auth による安全な認証
 - 📝 **レビューシステム**: 製品レビューと評価
 - 📞 **お問い合わせ**: 管理者への直接メッセージ機能
+- 🔄 **ブログ自動同期**: Zenn（zenn.dev/yucco）の公開記事をGitHub Actionsが毎日自動取得し、Supabaseへ反映
 
 ## 🛠️ 技術スタック
 
@@ -72,6 +73,23 @@
 - OpenAI GPT-4o-mini - AI チャット
 - Stripe - 決済処理
 - Gorse - 推薦エンジン
+
+## 🔄 ブログ自動同期（Zenn連携）
+
+Zenn（[zenn.dev/yucco](https://zenn.dev/yucco)）に公開した記事を、GitHub Actionsが毎日自動でSupabaseの`blogs`テーブルへ反映します。
+
+- **ワークフロー**: [`.github/workflows/sync-zenn-blogs.yml`](./.github/workflows/sync-zenn-blogs.yml)（毎日03:00 JST定期実行 / 手動実行も可）
+- **スクリプト**: [`scripts/sync-zenn-blogs.ts`](./scripts/sync-zenn-blogs.ts)
+- **データ取得元**: Zenn公開API（`zenn.dev/api/articles`）からタイトル・タグ・公開日・本文文字数（読了時間の算出元）を取得。tech-blog-1リポジトリへのアクセスは不要
+- **反映方法**: 記事URLをキーに既存行があれば更新、なければ新規追加（upsert）
+
+手動で同期したい場合:
+
+```bash
+npm run sync:zenn-blogs
+```
+
+（`.env`に`VITE_SUPABASE_URL`と`SUPABASE_SERVICE_ROLE_KEY`が必要です）
 
 ## 📚 ドキュメント
 

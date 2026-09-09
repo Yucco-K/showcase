@@ -109,8 +109,8 @@ npm run sync:zenn-blogs
 
 - [セキュリティスキャンガイド](./docs/SECURITY_SCANNING.md)
 - [環境変数設定](./docs/ENVIRONMENT_VARIABLES.md)
-- [チャットボットセットアップ](./CHATBOT_SETUP.md)
-- [Gorse セットアップガイド](./GORSE_SETUP_GUIDE.md)
+- [チャットボットセットアップ](./docs/CHATBOT_SETUP.md)
+- [Gorse セットアップガイド](./docs/GORSE_SETUP_GUIDE.md)
 - [FAQ](./docs/FAQ.md)
 - [利用規約](./docs/TERMS_OF_SERVICE.md)
 - [プライバシーポリシー](./docs/PRIVACY_POLICY.md)

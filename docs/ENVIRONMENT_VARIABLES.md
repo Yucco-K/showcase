@@ -15,6 +15,9 @@
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key-here
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+# FastAPI(api/chat)側はVITE_プレフィックスなしの変数を参照する
+SUPABASE_URL=https://your-project.supabase.co
 ```
 
 ### Stripe Configuration
@@ -36,6 +39,14 @@ VITE_ADMIN_EMAILS=admin@example.com,another-admin@example.com
 OPENAI_API_KEY=sk-your-openai-api-key-here
 ```
 
+### FastAPI CORS Configuration
+
+```bash
+# api/chat のCORS許可Origin（カンマ区切り）。未設定時は本番ドメインと
+# localhostのみ許可する（api/chat/config.py の get_allowed_origins() 参照）
+ALLOWED_ORIGINS=https://showcase-topaz.vercel.app,http://localhost:5173
+```
+
 ## オプションの環境変数
 
 ### Vercel Configuration
@@ -54,7 +65,11 @@ NOTION_DATABASE_ID=your-notion-database-id-here
 ### Gorse Recommendation System
 
 ```bash
-GORSE_API_URL=http://localhost:8087
+# クライアント側（開発時の直接アクセス用。本番はapi/gorse-proxy経由のため不要）
+VITE_GORSE_ENDPOINT=http://localhost:8087
+
+# サーバー側（api/gorse-proxyが使用）
+GORSE_ENDPOINT=http://localhost:8087
 GORSE_API_KEY=your-gorse-api-key-here
 ```
 

@@ -41,14 +41,25 @@ model_search_epoch = 5
 model_search_trials = 5
 
 [recommend.offline]
-check_recommend_period = "30m"
-refresh_recommend_period = "60m"
+check_recommend_period = "1m"
+refresh_recommend_period = "5m"
 enable_latest_recommend = true
 enable_popular_recommend = true
 enable_user_based_recommend = true
 enable_item_based_recommend = true
 enable_collaborative_recommend = true
 enable_click_through_prediction = false
+
+# 類似商品(item-to-item)推薦の定義。
+# 新しいGorse(:latest)ではenable_item_based_recommendだけでは
+# 有効にならず、この[[recommend.item-to-item]]セクションで
+# 明示的にアルゴリズムを定義する必要がある。
+# type="users": 同じユーザーからpositive feedback(purchase/like)を
+# 受けたアイテム同士を類似とみなす（埋め込み/タグ不要でこのデータ
+# セットにそのまま適用できる）
+[[recommend.item-to-item]]
+name = "neighbors"
+type = "users"
 
 [log]
 path = ""

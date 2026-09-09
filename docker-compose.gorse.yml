@@ -1,7 +1,9 @@
 services:
   # Redis（Gorseのキャッシュ用）
+  # 最新のGorseはRediSearchモジュール(FT._LIST等)を要求するため、
+  # 素のredisイメージではなくredis-stack-serverを使用する。
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack-server:latest
     container_name: gorse-redis
     ports:
       - "6379:6379"

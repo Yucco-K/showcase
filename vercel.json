@@ -30,7 +30,7 @@
 			"destination": "/api/chat/index.py"
 		},
 		{
-			"source": "/:path*",
+			"source": "/((?!api/).*)",
 			"destination": "/index.html"
 		}
 	]

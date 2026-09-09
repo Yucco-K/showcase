@@ -7,7 +7,7 @@ import type { Product } from "../types/product.ts";
 const GORSE_ENDPOINT =
 	import.meta.env.PROD
 		? "/gorse-api"
-		: import.meta.env.VITE_GORSE_ENDPOINT || "http://18.183.35.86:8087/api";
+		: import.meta.env.VITE_GORSE_ENDPOINT || "http://52.199.237.91:8087/api";
 
 // ⚠️ セキュリティ上の注意:
 // Gorse API Keyはクライアント側では空文字列にして、

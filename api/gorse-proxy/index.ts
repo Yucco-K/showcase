@@ -20,7 +20,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 const GORSE_ENDPOINT =
-	process.env.GORSE_ENDPOINT || "http://18.183.35.86:8087";
+	process.env.GORSE_ENDPOINT || "http://52.199.237.91:8087";
 const GORSE_API_KEY = process.env.GORSE_API_KEY || "";
 
 // 既存のクライアント側実装(src/lib/gorse.ts)と同じ閾値を踏襲

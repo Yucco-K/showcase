@@ -103,7 +103,7 @@ async function testFrontendIntegration() {
 	console.log("📋 環境変数確認:");
 	console.log(
 		"  - VITE_GORSE_ENDPOINT:",
-		process.env.VITE_GORSE_ENDPOINT || "http://52.198.15.232:8086"
+		process.env.VITE_GORSE_ENDPOINT || "http://52.199.237.91:8087"
 	);
 	console.log(
 		"  - GORSE_API_KEY:",

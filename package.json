@@ -53,7 +53,7 @@
 		"@vercel/node": "^5.3.6",
 		"chart.js": "^4.5.0",
 		"framer-motion": "^12.23.3",
-		"gorsejs": "^0.4.8",
+		"gorsejs": "^0.5.0",
 		"node-fetch": "^3.0.0",
 		"openai": "^5.10.2",
 		"react": "^19.1.0",

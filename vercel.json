@@ -2,7 +2,10 @@
 	"builds": [
 		{
 			"src": "api/chat/index.py",
-			"use": "@vercel/python"
+			"use": "@vercel/python",
+			"config": {
+				"includeFiles": "api/chat/**"
+			}
 		},
 		{
 			"src": "api/gorse-proxy/index.ts",

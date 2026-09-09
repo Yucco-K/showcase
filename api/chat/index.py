@@ -50,9 +50,24 @@ PREDEFINED_RESPONSES = {
 
 # --- FastAPIアプリとミドルウェア ---
 app = FastAPI()
+
+# CORS許可Origin: 環境変数ALLOWED_ORIGINS（カンマ区切り）で上書き可能。
+# 未設定時は本番ドメインとローカル開発用ポートのみを許可する。
+_allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+if _allowed_origins_env:
+    ALLOWED_ORIGINS = [
+        origin.strip() for origin in _allowed_origins_env.split(",") if origin.strip()
+    ]
+else:
+    ALLOWED_ORIGINS = [
+        "https://showcase-topaz.vercel.app",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,0 +1,35 @@
+name: Sync GitHub Projects
+
+# GitHub(Yucco-K)の公開リポジトリを定期的に取得し、
+# Supabaseのprojectsテーブル（ポートフォリオページの表示元）へ反映する。
+# 新規公開リポジトリは追加し、非公開化・archive化されたリポジトリへの
+# リンクは除外する。既存エントリのdescription/technologies等の
+# 手動キュレーション項目は上書きしない。
+on:
+  schedule:
+    - cron: "0 18 * * *" # 毎日 03:00 JST
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync GitHub projects to Supabase
+        run: npx tsx scripts/sync-github-projects.ts

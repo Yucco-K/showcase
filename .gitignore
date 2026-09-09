@@ -247,4 +247,20 @@ gorse-ec2-ip.txt
 /SECURITY_SCAN_REPORT*.md
 /SECURITY_AUDIT_REPORT.md
 /SECURITY_GUIDE.md
+
+# Python
+__pycache__/
+*.pyc
+
+# Individual Obsidian vault (personal notes/working documents)
+/showcase-vault/
+
+# One-off working/debug artifacts (unused, not referenced by any code)
+/lambda_build/
+/product_ids.txt
+/product_names.txt
+/products_data_temp.md
+/test-e2e.html
+/svg-output/
+/tiny-images/
 # Note: docs/SECURITY_SCANNING.md is user documentation and should be tracked

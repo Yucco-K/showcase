@@ -9,6 +9,10 @@
 			"use": "@vercel/node"
 		},
 		{
+			"src": "api/auth/custom-reset-password.ts",
+			"use": "@vercel/node"
+		},
+		{
 			"src": "package.json",
 			"use": "@vercel/static-build",
 			"config": {
@@ -22,7 +26,7 @@
 			"destination": "/api/gorse-proxy/api/:path*"
 		},
 		{
-			"source": "/api/:path*",
+			"source": "/api/chat",
 			"destination": "/api/chat/index.py"
 		},
 		{

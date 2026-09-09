@@ -96,58 +96,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	};
 
 	const resetPassword = async (email: string) => {
-		try {
-			// 開発環境と本番環境で適切なURLを使用
-			const redirectUrl = import.meta.env.PROD
-				? `${window.location.origin}/reset-password`
-				: `http://localhost:5173/reset-password`;
+		// 開発環境と本番環境で適切なURLを使用
+		const redirectUrl = import.meta.env.PROD
+			? `${window.location.origin}/reset-password`
+			: `http://localhost:5173/reset-password`;
 
-			// カスタムAPIエンドポイントを使用してJWTトークンを含んだリンクを生成
-			const response = await fetch("/api/auth/custom-reset-password", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					email,
-					redirectUrl,
-				}),
-			});
+		const { error } = await supabase.auth.resetPasswordForEmail(email, {
+			redirectTo: redirectUrl,
+		});
 
-			const data = await response.json();
-
-			if (!response.ok) {
-				throw new Error(data.error || "Failed to send reset email");
-			}
-
-			// カスタムリンクが生成された場合
-			if (data.resetLink) {
-				// 実際の実装では、ここでメール送信を行う
-			}
-
-			// フォールバック: 標準的なSupabaseの機能も並行して使用
-			const { error: fallbackError } =
-				await supabase.auth.resetPasswordForEmail(email, {
-					redirectTo: redirectUrl,
-				});
-
-			if (fallbackError) {
-				// フォールバックエラーは無視
-			}
-		} catch {
-			// エラーが発生した場合は標準的なSupabaseの機能を使用
-			const redirectUrl = import.meta.env.PROD
-				? `${window.location.origin}/reset-password`
-				: `http://localhost:5173/reset-password`;
-
-			const { error: fallbackError } =
-				await supabase.auth.resetPasswordForEmail(email, {
-					redirectTo: redirectUrl,
-				});
-
-			if (fallbackError) {
-				throw fallbackError;
-			}
+		if (error) {
+			throw error;
 		}
 	};
 

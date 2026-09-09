@@ -74,7 +74,6 @@ const addReply = async (parentId: string, comment: string) => {
 ### セキュリティ関連ファイル
 
 - `src/contexts/AuthProvider.tsx`
-- `api/auth/custom-reset-password.ts`
 - `src/hooks/useLoginAttempts.ts`
 - `src/lib/validation.ts`
 

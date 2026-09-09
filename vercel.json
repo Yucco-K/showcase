@@ -12,10 +12,6 @@
 			"use": "@vercel/node"
 		},
 		{
-			"src": "api/auth/custom-reset-password.ts",
-			"use": "@vercel/node"
-		},
-		{
 			"src": "package.json",
 			"use": "@vercel/static-build",
 			"config": {
@@ -31,10 +27,6 @@
 		{
 			"source": "/api/chat",
 			"destination": "/api/chat/index.py"
-		},
-		{
-			"source": "/api/auth/custom-reset-password",
-			"destination": "/api/auth/custom-reset-password.ts"
 		},
 		{
 			"source": "/((?!api/).*)",

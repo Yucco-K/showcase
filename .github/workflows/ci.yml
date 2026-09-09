@@ -76,48 +76,11 @@ jobs:
           mkdir -p playwright-report
           echo "Test directories created"
 
-      - name: Start development server
-        run: |
-          echo "Starting development server..."
-          echo "Current directory: $(pwd)"
-          echo "Node version: $(node --version)"
-          echo "NPM version: $(npm --version)"
-          npm run dev &
-          echo "Development server started in background"
-          sleep 30
-          echo "Development server startup wait completed"
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://example.supabase.co' }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'dummy-key' }}
-          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_dummy' }}
-          VITE_ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS || 'admin@example.com' }}
-
-      - name: Wait for server
-        run: |
-          echo "Waiting for development server to start..."
-          npx wait-on http://localhost:5173 --timeout 300000 || echo "Server startup timeout, but continuing..."
-          echo "Server startup check completed"
-        timeout-minutes: 8
-
       - name: Run E2E tests
         run: |
-          mkdir -p test-results playwright-report
           echo "Starting Playwright tests..."
-          echo "Current directory: $(pwd)"
-          echo "Directory contents:"
-          ls -la
-          echo "Test directory contents:"
-          ls -la tests/ || echo "No tests directory found"
-          echo "Node version: $(node --version)"
-          echo "NPM version: $(npm --version)"
-          echo "Playwright version: $(npx playwright --version)"
-          echo "Running tests with timeout..."
-          timeout 600 npm run test || echo "Tests failed or timed out, but continuing..."
+          npm run test
           echo "Test execution completed"
-          echo "Test results directory contents:"
-          ls -la test-results/ || echo "No test results found"
-          echo "Playwright report directory contents:"
-          ls -la playwright-report/ || echo "No playwright report found"
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://example.supabase.co' }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'dummy-key' }}
@@ -180,4 +143,3 @@ jobs:
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_dummy' }}
           VITE_ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS || 'admin@example.com' }}
         timeout-minutes: 10
-        continue-on-error: true

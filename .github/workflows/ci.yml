@@ -62,6 +62,12 @@ jobs:
           echo "Build output contents:"
           ls -la dist/ || echo "No dist directory found"
 
+      - name: Unit test
+        run: |
+          echo "Starting Vitest unit tests..."
+          npm run test:unit
+          echo "Unit tests completed"
+
       - name: Install Playwright
         run: |
           echo "Installing Playwright..."

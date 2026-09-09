@@ -1,6 +1,6 @@
 # App Showcase
 
-モダンなポートフォリオ・ショーケースサイト。Supabase、Stripe、Gorse 推薦システム、AI チャットボットを統合したフルスタックアプリケーションです。
+架空のアプリストアという題材を通じて、**複数の外部サービス（Supabase / OpenAI / Stripe / Gorse）をどう統合し、どう品質を担保するか**を実践したフルスタックWebアプリケーションです。
 
 <div align="center">
 
@@ -15,64 +15,76 @@
 
 </div>
 
-## 📱 プロジェクト概要
+## 📱 何を作ったか
 
-「App Showcase」は、**架空のアプリストアを通じてポートフォリオを紹介するフルスタックWebアプリケーション**です。ECサイトのようなUI/UXを持ちながら、ユーザー管理、レビューシステム、AIチャットボット、マーケティング分析ダッシュボードなど、**多彩な機能**を実装しています。
+「App Showcase」は、**架空のアプリストアを通じてポートフォリオを紹介するフルスタックWebアプリケーション**です。ECサイトのようなUI/UXの中に、AIチャットボット・推薦システム・決済・管理画面といった、実務でよく求められる要素を一通り実装しています。
 
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <b>🛒 フロントエンド</b><br>
-      検索・フィルタ・レビュー・チャットボット統合
-    </td>
-    <td align="center" width="50%">
-      <b>⚙️ 管理画面</b><br>
-      商品・ブログ・お問い合わせ・マーケティング管理
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <b>👤 マイページ</b><br>
-      購入履歴・お気に入り・プロフィール管理
-    </td>
-    <td align="center">
-      <b>🤖 AI機能</b><br>
-      チャットボットによる商品推薦・FAQ対応
-    </td>
-  </tr>
-</table>
+- 🛍️ 製品カタログ（検索・フィルタ・レビュー）
+- 💳 Stripe決済
+- 🤖 AIチャットボット（RAG構成）
+- 🎯 Gorseによる推薦システム
+- 👤 Supabase Authによる認証・RLSによる認可
+- ⚙️ 管理画面（商品・ブログ・お問い合わせ・マーケティング分析）
+- 🔄 Zenn記事の自動同期（GitHub Actions）
 
-## ✨ 主な機能
+## 🎯 どんな問題を扱ったか、どう設計したか
 
-- 🛍️ **製品カタログ**: 製品の閲覧、検索、フィルタリング
-- 💳 **Stripe 決済**: セキュアな決済処理
-- 🤖 **AI チャットボット**: OpenAI GPT-4o-mini を使用したインテリジェントなカスタマーサポート
-- 🎯 **推薦システム**: Gorse を使用したパーソナライズされた製品推薦
-- 👤 **ユーザー認証**: Supabase Auth による安全な認証
-- 📝 **レビューシステム**: 製品レビューと評価
-- 📞 **お問い合わせ**: 管理者への直接メッセージ機能
-- 🔄 **ブログ自動同期**: Zenn（zenn.dev/yucco）の公開記事をGitHub Actionsが毎日自動取得し、Supabaseへ反映
+複数の外部サービスを繋ぐだけなら難しくありません。難しいのは、**それぞれの境界で何を信用し、何を検証し、失敗した時にどう振る舞うか**を設計することです。このリポジトリでは特に以下の4点を意識しました。
+
+### 1. AI / RAG — 単なるAPI呼び出しで終わらせない
+
+```text
+Frontend → FastAPI → LangChain → OpenAI → Supabase（pgvector）
+```
+
+チャットボットは単純にOpenAIへ質問を投げるだけの実装にせず、以下の段階を踏む構成にしています。
+
+1. 定型的な挨拶は即座に返す（LLM呼び出し自体を避けるコスト最適化）
+2. LLMでクエリの意図を判定（価格比較の質問かどうか等）
+3. 意図に応じてDBへの直接クエリ（価格順ソート等）またはベクトル検索(RAG)に分岐
+4. 検索結果をコンテキストとしてLLMに渡し、最終的な回答を生成
+
+サーバー側のコードは`config` / `schemas` / `services`（chatbot・intent・retrieval） / `repositories` / `routers`に責務分割しており（[api/chat/](./api/chat/)）、意図分析ロジックとDB問い合わせロジックが混在しないようにしています。
+
+### 2. Authentication / Authorization — UIだけでなくDB側でも制御する
+
+```text
+Browser → Supabase Auth → Application(RLS-aware queries) → PostgreSQL(RLS)
+```
+
+管理者専用ページはフロントエンドでリンクを隠すだけでなく、未ログイン・非管理者が直接URLへアクセスした場合にも実際にリダイレクトされることをE2Eテストで検証しています（[tests/auth.spec.ts](./tests/auth.spec.ts)）。加えてPostgreSQL側でもRow Level Security（RLS）を有効化し、UIの制御を迂回した直接アクセスに対しても防御しています（[supabase/migrations/](./supabase/migrations/)）。
+
+### 3. Recommendation — フィードバックベースの推薦とその課題
+
+Gorseに「閲覧・お気に入り・購入」のフィードバックを送信し、パーソナライズされた推薦（類似商品・人気順・ユーザーごとのランキング）を行う構成です（[src/lib/gorse.ts](./src/lib/gorse.ts)）。クライアント側にはキャッシュ・重複リクエスト防止・タイムアウト・レート制限を実装していますが、レート制限が完全にクライアント側で完結しているとユーザーがlocalStorageを操作すれば回避できてしまうため、**サーバー側のプロキシ（[api/gorse-proxy/](./api/gorse-proxy/)）でユーザーID/IPごとのリクエスト数をSupabase上で原子的にカウントし、実効性のある制限をかける**構成に改善しました。
+
+Gorse自体はAWS EC2上にDocker Composeで構築しています（Postgres/Redis/Gorse master・server・workerの4種のコンテナ構成）。API自体に到達できない場合にはフロントエンド側でローカルフォールバック（同カテゴリ商品の提示）に切り替わるようにし、外部サービス障害時でもUIが破綻しないようにしています。
+
+### 4. CI/CD — 「テストが通ったことにする」ではなく実際に通す
+
+```text
+Type Check → Lint → Build → Unit Test(Vitest) → E2E(Playwright) → Security Scan → Deploy
+```
+
+以前はCI内でPlaywrightがポート競合により実行前にエラー終了し、その失敗を`|| echo "continuing"`で握りつぶして常にCIが成功扱いになっていました。テスト失敗が正しくCI失敗として扱われるよう修正し、その過程で実際に検出された不具合（本番で機能していなかったパスワードリセットAPIのルーティング不備など）も合わせて修正しています。詳細は[.github/workflows/ci.yml](./.github/workflows/ci.yml)を参照してください。
+
+## 🧪 テストへのアプローチ
+
+「動いているように見える」ではなく「何が壊れたら困るか」を基準にテストしています。
+
+- **E2E（Playwright）**: 認可（管理者ページへの直接URLアクセス拒否）、DB連携（実データの内容まで検証、単なる要素の表示確認では終わらせない）
+- **Unit（Vitest）**: 決済カードのLuhnアルゴリズム検証・ブランド判定、Zodバリデーションスキーマ、商品/ブログのフィルタリングロジックなど、E2Eに向かない純粋関数を中心にカバー
 
 ## 🛠️ 技術スタック
 
-**総合構成**: `Cursor × TaskMaster × Playwright × React × Vite × TypeScript × Stripe × Supabase × Vercel × GitHub Actions × Python × FastAPI × LangChain × OpenAI API × RAG × Gorse API × AWS（EC2, Lambda）`
-
-### フロントエンド
-- React 19 + TypeScript
-- Vite
-- Styled Components
-- Framer Motion
-- Mantine UI
-
-### バックエンド
-- Supabase (PostgreSQL + Auth + Storage)
-- FastAPI (Python) - AI チャットボット API
-- Vercel - ホスティング
-
-### 外部サービス
-- OpenAI GPT-4o-mini - AI チャット
-- Stripe - 決済処理
-- Gorse - 推薦エンジン
+- **フロントエンド**: React 19, TypeScript, Vite, Styled Components, Mantine UI
+- **バックエンド**: Supabase (PostgreSQL + Auth + RLS + Storage), FastAPI (Python), Vercel Functions
+- **AI**: OpenAI GPT-4o-mini, LangChain, pgvector
+- **推薦**: Gorse
+- **決済**: Stripe
+- **インフラ / CI**: Vercel, GitHub Actions, AWS (EC2), Docker
+- **テスト**: Playwright (E2E), Vitest (Unit)
+- **セキュリティ**: Gitleaks, TruffleHog, pre-commit, Dependabot
 
 ## 🔄 ブログ自動同期（Zenn連携）
 
@@ -80,7 +92,7 @@ Zenn（[zenn.dev/yucco](https://zenn.dev/yucco)）に公開した記事を、Git
 
 - **ワークフロー**: [`.github/workflows/sync-zenn-blogs.yml`](./.github/workflows/sync-zenn-blogs.yml)（毎日03:00 JST定期実行 / 手動実行も可）
 - **スクリプト**: [`scripts/sync-zenn-blogs.ts`](./scripts/sync-zenn-blogs.ts)
-- **データ取得元**: Zenn公開API（`zenn.dev/api/articles`）からタイトル・タグ・公開日・本文文字数（読了時間の算出元）を取得。tech-blog-1リポジトリへのアクセスは不要
+- **データ取得元**: Zenn公開API（`zenn.dev/api/articles`）からタイトル・タグ・公開日・本文文字数（読了時間の算出元）を取得
 - **反映方法**: 記事URLをキーに既存行があれば更新、なければ新規追加（upsert）
 
 手動で同期したい場合:
@@ -146,6 +158,19 @@ python -m uvicorn index:app --reload --port 8001
 
 # Gorse の起動（別ターミナル）
 docker-compose -f docker-compose.gorse.yml up -d
+```
+
+### テスト
+
+```bash
+# ユニットテスト（Vitest）
+npm run test:unit
+
+# E2Eテスト（Playwright）
+npm run test
+
+# 型チェック・Lint・ビルド・テストを一括実行
+npm run ci
 ```
 
 ### ビルド

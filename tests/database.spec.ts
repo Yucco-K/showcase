@@ -22,37 +22,63 @@ test.describe("データベース連携のE2Eテスト", () => {
 	test("商品一覧ページのDB連携確認", async ({ page }) => {
 		await page.goto("http://localhost:5173/products");
 
-		// 商品カードが表示されることを確認（DBから取得）
-		await expect(
-			page.locator("[data-testid='product-card']").first()
-		).toBeVisible();
+		// 商品カードが複数表示されることを確認（DBから取得。1件だけでは
+		// ハードコードされたダミー表示との区別がつかないため件数も見る）
+		const productCards = page.locator("[data-testid='product-card']");
+		await expect(productCards.first()).toBeVisible();
+		expect(await productCards.count()).toBeGreaterThan(1);
 
-		// 商品名が表示されることを確認
-		await expect(page.locator("h3").first()).toBeVisible();
+		// 商品名が空でないことを確認
+		const firstTitle = await page.locator("h3").first().textContent();
+		expect(firstTitle?.trim().length).toBeGreaterThan(0);
+
+		// 価格が「¥」+ 数字（カンマ区切り可）の実データ形式で表示されることを確認
+		await expect(page.locator("text=/¥[0-9,]+/").first()).toBeVisible();
 	});
 
 	test("ブログ一覧ページのDB連携確認", async ({ page }) => {
 		await page.goto("http://localhost:5173/blog");
 
-		// ブログカードが表示されることを確認（DBから取得）
-		// h3タグ（ブログタイトル）が表示されていることを確認
-		await expect(page.locator("h3").first()).toBeVisible();
+		// 「読み込みエラー」「記事が見つかりませんでした」等のエラー/空表示も
+		// h3を使うため、h3の可視性だけでは成功と誤判定しうる。
+		// 実際のブログカード(data-testid)の存在で判定する。
+		const blogCards = page.locator("[data-testid='blog-card']");
+		await expect(blogCards.first()).toBeVisible();
+		expect(await blogCards.count()).toBeGreaterThan(0);
+
+		// タイトルが空でないことを確認
+		const firstTitle = await blogCards
+			.first()
+			.locator("h3")
+			.textContent();
+		expect(firstTitle?.trim().length).toBeGreaterThan(0);
 	});
 
 	test("商品詳細ページのDB連携確認", async ({ page }) => {
 		await page.goto("http://localhost:5173/products");
 
-		// 商品カードが表示されることを確認
-		await expect(
-			page.locator("[data-testid='product-card']").first()
-		).toBeVisible();
+		// 一覧ページの1件目の商品名を取得しておき、詳細ページでも
+		// 同じ商品名が表示されることを確認する（別商品の情報が
+		// 誤って表示されていないか、単なる固定文言でないかを検証）
+		const firstCardTitleRaw = await page
+			.locator("[data-testid='product-card']")
+			.first()
+			.locator("h3")
+			.textContent();
+		const firstCardTitle = firstCardTitleRaw?.trim() ?? "";
+		expect(firstCardTitle.length).toBeGreaterThan(0);
 
 		// 商品カードの「詳細を見る」ボタンをクリックして詳細ページに遷移
-		// より確実なセレクタを使用
 		await page.locator("text=詳細を見る").first().click();
 
 		// 詳細ページに遷移したことを確認（UUID形式のIDに対応）
 		await expect(page).toHaveURL(/\/products\/[a-f0-9-]+/);
+
+		// 一覧ページと同じ商品名が詳細ページにも表示されることを確認
+		await expect(page.locator("h1", { hasText: firstCardTitle })).toBeVisible();
+
+		// 価格が実データ形式（¥+数字）で表示されることを確認
+		await expect(page.locator("text=/¥[0-9,]+/").first()).toBeVisible();
 	});
 
 	test.skip("お問い合わせフォームの送信確認", async ({ page }) => {
@@ -105,14 +131,13 @@ test.describe("データベース連携のE2Eテスト", () => {
 		);
 	});
 
-	test("データの読み込み状態確認", async ({ page }) => {
-		await page.goto("http://localhost:5173/products");
-
-		// ローディング状態が表示されることを確認（もし実装されている場合）
-		// 実際の実装に応じて調整が必要
-		await expect(
-			page.locator("[data-testid='product-card']").first()
-		).toBeVisible();
+	test("存在しない商品IDへの直接アクセス確認", async ({ page }) => {
+		// 存在しないUUID形式のIDに直接アクセスした場合、他の商品の情報が
+		// 誤って表示されず「商品が見つかりません」と表示されることを確認
+		await page.goto(
+			"http://localhost:5173/products/00000000-0000-0000-0000-000000000000"
+		);
+		await expect(page.locator("text=商品が見つかりません")).toBeVisible();
 	});
 
 	test("エラーハンドリングの確認", async ({ page }) => {

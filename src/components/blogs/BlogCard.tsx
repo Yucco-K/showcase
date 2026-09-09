@@ -181,7 +181,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({ blog, onClick }) => {
 
 	return (
 		<CardContainer>
-			<Card onClick={handleClick}>
+			<Card onClick={handleClick} data-testid="blog-card">
 				{blog.isExternal && <ExternalIcon />}
 
 				<BlogHeader>

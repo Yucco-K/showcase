@@ -41,4 +41,30 @@ test.describe("認証機能のE2Eテスト", () => {
 			await expect(link).toHaveCount(0);
 		}
 	});
+
+	// 未ログインユーザーが管理者ページへURLを直接指定してアクセスした場合、
+	// リンクが非表示なことだけでなく、実際にアクセス自体が拒否され
+	// TOPページへリダイレクトされることを確認する（認可の実効性テスト）。
+	const adminOnlyPaths = [
+		"/blog-admin",
+		"/product-admin",
+		"/contact-admin",
+		"/marketing-dashboard",
+	];
+
+	for (const path of adminOnlyPaths) {
+		test(`未ログインでの管理者ページ直接アクセス拒否確認: ${path}`, async ({
+			page,
+		}) => {
+			await page.goto(`http://localhost:5173${path}`);
+
+			// AdminProtectedRouteによりTOPページへリダイレクトされることを確認
+			await expect(page).toHaveURL("http://localhost:5173/");
+
+			// 管理者ページ固有のUI（例: Blog Admin等の管理画面見出し）が
+			// 表示されていないことも合わせて確認する
+			await expect(page.locator("text=Blog Admin")).toHaveCount(0);
+			await expect(page.locator("text=Product Admin")).toHaveCount(0);
+		});
+	}
 });

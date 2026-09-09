@@ -5,6 +5,10 @@
 			"use": "@vercel/python"
 		},
 		{
+			"src": "api/gorse-proxy/[...path].ts",
+			"use": "@vercel/node"
+		},
+		{
 			"src": "package.json",
 			"use": "@vercel/static-build",
 			"config": {
@@ -15,7 +19,7 @@
 	"rewrites": [
 		{
 			"source": "/gorse-api/api/:path*",
-			"destination": "http://18.183.35.86:8087/api/:path*"
+			"destination": "/api/gorse-proxy/api/:path*"
 		},
 		{
 			"source": "/api/:path*",

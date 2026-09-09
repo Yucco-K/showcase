@@ -1249,11 +1249,16 @@ VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 
 ### CI/CD パイプライン
 
+`.github/workflows/ci.yml`により、以下がすべて成功した場合のみ本番デプロイされる（いずれかが失敗するとデプロイは行われない）：
+
 1. **コードプッシュ** → GitHub リポジトリ
-2. **自動テスト** → Playwright テスト実行
-3. **ビルド** → Vite ビルドプロセス
-4. **デプロイ** → Vercel 自動デプロイ
-5. **検証** → 本番環境テスト
+2. **型チェック** → `tsc --noEmit`
+3. **Lint** → ESLint
+4. **ビルド** → Vite ビルドプロセス
+5. **ユニットテスト** → Vitest（純粋ロジック検証）
+6. **E2Eテスト** → Playwright テスト実行
+7. **セキュリティスキャン** → Gitleaks / TruffleHog
+8. **デプロイ** → Vercel 自動デプロイ（上記すべて成功時のみ）
 
 ---
 

@@ -183,7 +183,8 @@ MIT License - Feel free to use this template for your portfolio.
 
 ## 🔗 Links
 
-- **Live Demo**: [https://showcase-yucco.vercel.app/](https://showcase-yucco.vercel.app/)
+- **This Portfolio Page**: [https://yucco-k.github.io/showcase/](https://yucco-k.github.io/showcase/)（このページ自体。GitHub Pagesでホスティング）
+- **Live App (実際のアプリ本体)**: [https://showcase-topaz.vercel.app/](https://showcase-topaz.vercel.app/)（Vercelでホスティング）
 - **Main Repository**: [https://github.com/Yucco-K/showcase](https://github.com/Yucco-K/showcase)
 - **Original Design**: Figma App Introduction Layout
 

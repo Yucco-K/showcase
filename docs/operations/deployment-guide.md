@@ -9,19 +9,22 @@ Portfolio Showcase チャットボットの本番環境へのデプロイ手順�
 ### フロントエンド
 
 - **フレームワーク**: React + TypeScript
-- **ホスティング**: Vercel/Netlify
+- **ホスティング**: Vercel
 - **ビルド**: Vite
 
 ### バックエンド
 
-- **チャットボット**: Supabase Edge Functions (Deno)
+- **チャットボット**: FastAPI (Python) — Vercel Serverless Function
+  （`api/chat/`。`config.py`/`main.py`/`schemas/`/`services/`/`repositories/`/`routers/`に責務分割済み。`index.py`はVercelのエントリポイントとして`main.py`の`app`を再exportするのみ）
 - **データベース**: Supabase PostgreSQL
 - **認証**: Supabase Auth
 
+> 以前は Supabase Edge Functions (Deno) でチャットボットを実装していたが、Python/FastAPI/LangChainへ移行済み。`supabase/functions/chat/`は現在使用されていない。
+
 ### AI/ML
 
-- **モデル**: GPT-4.1-mini
-- **統合**: OpenAI API
+- **モデル**: GPT-4o-mini
+- **統合**: OpenAI API + LangChain（意図分析・RAG）
 
 ## デプロイメント手順
 
@@ -33,22 +36,25 @@ git commit -m "変更内容の説明"
 git push origin main
 ```
 
-### 2. 自動デプロイの確認
+### 2. CI/CDパイプラインの確認
 
-- Vercel/Netlify が自動的にデプロイを開始
-- ビルドログでエラーがないことを確認
+`main`へのpushで`.github/workflows/ci.yml`が実行され、以下がすべて成功した場合のみ本番へデプロイされる（テスト失敗時はデプロイされない）：
 
-### 3. Supabase Functions のデプロイ
-
-```bash
-supabase functions deploy chat
+```text
+Type Check → Lint → Build → Unit Test(Vitest) → E2E(Playwright) → Security Scan → Deploy
 ```
+
+### 3. Vercelデプロイの確認
+
+- GitHub Actionsの`deploy`ジョブがVercelへデプロイ
+- `api/chat`（FastAPI）・`api/gorse-proxy`（Gorseプロキシ）ともにVercel Functionsとしてデプロイされる
 
 ### 4. 環境変数の確認
 
 - `OPENAI_API_KEY`
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_URL` / `VITE_SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`
+- `ALLOWED_ORIGINS`（FastAPI CORS許可Origin）
+- `GORSE_ENDPOINT` / `GORSE_API_KEY`（`api/gorse-proxy`用）
 
 ## 運用管理
 
@@ -61,17 +67,11 @@ supabase functions deploy chat
 
 ### ログ確認
 
-```bash
-# Supabase Functions ログ
-supabase functions logs chat
-
-# リアルタイムログ
-supabase functions logs chat --follow
-```
+Vercelダッシュボードの「Logs」タブ、またはVercel CLIの`vercel logs`でFunctionのログを確認する（Supabase Edge Functionsは現在使用していない）。
 
 ### パフォーマンス最適化
 
-- **モデル選択**: GPT-4.1-mini（コスト効率）
+- **モデル選択**: GPT-4o-mini（コスト効率）
 - **キャッシュ活用**: 応答キャッシュ
 - **エラーハンドリング**: フォールバック応答
 
@@ -105,9 +105,8 @@ supabase functions logs chat --follow
 
 ## 今後の改善計画
 
-### LangChain 統合
+> LangChainによるRAG機能（商品情報のベクトル検索）は実装済み（`api/chat/services/retrieval.py`）。以下は未実装の今後の検討事項。
 
-- **RAG 機能**: 商品情報検索強化
 - **会話履歴**: 文脈保持機能
 - **Agent 機能**: 動的応答生成
 

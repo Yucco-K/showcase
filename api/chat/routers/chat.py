@@ -2,6 +2,7 @@
 
 import traceback
 
+import openai
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from services.chatbot import ChatbotSingleton
@@ -44,6 +45,14 @@ async def handle_chat(request: Request):
         response = JSONResponse(content={"reply": final_answer})
         logger.info("5. response_prepared. returning...")
         return response
+    except openai.RateLimitError as e:
+        logger.error(f"!!! OpenAI RateLimitError in handle_chat: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": "AI機能が現在ご利用いただけません（OpenAI APIの利用上限に達しています）。しばらく経ってから再度お試しください。"
+            },
+        )
     except Exception as e:
         error_details = traceback.format_exc()
         logger.error("!!! UNHANDLED EXCEPTION in handle_chat !!!")

@@ -80,11 +80,16 @@ JSONのみ回答:
         input_variables=["query"],
     )
 
-    response = None
+    chain = intent_prompt | chatbot.llm
     try:
-        chain = intent_prompt | chatbot.llm
         response = await chain.ainvoke({"query": query})
+    except Exception as e:
+        # LLM API呼び出し自体の失敗（クォータ超過・レート制限・ネットワーク等）。
+        # ここでは意図的に握りつぶし、呼び出し元のキーワードベースのフォールバックに委ねる。
+        logger.warning(f"[Intent Analysis] LLM call failed for '{query}': {e}")
+        return {"type": "none"}
 
+    try:
         # JSONを抽出（マークダウンのコードブロックなどを除去）
         content = response.content.strip()
         json_match = re.search(r"\{.*\}", content, re.DOTALL)
@@ -95,8 +100,7 @@ JSONのみ回答:
         logger.info(f"[Intent Analysis] Query: '{query}' → {intent_data}")
         return intent_data
     except Exception as e:
-        logger.warning(f"[Intent Analysis] Failed for '{query}': {e}")
-        logger.warning(
-            f"[Intent Analysis] Response: {response.content if response else 'N/A'}"
-        )
+        # LLMの応答がJSONとしてパースできなかった場合（プロンプト崩れ・想定外の出力形式）。
+        logger.warning(f"[Intent Analysis] Failed to parse response for '{query}': {e}")
+        logger.warning(f"[Intent Analysis] Raw response: {response.content}")
         return {"type": "none"}

@@ -5,6 +5,14 @@
 			"use": "@vercel/python"
 		},
 		{
+			"src": "api/gorse-proxy/index.ts",
+			"use": "@vercel/node"
+		},
+		{
+			"src": "api/auth/custom-reset-password.ts",
+			"use": "@vercel/node"
+		},
+		{
 			"src": "package.json",
 			"use": "@vercel/static-build",
 			"config": {
@@ -15,14 +23,18 @@
 	"rewrites": [
 		{
 			"source": "/gorse-api/api/:path*",
-			"destination": "http://18.183.35.86:8087/api/:path*"
+			"destination": "/api/gorse-proxy/index.ts?path=api/:path*"
 		},
 		{
-			"source": "/api/:path*",
+			"source": "/api/chat",
 			"destination": "/api/chat/index.py"
 		},
 		{
-			"source": "/:path*",
+			"source": "/api/auth/custom-reset-password",
+			"destination": "/api/auth/custom-reset-password.ts"
+		},
+		{
+			"source": "/((?!api/).*)",
 			"destination": "/index.html"
 		}
 	]

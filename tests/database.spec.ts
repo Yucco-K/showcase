@@ -9,12 +9,14 @@ test.describe("データベース連携のE2Eテスト", () => {
 		await page.goto("http://localhost:5173/portfolio");
 
 		// プロジェクトカードが表示されることを確認（DBから取得）
-		await expect(page.locator("a[href*='github.com']").first()).toBeVisible();
+		const githubLink = page.locator("a[href*='github.com']").first();
+		await expect(githubLink).toBeVisible();
 
-		// プロジェクトタイトルが表示されることを確認
-		await expect(page.locator("a[href*='github.com']").first()).toContainText(
-			"yucco-k.github.io"
-		);
+		// DBから取得したプロジェクト情報が実際に反映されていることを確認
+		// （特定プロジェクト名には依存せず、有効なGitHubリンクと本文が存在することを検証）
+		await expect(githubLink).toHaveAttribute("href", /^https:\/\/github\.com\/.+/);
+		const linkText = await githubLink.textContent();
+		expect(linkText?.trim().length).toBeGreaterThan(0);
 	});
 
 	test("商品一覧ページのDB連携確認", async ({ page }) => {

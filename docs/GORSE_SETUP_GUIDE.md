@@ -15,16 +15,15 @@
 `.env` ファイルに以下の環境変数を追加してください：
 
 ```env
-# Gorse推薦システム設定
-VITE_GORSE_API_URL=http://localhost:8087
-VITE_GORSE_API_KEY=
+# Gorse推薦システム設定（開発時のクライアント直接アクセス用）
+VITE_GORSE_ENDPOINT=http://localhost:8087
 
-# サーバーサイド用（オプション）
-GORSE_API_URL=http://localhost:8087
+# サーバーサイド用（api/gorse-proxy、本番はこちら経由でアクセスする）
+GORSE_ENDPOINT=http://localhost:8087
 GORSE_API_KEY=
 ```
 
-**注意**: このプロジェクトはVite + Reactを使用しているため、クライアント側で使用する環境変数には `VITE_` プレフィックスが必要です。
+**注意**: このプロジェクトはVite + Reactを使用しているため、クライアント側で使用する環境変数には `VITE_` プレフィックスが必要です。本番環境では `src/lib/gorse.ts` がクライアントから直接Gorseを叩かず、`/gorse-api` 経由でVercel Function（`api/gorse-proxy`）にリクエストします（後述）。
 
 ### 2. Gorse 環境の起動
 
@@ -171,7 +170,7 @@ model_fit_period = "60m"  # モデル更新間隔
    - Gorse Web UI (http://localhost:8088) でデータを確認してください
 
 3. **CORS エラー**
-   - 環境変数 `NEXT_PUBLIC_GORSE_ENDPOINT` が正しく設定されているか確認
+   - 環境変数 `VITE_GORSE_ENDPOINT`（開発時）または `GORSE_ENDPOINT`（`api/gorse-proxy`用）が正しく設定されているか確認
 
 ### ログの確認
 
@@ -186,18 +185,15 @@ docker-compose -f docker-compose.gorse.yml logs -f gorse-server
 
 ## 🚀 本番環境への展開
 
-### Supabase Edge Function
+### Vercel Function経由のサーバーサイドプロキシ
 
-本番環境では Supabase Edge Function を使用してフィードバックを送信：
+本番環境ではクライアントから直接Gorseサーバーへはアクセスせず、`api/gorse-proxy`（Vercel Function）を経由します（[api/gorse-proxy/index.ts](../api/gorse-proxy/index.ts)）。
 
-```bash
-# Edge Functionのデプロイ
-supabase functions deploy gorse-feedback
+- `vercel.json`の`/gorse-api/api/:path*`リライトが`api/gorse-proxy`へ転送
+- ログイン済みユーザーはSupabaseユーザーID、未ログインはIPアドレスを識別子として、Supabase上でリクエスト数を原子的にカウントし、サーバー側で実効性のあるレート制限をかける（クライアント側のlocalStorageベースの制限だけでは、ユーザーが削除・改ざんして回避できてしまうため）
+- Vercelの環境変数に `GORSE_ENDPOINT` / `GORSE_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY` を設定する
 
-# 環境変数の設定
-supabase secrets set GORSE_ENDPOINT=https://your-gorse-server.com
-supabase secrets set GORSE_API_KEY=your-api-key
-```
+> `supabase/functions/gorse-feedback/` というSupabase Edge Functionも存在しますが、現在フロントエンドのどこからも呼び出されていない未使用のコードです。実際のフィードバック送信は `src/lib/gorse.ts` → `/gorse-api` 経由で行われます。
 
 ### セキュリティ設定
 
@@ -207,6 +203,7 @@ supabase secrets set GORSE_API_KEY=your-api-key
 2. **CORS 設定** の制限
 3. **PostgreSQL 認証** の強化
 4. **Redis 認証** の設定
+5. **サーバーサイドレート制限**（`api/gorse-proxy`のSupabaseベースのカウント）の環境変数設定
 
 ## 📊 モニタリング
 

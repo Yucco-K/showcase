@@ -138,15 +138,24 @@ export default async function handler(
 		console.error("[gorse-proxy] Rate limit check failed, failing open:", error);
 	}
 
-	const pathSegments = Array.isArray(req.query.path)
-		? req.query.path
-		: req.query.path
-			? [req.query.path]
-			: [];
-	const gorsePath = "/" + pathSegments.join("/");
-	const queryIndex = (req.url || "").indexOf("?");
-	const queryString = queryIndex >= 0 ? (req.url || "").slice(queryIndex) : "";
-	const targetUrl = `${GORSE_ENDPOINT}${gorsePath}${queryString}`;
+	// ?path=... はこのプロキシ自身のルーティング専用パラメータのため、
+	// Gorse本体への転送時には取り除き、それ以外のクエリはそのまま引き継ぐ。
+	const pathParam = Array.isArray(req.query.path)
+		? req.query.path.join("/")
+		: req.query.path || "";
+	const gorsePath = `/${pathParam}`;
+
+	const forwardParams = new URLSearchParams();
+	for (const [key, value] of Object.entries(req.query)) {
+		if (key === "path") continue;
+		if (Array.isArray(value)) {
+			value.forEach((v) => forwardParams.append(key, v));
+		} else if (value !== undefined) {
+			forwardParams.append(key, value);
+		}
+	}
+	const queryString = forwardParams.toString();
+	const targetUrl = `${GORSE_ENDPOINT}${gorsePath}${queryString ? `?${queryString}` : ""}`;
 
 	try {
 		const method = req.method || "GET";

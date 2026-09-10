@@ -1,6 +1,6 @@
 # App Showcase
 
-架空のアプリストアという題材を通じて、**複数の外部サービス（Supabase / OpenAI / Stripe / Gorse）をどう統合し、どう品質を担保するか**を実践したフルスタックWebアプリケーションです。
+架空のアプリストアを題材に、Supabase / OpenAI / Stripe / Gorse など複数の外部サービスを組み合わせながら、認証・決済・推薦・AI機能・テスト・CI/CDまで幅広く試しているフルスタックWebアプリケーションです。
 
 <div align="center">
 
@@ -17,7 +17,11 @@
 
 ## 📱 何を作ったか
 
-「App Showcase」は、**架空のアプリストアを通じてポートフォリオを紹介するフルスタックWebアプリケーション**です。ECサイトのようなUI/UXの中に、AIチャットボット・推薦システム・決済・管理画面といった、実務でよく求められる要素を一通り実装しています。
+「App Showcase」は、架空のアプリストアを通じて、自分のポートフォリオや学習内容を紹介するフルスタックWebアプリケーションです。
+
+ECサイト風のUIの中に、AIチャットボット・推薦システム・決済・認証・管理画面など、Webアプリケーション開発でよく使われる要素を組み込んでいます。
+
+単に機能を増やすだけではなく、外部サービスとの境界や障害時の挙動、認証・認可、テスト、CI/CDなども含めて、少しずつ改善を続けています。
 
 - 🛍️ 製品カタログ（検索・フィルタ・レビュー）
 - 💳 Stripe決済
@@ -27,17 +31,17 @@
 - ⚙️ 管理画面（商品・ブログ・お問い合わせ・マーケティング分析）
 - 🔄 Zenn記事の自動同期（GitHub Actions）
 
-## 🎯 どんな問題を扱ったか、どう設計したか
+## 🎯 どんなことを考えながら設計したか
 
-複数の外部サービスを繋ぐだけなら難しくありません。難しいのは、**それぞれの境界で何を信用し、何を検証し、失敗した時にどう振る舞うか**を設計することです。このリポジトリでは特に以下の4点を意識しました。
+複数の外部サービスを繋ぐこと自体はそれほど難しくありませんが、**それぞれの境界で何を信用し、何を検証し、失敗した時にどう振る舞うか**を設計する部分に難しさを感じました。このリポジトリでは特に以下の4点を意識しています。
 
-### 1. AI / RAG — 単なるAPI呼び出しで終わらせない
+### 1. AI / RAG — API呼び出しだけでなく検索や意図判定も組み合わせる
 
 ```text
 Frontend → FastAPI → LangChain → OpenAI → Supabase（pgvector）
 ```
 
-チャットボットは単純にOpenAIへ質問を投げるだけの実装にせず、以下の段階を踏む構成にしています。
+チャットボットは単純にOpenAIへ質問を投げるだけではなく、以下のような段階を踏む構成にしています。
 
 1. 定型的な挨拶は即座に返す（LLM呼び出し自体を避けるコスト最適化）
 2. LLMでクエリの意図を判定（価格比較の質問かどうか等）
@@ -52,39 +56,39 @@ Frontend → FastAPI → LangChain → OpenAI → Supabase（pgvector）
 Browser → Supabase Auth → Application(RLS-aware queries) → PostgreSQL(RLS)
 ```
 
-管理者専用ページはフロントエンドでリンクを隠すだけでなく、未ログイン・非管理者が直接URLへアクセスした場合にも実際にリダイレクトされることをE2Eテストで検証しています（[tests/auth.spec.ts](./tests/auth.spec.ts)）。加えてPostgreSQL側でもRow Level Security（RLS）を有効化し、UIの制御を迂回した直接アクセスに対しても防御しています（[supabase/migrations/](./supabase/migrations/)）。
+管理者専用ページはフロントエンドでリンクを隠すだけに頼らず、未ログイン・非管理者が直接URLへアクセスした場合にも実際にリダイレクトされることをE2Eテストで確認しています（[tests/auth.spec.ts](./tests/auth.spec.ts)）。加えてPostgreSQL側でもRow Level Security（RLS）を有効化しており、UIの制御だけに依存しない形にしています（[supabase/migrations/](./supabase/migrations/)）。
 
-### 3. Recommendation — フィードバックベースの推薦とその課題
+### 3. Recommendation — フィードバックを使った推薦と改善
 
-Gorseに「閲覧・お気に入り・購入」のフィードバックを送信し、パーソナライズされた推薦（類似商品・人気順・ユーザーごとのランキング）を行う構成です（[src/lib/gorse.ts](./src/lib/gorse.ts)）。クライアント側にはキャッシュ・重複リクエスト防止・タイムアウト・レート制限を実装していますが、レート制限が完全にクライアント側で完結しているとユーザーがlocalStorageを操作すれば回避できてしまうため、**サーバー側のプロキシ（[api/gorse-proxy/](./api/gorse-proxy/)）でユーザーID/IPごとのリクエスト数をSupabase上で原子的にカウントし、実効性のある制限をかける**構成に改善しました。
+Gorseに「閲覧・お気に入り・購入」のフィードバックを送信し、パーソナライズされた推薦（類似商品・人気順・ユーザーごとのランキング）を行う構成です（[src/lib/gorse.ts](./src/lib/gorse.ts)）。クライアント側にはキャッシュ・重複リクエスト防止・タイムアウト・レート制限を実装していますが、レート制限が完全にクライアント側で完結しているとユーザーがlocalStorageを操作すれば回避できてしまうため、**より確実に制御できるよう、サーバー側のプロキシ（[api/gorse-proxy/](./api/gorse-proxy/)）でユーザーID/IPごとのリクエスト数をSupabase上でカウントする構成も追加しました**。
 
 Gorse自体はAWS EC2上にDocker Composeで構築しています（Postgres/Redis/Gorse master・server・workerの4種のコンテナ構成）。API自体に到達できない場合にはフロントエンド側でローカルフォールバック（同カテゴリ商品の提示）に切り替わるようにし、外部サービス障害時でもUIが破綻しないようにしています。
 
-### 4. CI/CD — 「テストが通ったことにする」ではなく実際に通す
+### 4. CI/CD — テスト結果が正しく反映される構成にする
 
 ```text
 Type Check → Lint → Build → Unit Test(Vitest) → E2E(Playwright) → Security Scan → Deploy
 ```
 
-以前はCI内でPlaywrightがポート競合により実行前にエラー終了し、その失敗を`|| echo "continuing"`で握りつぶして常にCIが成功扱いになっていました。テスト失敗が正しくCI失敗として扱われるよう修正し、その過程で実際に検出された不具合（本番で機能していなかったパスワードリセットAPIのルーティング不備など）も合わせて修正しています。詳細は[.github/workflows/ci.yml](./.github/workflows/ci.yml)を参照してください。
+以前はCI内でPlaywrightがポート競合により実行前にエラー終了してしまい、その失敗を`|| echo "continuing"`で受け流していたため、エラーが発生してもCI全体として成功扱いになる構成になっていました。テストの失敗がきちんとCIの失敗として扱われるよう修正し、その過程で見つかった不具合（本番で機能していなかったパスワードリセットAPIのルーティング不備など）もあわせて直しています。詳細は[.github/workflows/ci.yml](./.github/workflows/ci.yml)をご覧ください。
 
 ## 🧪 テストへのアプローチ
 
-「動いているように見える」ではなく「何が壊れたら困るか」を基準にテストしています。
+テストでは、単に画面上に要素が表示されるかだけでなく、認証・DB連携・決済など、ユーザーへの影響が大きい部分を意識して確認しています。
 
 - **E2E（Playwright）**: 認可（管理者ページへの直接URLアクセス拒否）、DB連携（実データの内容まで検証、単なる要素の表示確認では終わらせない）
 - **Unit（Vitest）**: 決済カードのLuhnアルゴリズム検証・ブランド判定、Zodバリデーションスキーマ、商品/ブログのフィルタリングロジックなど、E2Eに向かない純粋関数を中心にカバー
 
 ## 🛠️ 技術スタック
 
-- **フロントエンド**: React 19, TypeScript, Vite, Styled Components, Mantine UI
-- **バックエンド**: Supabase (PostgreSQL + Auth + RLS + Storage), FastAPI (Python), Vercel Functions
-- **AI**: OpenAI GPT-4o-mini, LangChain, pgvector
-- **推薦**: Gorse
-- **決済**: Stripe
-- **インフラ / CI**: Vercel, GitHub Actions, AWS (EC2), Docker
-- **テスト**: Playwright (E2E), Vitest (Unit)
-- **セキュリティ**: Gitleaks, TruffleHog, pre-commit, Dependabot
+- **Frontend**: React 19, TypeScript, Vite, Styled Components, Mantine UI
+- **Backend / Database**: Supabase (PostgreSQL + Auth + RLS + Storage), FastAPI (Python), Vercel Functions
+- **AI / RAG**: OpenAI GPT-4o-mini, LangChain, pgvector
+- **Recommendation**: Gorse
+- **Payment**: Stripe
+- **Infrastructure / CI/CD**: Vercel, GitHub Actions, AWS (EC2), Docker
+- **Testing**: Playwright (E2E), Vitest (Unit)
+- **Security**: Gitleaks, TruffleHog, pre-commit, Dependabot
 
 ## 🔄 ブログ自動同期（Zenn連携）
 

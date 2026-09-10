@@ -107,5 +107,8 @@
 	"bugs": {
 		"url": "https://github.com/Yucco-K/showcase/issues"
 	},
-	"homepage": "https://github.com/Yucco-K/showcase#readme"
+	"homepage": "https://github.com/Yucco-K/showcase#readme",
+	"overrides": {
+		"katex": "^0.18.7"
+	}
 }

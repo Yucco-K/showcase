@@ -52,7 +52,7 @@
 		"@tiptap/react": "^3.0.7",
 		"@tiptap/starter-kit": "^3.0.7",
 		"@tryfabric/martian": "^1.2.4",
-		"@vercel/node": "^5.3.6",
+		"@vercel/node": "^12.0.3",
 		"chart.js": "^4.5.0",
 		"framer-motion": "^12.23.3",
 		"gorsejs": "^0.5.0",
@@ -107,5 +107,8 @@
 	"bugs": {
 		"url": "https://github.com/Yucco-K/showcase/issues"
 	},
-	"homepage": "https://github.com/Yucco-K/showcase#readme"
+	"homepage": "https://github.com/Yucco-K/showcase#readme",
+	"overrides": {
+		"katex": "^0.18.7"
+	}
 }

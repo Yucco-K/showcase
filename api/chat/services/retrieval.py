@@ -80,7 +80,11 @@ async def get_price_comparison_response(
     LLM意図分析経由・キーワードフォールバック経由の両方から共通で呼び出す
     （従来はほぼ同一のロジックが2箇所に重複していたものを統合）。
     """
-    limit = min(max(int(limit), 1), 10)
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 1
+    limit = min(max(limit, 1), 10)
     products = product_repository.get_products_sorted_by_price(
         chatbot.supabase_client, desc=desc, limit=limit
     )

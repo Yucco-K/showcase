@@ -43,12 +43,14 @@ def get_allowed_origins() -> list[str]:
     未設定時は本番ドメインとローカル開発用ポートのみを許可する。
     """
     allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
-    if allowed_origins_env:
-        return [
+    if allowed_origins_env.strip():
+        origins = [
             origin.strip()
             for origin in allowed_origins_env.split(",")
             if origin.strip()
         ]
+        if origins:
+            return origins
     return [
         "https://showcase-topaz.vercel.app",
         "http://localhost:5173",

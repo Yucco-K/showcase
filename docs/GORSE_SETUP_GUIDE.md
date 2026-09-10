@@ -193,7 +193,7 @@ docker-compose -f docker-compose.gorse.yml logs -f gorse-server
 - ログイン済みユーザーはSupabaseユーザーID、未ログインはIPアドレスを識別子として、Supabase上でリクエスト数を原子的にカウントし、サーバー側で実効性のあるレート制限をかける（クライアント側のlocalStorageベースの制限だけでは、ユーザーが削除・改ざんして回避できてしまうため）
 - Vercelの環境変数に `GORSE_ENDPOINT` / `GORSE_API_KEY` / `SUPABASE_SERVICE_ROLE_KEY` を設定する
 
-> `supabase/functions/gorse-feedback/` というSupabase Edge Functionも存在しますが、現在フロントエンドのどこからも呼び出されていない未使用のコードです。実際のフィードバック送信は `src/lib/gorse.ts` → `/gorse-api` 経由で行われます。
+> かつて `supabase/functions/gorse-feedback/` というSupabase Edge Functionが存在しましたが、フロントエンドのどこからも呼び出されていない未使用のコードだったため削除済みです。フィードバック送信は `src/lib/gorse.ts` → `/gorse-api` 経由で行われます。
 
 ### セキュリティ設定
 

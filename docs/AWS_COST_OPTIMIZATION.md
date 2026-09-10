@@ -108,10 +108,10 @@ private maxRequestsPerHour = 50;   // 1時間の上限
 
 ```bash
 # EC2インスタンスを停止
-aws ec2 stop-instances --instance-ids i-00355780bbcfa1e3b
+aws ec2 stop-instances --instance-ids i-xxxxxxxxxxxxxxxxx
 
 # 起動
-aws ec2 start-instances --instance-ids i-00355780bbcfa1e3b
+aws ec2 start-instances --instance-ids i-xxxxxxxxxxxxxxxxx
 ```
 
 **節約額**:
@@ -130,15 +130,15 @@ aws ec2 start-instances --instance-ids i-00355780bbcfa1e3b
 
 ```bash
 # インスタンスを停止
-aws ec2 stop-instances --instance-ids i-00355780bbcfa1e3b
+aws ec2 stop-instances --instance-ids i-xxxxxxxxxxxxxxxxx
 
 # インスタンスタイプを変更
 aws ec2 modify-instance-attribute \
-  --instance-id i-00355780bbcfa1e3b \
+  --instance-id i-xxxxxxxxxxxxxxxxx \
   --instance-type "{\"Value\": \"t3.micro\"}"
 
 # 起動
-aws ec2 start-instances --instance-ids i-00355780bbcfa1e3b
+aws ec2 start-instances --instance-ids i-xxxxxxxxxxxxxxxxx
 ```
 
 ### 4. 🔒 IP ベースのアクセス制限
@@ -148,7 +148,7 @@ aws ec2 start-instances --instance-ids i-00355780bbcfa1e3b
 ```bash
 # セキュリティグループIDを取得
 SG_ID=$(aws ec2 describe-instances \
-  --instance-ids i-00355780bbcfa1e3b \
+  --instance-ids i-xxxxxxxxxxxxxxxxx \
   --query 'Reservations[0].Instances[0].SecurityGroups[0].GroupId' \
   --output text)
 
@@ -222,7 +222,7 @@ aws budgets create-budget \
 aws cloudwatch get-metric-statistics \
   --namespace AWS/EC2 \
   --metric-name CPUUtilization \
-  --dimensions Name=InstanceId,Value=i-00355780bbcfa1e3b \
+  --dimensions Name=InstanceId,Value=i-xxxxxxxxxxxxxxxxx \
   --start-time $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%S) \
   --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
   --period 300 \
@@ -249,7 +249,7 @@ aws ce get-cost-and-usage \
 1. **インスタンスを停止** → 即座に課金停止
 
    ```bash
-   aws ec2 stop-instances --instance-ids i-00355780bbcfa1e3b
+   aws ec2 stop-instances --instance-ids i-xxxxxxxxxxxxxxxxx
    ```
 
 2. **予算アラート設定** → 超過を防止

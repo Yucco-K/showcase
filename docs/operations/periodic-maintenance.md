@@ -24,7 +24,7 @@ order by version desc;
 - ローカルの`supabase/migrations/`ファイル一覧と本番の適用履歴を突き合わせ、未適用のmigrationがないか確認する
 - 過去に、機能追加のmigrationがマージされてから本番未適用のまま長期間放置されていた事例があった（気づかないまま関連機能が動作していなかった）
 
-### 3. マージ済み・クローズ済みブランチの整理
+### 3. マージ済みブランチの整理
 
 ```bash
 git fetch origin --prune
@@ -32,7 +32,7 @@ gh pr list --state merged --limit 100 --json headRefName --jq '.[].headRefName'
 ```
 
 - マージ済みPRのheadブランチで、ローカル・リモートに残っているものを削除する
-- Dependabotが作成し、後から手動対応PRに統合されて自動クローズされなかったブランチも見落としやすいので合わせて確認する
+- Dependabotが作成したheadブランチも見落としやすいので合わせて確認する
 
 ### 4. Copilotレビュー指摘の棚卸し
 

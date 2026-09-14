@@ -51,7 +51,7 @@ curl -sI https://yucco-k.github.io/showcase/
 
 - 200が返ることを確認する。Pages設定（Settings → Pages → Source）が意図せず無効化されるケースがあるため、README等の画像リンクも合わせて目視確認する
 
-### 6. EC2インスタンスのコスト状況確認
+### 6. EC2インスタンスの稼働状況確認
 
 ```bash
 aws ec2 describe-instances --profile gorse --query 'Reservations[].Instances[].[InstanceId,State.Name]'

@@ -57,7 +57,7 @@ curl -sI https://yucco-k.github.io/showcase/
 aws ec2 describe-instances --profile gorse --query 'Reservations[].Instances[].[InstanceId,State.Name]'
 ```
 
-- 検証目的でのみ使うインスタンスは、使わない期間はAMIバックアップを取ってterminateし、必要な時だけ復元する運用の方が、stopしたままにするより低コストになる場合が多い（EBSボリューム分の課金は停止中も発生するため）
+- インスタンスIDと`State.Name`を確認し、不要に起動中・停止中のインスタンスが残っていないかを見直す。検証目的でのみ使うインスタンスは、使わない期間はAMIバックアップを取ってterminateし、必要な時だけ復元する運用の方が、stopしたままにするより低コストになる場合が多い（EBSボリューム分の課金は停止中も発生するため）
 
 ## 推奨頻度: 四半期
 

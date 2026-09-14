@@ -18,7 +18,7 @@ cd portfolio-page && npm audit
 
 ```sql
 select version, name from supabase_migrations.schema_migrations
-order by version desc limit 5;
+order by version desc;
 ```
 
 - ローカルの`supabase/migrations/`ファイル一覧と本番の適用履歴を突き合わせ、未適用のmigrationがないか確認する
